@@ -46,6 +46,20 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 - Run a final humanizer pass only for AI slop patterns, filler, repetitive structure, promotional language, or unnatural rhythm.
 - Leave final taste, pacing, and emotional polish to the human author.
 
+## Phase 5: Autonomous Loop
+
+Use `scripts/run_manuscript_loop.py` after every draft, expansion, repair, or final validation pass when the user wants an autonomous workflow.
+
+- Run the loop controller after context validation and length checks are available.
+- Continue only when the loop report says `CONTINUE`.
+- If the loop reports `NEEDS_CONTEXT_REPAIR`, repair the named chapter before style work or expansion.
+- If the loop reports `NEEDS_STYLE_REPAIR`, rewrite only the flagged lines or passages.
+- If the loop reports `NEEDS_EXPANSION`, expand the recommended chapter from approved scene breakdowns and source files only.
+- If the loop reports `DONE`, stop and report the final state.
+- If the loop reports `BLOCKED`, stop and ask for user direction.
+
+Codex performs prose edits. The loop controller only scans, prioritizes, reports state, and recommends the next action.
+
 ## No Word Count Padding
 
 Use broad book or chapter targets only as planning context. Never add filler to satisfy a scene or beat length. If a beat is short because the source is short, keep it short and source-grounded.
