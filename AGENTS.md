@@ -61,3 +61,16 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
   ```
 - Use length results only as book-level planning guidance. Never pad scenes, force fixed beat/chapter word counts, or invent unsupported story to close the gap.
+
+## Autonomous Manuscript Loop
+
+- For requests like "run the book," "finish the manuscript," "autonomous loop," or "keep going until valid," use the local `.agents/skills/manuscript-workflow-orchestrator/` loop controller.
+- Run:
+  ```bash
+  python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/<book-slug> --target-min 30000 --target-max 31000
+  ```
+- Treat `DONE` as the stop condition and `CONTINUE` as permission for the next Codex prose action.
+- Fix context problems before style problems, and fix style problems before length expansion.
+- If the loop reports `NEEDS_EXPANSION`, expand only inside approved chapter `scene-breakdown.md` beats using source-supported action, consequence, conflict, dialogue pressure, setting texture, and transitions.
+- If the loop reports `BLOCKED`, stop and ask for user direction.
+- The loop must never pad prose, invent unsupported facts, or create fixed beat/scene word counts.
