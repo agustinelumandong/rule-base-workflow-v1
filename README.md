@@ -117,3 +117,9 @@ Use this when you want a repeatable AI-assisted book workflow with:
 ## Status
 
 This is a guided workflow, not a fully autonomous loop. You still choose when to start each pass and what to focus on next.
+
+Feel free to contribute improvements, fixes, or new workflow ideas.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
