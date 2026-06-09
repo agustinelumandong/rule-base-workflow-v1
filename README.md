@@ -115,6 +115,22 @@ Use this when you want a repeatable AI-assisted book workflow with:
 - validation before polish
 - a clean path from outline to manuscript
 
+## Orchestration visualization
+
+```mermaid
+flowchart TD
+  A[User request] --> B[Orchestrator scans book folder]
+  B --> C[Load phase-0 and source files]
+  C --> D[Create or refresh rulebook]
+  D --> E[Create mood-lock]
+  E --> F[Build chapter summaries]
+  F --> G[Write scene breakdowns]
+  G --> H[Draft or expand chapters]
+  H --> I[Run context and length checks]
+  I --> J[Apply style cleanup]
+  J --> K[Report status to user]
+```
+
 ## Status
 
 This is a guided workflow, not a fully autonomous loop. You still choose when to start each pass and what to focus on next.
