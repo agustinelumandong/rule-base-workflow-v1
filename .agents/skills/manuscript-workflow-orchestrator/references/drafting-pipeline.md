@@ -7,6 +7,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 - Start from the target folder source file.
 - Build or refresh `rulebook.md` and `mood-lock.md`.
 - Create `chapter-summaries.md`.
+- Create or refresh `chapter-pacing-plan.md` when the user wants reference-guided rhythm or when chapters are becoming artificially similar in length.
 - Create chapter beats with plot movement plus emotional/thematic pressure.
 - Use Codex / ChatGPT 5.5 as primary.
 - Use Gemini only as optional secondary review.
@@ -29,6 +30,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 - For chapter-level work, load `context-packet.md`, the chapter draft, and `scene-breakdown.md` instead of the full manuscript.
 - Draft one scene at a time.
 - Do not require fixed numeric lengths for scenes.
+- Use pacing guidance only to decide whether approved beats deserve lean, standard, expanded, or major treatment. Never treat elastic ranges as hard targets.
 - After drafting or expanding a chapter, run the context validator before treating the chapter as approved.
 - After drafting or expanding a chapter, run the length checker to measure book-level progress without turning the result into a scene target.
 - Lock each scene to the selected POV.
@@ -69,6 +71,10 @@ Codex performs prose edits. The loop controller only scans, prioritizes, reports
 ## No Word Count Padding
 
 Use broad book or chapter targets only as planning context. Never add filler to satisfy a scene or beat length. If a beat is short because the source is short, keep it short and source-grounded.
+
+## Reference-Guided Pacing
+
+Use `scripts/plan_chapter_pacing.py` to create `chapter-pacing-plan.md` when chapter lengths need natural variation. The plan may use optional reference analysis from `.agents/skills/western-story-pattern-analyzer/`, but current book source remains authoritative. Longer treatment must be justified by approved source movement such as confrontation, rescue, siege, reveal, reversal, consequence, or moral pressure.
 
 ## Length Progress Check
 

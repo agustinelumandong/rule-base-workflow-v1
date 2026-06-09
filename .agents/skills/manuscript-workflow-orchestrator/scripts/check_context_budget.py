@@ -56,6 +56,7 @@ def mode_files(book_folder: Path, slug: str | None, mode: str) -> tuple[list[Pat
                 book_folder / "rulebook.md",
                 book_folder / "mood-lock.md",
                 book_folder / "chapter-summaries.md",
+                book_folder / "chapter-pacing-plan.md",
             ],
             ["chapter drafts", "full manuscript compilation"],
         )
@@ -87,7 +88,9 @@ def mode_files(book_folder: Path, slug: str | None, mode: str) -> tuple[list[Pat
         )
     if mode == "expansion":
         return (
-            chapter_files + ([folder / "continuity-out.md"] if folder else []),
+            chapter_files
+            + ([book_folder / "chapter-pacing-plan.md"] if (book_folder / "chapter-pacing-plan.md").exists() else [])
+            + ([folder / "continuity-out.md"] if folder else []),
             ["new story sources", "full manuscript", "fixed scene or beat word targets"],
         )
     return (

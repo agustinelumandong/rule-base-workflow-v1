@@ -16,6 +16,15 @@
 - Validate context before style repair. Run style repair before length expansion.
 - End agent passes with: Source Used, Mode, Changes Made, Risks, Next Action, and Stop/Continue.
 
+## Reference-Guided Pacing
+
+- Optional reference books, such as `references/timber`, may be analyzed for high-level rhythm only: chapter length variation, scene density, opening/ending patterns, conflict escalation, quiet beats, and long/short chapter placement.
+- Never copy reference prose, plot, characters, voice, exact scenes, exact turns, or exact chapter structure.
+- The current book source always wins: `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and chapter `scene-breakdown.md`.
+- Use `chapter-pacing-plan.md` to prevent every chapter from landing around the same size.
+- Elastic ranges are planning guidance. `~1000` means a natural supported range such as roughly `900-1200`, not an exact target.
+- Never pad, equalize chapter lengths, or invent unsupported story to hit a range.
+
 ## Context Packet And Rolling Continuity
 
 - A context packet is a compact chapter source bundle. It is not a new source of truth.
@@ -47,6 +56,7 @@
   - **NOTE: Plot and Emotion:** In addition to plot beats, explicitly prompt the AI to include "emotional beats" or "thematic check-ins" to ensure narrative resonance isn't lost to pure mechanics.
   - **Scope Guidance:** Use broad book or chapter targets only for planning. Do not require fixed numeric lengths for beats or scenes.
   - **Source-Determined Beat Count:** Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when needed. Stop when the chapter's required movement and continuity out are complete.
+  - **Elastic Pacing:** If `chapter-pacing-plan.md` exists, use its pacing class to decide which chapters and beats deserve lean, standard, expanded, or major treatment. Treat all ranges as flexible and source-supported.
   - **Token Balance:** For chapter-level beat work, use the chapter context packet when available instead of loading the full manuscript or full rulebook.
 - **Operator Intervention:** Review and manually edit these beats as they are generated to ensure the narrative stays on track before moving to the drafting phase.
 
@@ -155,6 +165,8 @@ Write Beat [Beat Number] for Chapter [Chapter Number] of the western series foll
 
 Before generating beats for a chapter, derive the beat count from the chapter source. Do not use a fixed beat count across chapters. Create one beat for each required story movement, emotional turn, tactical transition, or continuity exit. Add a transition beat only if the chapter would otherwise skip needed context.
 
+If `chapter-pacing-plan.md` exists, use it as optional pacing guidance. Add elastic pacing fields only when they help the chapter avoid artificial sameness. Do not treat `~1000`, `~1600`, or any range as a hard target. Stop short when the source runs out; allow more only when the approved beat requires it.
+
 ## SOURCE CONTEXT LOCK
 
 - **Source Anchor:** [Exact chapter/outline/rulebook fact this beat comes from.]
@@ -162,6 +174,14 @@ Before generating beats for a chapter, derive the beat count from the chapter so
 - **Required Story Movement:** [What must change by the end of this beat.]
 - **Continuity Out:** [What must remain true for the next beat or scene.]
 - **Do Not Invent:** [Names, places, events, motives, or lore the AI must not add.]
+
+## PACING GUIDANCE
+
+- **Pacing Class:** [lean, standard, expanded, major, epilogue/teaser, or UNKNOWN.]
+- **Elastic Range:** [Optional natural range such as `~1000`, meaning roughly `900-1200` only if source-supported.]
+- **Why This Beat Is Short/Long:** [Story reason based on source movement, not word-count pressure.]
+- **Expansion Permission:** [What may be deepened without adding unsupported story.]
+- **Reference Rhythm Note:** [Optional high-level rhythm note; do not copy reference content.]
 
 ## NARRATIVE CONTEXT
 
@@ -189,6 +209,14 @@ Before generating beats for a chapter, derive the beat count from the chapter so
 - **Required Story Movement:** [What must change by the end of this beat.]
 - **Continuity Out:** [What must remain true for the next beat or scene.]
 - **Do Not Invent:** [Names, places, events, motives, or lore the AI must not add.]
+
+### Pacing Guidance
+
+- **Pacing Class:** [lean, standard, expanded, major, epilogue/teaser, or UNKNOWN.]
+- **Elastic Range:** [Optional natural range such as `~1000`, meaning roughly `900-1200` only if source-supported.]
+- **Why This Beat Is Short/Long:** [Story reason based on source movement, not word-count pressure.]
+- **Expansion Permission:** [What may be deepened without adding unsupported story.]
+- **Reference Rhythm Note:** [Optional high-level rhythm note; do not copy reference content.]
 
 ### Beat Instructions
 

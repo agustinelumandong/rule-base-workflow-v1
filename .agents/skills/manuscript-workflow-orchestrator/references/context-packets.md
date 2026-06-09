@@ -22,6 +22,7 @@ Each packet should include:
 - chapter summary
 - relevant rulebook facts only
 - compressed mood and style lock
+- current chapter pacing guidance from `chapter-pacing-plan.md` when available
 - prior chapter `continuity-out.md` or prior scene continuity-out lines
 - next chapter continuity need
 - current chapter `scene-breakdown.md`
@@ -32,7 +33,7 @@ Each packet should include:
 - Use the packet for chapter drafting, repair, style cleanup, validation, and expansion.
 - Do not load the full manuscript for normal chapter work.
 - Do not load the full rulebook unless rebuilding planning artifacts or resolving a missing source fact.
-- Refresh the packet after changing `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, or the chapter `scene-breakdown.md`.
+- Refresh the packet after changing `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, `chapter-pacing-plan.md`, or the chapter `scene-breakdown.md`.
 - If the packet says a fact is missing, mark it `UNKNOWN` or ask if it blocks drafting.
 
 ## Rolling Continuity

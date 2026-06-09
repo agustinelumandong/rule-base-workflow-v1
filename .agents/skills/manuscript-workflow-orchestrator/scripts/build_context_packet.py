@@ -185,6 +185,20 @@ def next_continuity_need(book_folder: Path, slug: str) -> str:
     return word_excerpt(section, 350) if section else f"No next continuity detail found for {next_slug}."
 
 
+def pacing_excerpt(book_folder: Path, slug: str) -> str:
+    text = read_optional(book_folder / "chapter-pacing-plan.md")
+    if not text:
+        return "No chapter-pacing-plan.md found. Use source scope only; do not equalize chapter lengths."
+    labels = [slug]
+    number = chapter_number(slug)
+    if slug == "epilogue":
+        labels.append("Epilogue")
+    elif number is not None:
+        labels.extend([f"Chapter {number}", f"Chapter {number:02d}"])
+    lines = extract_matching_lines(text, labels + ["Source Rule", "Length Rule"], limit=16)
+    return lines or "No matching pacing row found. Use source scope only; do not equalize chapter lengths."
+
+
 def render_packet(book_folder: Path, slug: str) -> str:
     src = source_path(book_folder)
     if src is None:
@@ -235,6 +249,10 @@ def render_packet(book_folder: Path, slug: str) -> str:
         "## Mood And Tone Summary",
         "",
         word_excerpt(mood_lock, 450),
+        "",
+        "## Pacing Guidance",
+        "",
+        pacing_excerpt(book_folder, slug),
         "",
         "## Prior Continuity Out",
         "",
