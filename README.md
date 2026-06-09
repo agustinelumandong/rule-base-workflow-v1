@@ -100,6 +100,7 @@ references/
 
 - clone the repo
 - open it in your editor
+- create a separate branch for each story so the core rule-based workflow stays unchanged
 - duplicate the book folder you want to experiment with
 - edit the source files for your own story
 - run the validation scripts after drafting changes
