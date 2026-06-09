@@ -1,0 +1,74 @@
+# Western Style Lock
+
+Use these rules when drafting or revising Western prose, chapter beats, action passages, or style-locked prompts.
+
+## Literal Prose
+
+- Use literal prose by default.
+- Avoid metaphors, similes, and personification unless the user asks otherwise.
+- Do not give the environment feelings, plans, or intentions.
+- Keep descriptions physical, concrete, and grounded in tools, terrain, bodies, animals, buildings, weather, and labor.
+- Show objective action and result. Do not explain obvious psychology or teach the reader what an action means.
+
+## Banned AI Echo Words
+
+Avoid these words unless they appear in quoted source material or the user explicitly wants them preserved:
+
+- `absolutely`
+- `completely`
+- `relentless`
+- `massive`
+- `sharp`
+- `heavy`
+- `pure`
+- `extremely`
+- `perfectly`
+
+## Vocabulary
+
+Prefer plain 1800s blue-collar vocabulary:
+
+- iron
+- leather
+- dirt
+- lead
+- bone
+- granite
+- timber
+- dust
+- rope
+- sweat
+- blood
+
+Avoid modern or clinical terms when a plainer period-grounded word can do the job:
+
+- `velocity`
+- `fraction`
+- `trajectory`
+- `impact`
+- `visible`
+- `resolving`
+
+Avoid Texas slang unless the user specifically requests it.
+
+## Cadence
+
+- Avoid `-ing` sentence openers.
+- Avoid repeated Name/Pronoun loops, such as several consecutive sentences beginning with the same character name or pronoun.
+- Mix sentence lengths to create an uneven rhythm.
+- Cut generic AI transitions and filler.
+- Keep chapter or beat openings active: start with mechanical action, sound, or physical strain instead of weather or scenery.
+
+## Behavior Over Thought
+
+- Avoid internal monologue when behavior-driven prose is requested.
+- Avoid phrases like `He felt`, `He realized`, or `He thought` when the user wants externalized tension.
+- Show principles and tension through action, posture, silence, choices, and what a character refuses to do.
+
+## Violence And Action
+
+- Keep combat fast, grounded, and brutal.
+- Avoid micro-mechanics that slow the fight into choreography.
+- Avoid fleeing or begging survivors unless the user explicitly asks for that beat.
+- Avoid formulaic aftermaths.
+- Track weapons, wounds, positions, and who can see what.

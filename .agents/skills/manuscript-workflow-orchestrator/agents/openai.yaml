@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manuscript Workflow Orchestrator"
+  short_description: "Run book folder workflow from phase file to drafts"
+  default_prompt: "Use $manuscript-workflow-orchestrator to scan this book folder and build the manuscript workflow artifacts."

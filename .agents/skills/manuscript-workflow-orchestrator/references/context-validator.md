@@ -1,0 +1,57 @@
+# Context Validator
+
+Use the context validator after chapter drafting, chapter expansion, chapter compilation, or any revision that may affect story facts.
+
+## Commands
+
+Run the deterministic validator for the whole book:
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/tex-cade
+```
+
+Generate an AI semantic review prompt for one chapter:
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/tex-cade --chapter chapter-02 --ai-prompt
+```
+
+Replace `books/tex-cade` and `chapter-02` with the target book folder and chapter slug.
+
+## What The Script Checks
+
+- Required book files exist.
+- Chapter drafts, scene breakdowns, and drafting plans exist.
+- Each scene breakdown has complete beat context-lock structure.
+- `phase-0.md` chapter sections are parsed and matched to each chapter folder.
+- Each scene breakdown is checked for overlap with its matching `phase-0.md` chapter source.
+- Each chapter draft is checked for overlap with its matching `phase-0.md` chapter source.
+- Beat `Source Anchor` and `Required Story Movement` fields are checked for draft coverage.
+- Drafts are non-empty.
+- Drafts avoid forbidden fixed word-count language.
+- Drafts avoid unresolved `UNKNOWN`, `TBD`, or `TODO` markers.
+- Drafts are scanned for style warnings such as AI echo words, modern/clinical terms, unwanted dialogue tags, and internal-monologue phrases.
+
+Low source overlap is treated as a warning unless required files or beat structures are missing. This keeps the checker useful for short first drafts while still flagging chapters that need review before expansion.
+
+## What AI Must Review
+
+Use Codex / ChatGPT 5.5 for semantic review when the automated validator reports source-overlap warnings or after major expansion. Gemini is optional secondary review only.
+
+The AI review must compare the chapter draft against `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and that chapter's `scene-breakdown.md`.
+
+The AI must answer:
+
+- Does the chapter cover every approved beat?
+- Does any scene skip required story movement?
+- Does the chapter invent unsupported names, locations, motives, lore, backstory, or plot bridges?
+- Does continuity in/out match the prior and next chapter?
+- Does POV stay controlled?
+- Does Western style lock hold?
+- Does expansion deepen approved material instead of padding?
+
+If the AI reports failures, revise the chapter or scene breakdown before continuing.
+
+## Relationship To Length Checker
+
+Run context validation before using length pressure to guide expansion. The length checker can identify underdrafted chapters, but context validation protects source match and style lock.
