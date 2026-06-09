@@ -62,6 +62,22 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   ```
 - Use length results only as book-level planning guidance. Never pad scenes, force fixed beat/chapter word counts, or invent unsupported story to close the gap.
 
+## Token-Balanced Context
+
+- Choose a prompt mode before chapter work: `planning`, `drafting`, `repair`, `style`, `validation`, `expansion`, or `final`.
+- Before chapter-level drafting, repair, style cleanup, validation, or expansion, build or refresh:
+  ```bash
+  python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py books/<book-slug> --chapter chapter-XX
+  ```
+- Use the context packet, chapter draft, and chapter `scene-breakdown.md` for normal chapter work. Do not load the full manuscript or full rulebook unless rebuilding planning artifacts, resolving a blocking source fact, or doing final review.
+- Check context budget when unsure what to load:
+  ```bash
+  python .agents/skills/manuscript-workflow-orchestrator/scripts/check_context_budget.py books/<book-slug> --chapter chapter-XX --mode drafting
+  ```
+- Use the compressed style lock in routine prompts: Literal Western prose; no AI echo words; no modern/clinical terms; no dialogue tags when action anchors are requested; behavior over thought; source-locked.
+- After drafting or expanding a chapter, create or update `chapters/chapter-XX/continuity-out.md` so the next chapter can avoid loading the full prior draft.
+- End every manuscript pass with: Source Used, Mode, Changes Made, Risks, Next Action, and Stop/Continue.
+
 ## Autonomous Manuscript Loop
 
 - For requests like "run the book," "finish the manuscript," "autonomous loop," or "keep going until valid," use the local `.agents/skills/manuscript-workflow-orchestrator/` loop controller.

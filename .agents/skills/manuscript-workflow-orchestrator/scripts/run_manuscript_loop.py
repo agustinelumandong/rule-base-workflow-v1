@@ -179,6 +179,30 @@ def choose_expansion_chapter(
     return min(valid_slugs, key=lambda slug: words_by_chapter.get(slug, 10**9))
 
 
+def mode_for_status(status: str) -> str:
+    if status == "NEEDS_CONTEXT_REPAIR":
+        return "repair"
+    if status == "NEEDS_STYLE_REPAIR":
+        return "style"
+    if status == "NEEDS_EXPANSION":
+        return "expansion"
+    if status == "DONE":
+        return "final"
+    return "blocked"
+
+
+def action_chapter(status: str, context_problem_chapters: list[str], expansion_chapter: str, style_issues: list[StyleIssue]) -> str | None:
+    if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
+        return context_problem_chapters[0]
+    if status == "NEEDS_EXPANSION" and expansion_chapter != "NONE":
+        return expansion_chapter
+    if status == "NEEDS_STYLE_REPAIR" and style_issues:
+        for part in style_issues[0].path.parts:
+            if part.startswith("chapter-") or part == "epilogue":
+                return part
+    return None
+
+
 def classify(
     length_state: LengthState,
     book_failures: list[str],
@@ -219,6 +243,18 @@ def render_report(
     context_status = context_validator.overall_status(book_failures, reports)
     expansion_chapter = choose_expansion_chapter(reports, length_state.counts)
     context_problem_chapters = issue_chapters(reports)
+    prompt_mode = mode_for_status(status)
+    next_chapter = action_chapter(status, context_problem_chapters, expansion_chapter, style_issues)
+    packet_command = (
+        f"python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py {book_folder} --chapter {next_chapter}"
+        if next_chapter
+        else "not needed"
+    )
+    budget_command = (
+        f"python .agents/skills/manuscript-workflow-orchestrator/scripts/check_context_budget.py {book_folder} --chapter {next_chapter} --mode {prompt_mode}"
+        if next_chapter and prompt_mode != "blocked"
+        else "not needed"
+    )
 
     if status == "DONE":
         decision = "STOP"
@@ -250,7 +286,10 @@ def render_report(
         f"- **Status:** {status}",
         f"- **Decision:** {decision}",
         f"- **Reason:** {reason}",
+        f"- **Prompt Mode:** `{prompt_mode}`",
         f"- **Next Action:** {next_action}",
+        f"- **Context Packet Command:** `{packet_command}`",
+        f"- **Context Budget Command:** `{budget_command}`",
         "",
         "## Length State",
         "",
@@ -302,6 +341,7 @@ def render_report(
             "## Loop Rules",
             "",
             "- Codex performs prose edits; this script only reports state and next action.",
+            "- Build or refresh the context packet before chapter-level prose edits.",
             "- Fix context before style; fix style before expansion.",
             "- Expand only from approved source files and scene breakdowns.",
             "- Never pad prose, invent unsupported story, or force beat/scene word counts.",
@@ -320,12 +360,14 @@ def render_blocked_report(book_folder: Path, reason: str) -> str:
             "- **Status:** BLOCKED",
             "- **Decision:** STOP",
             f"- **Reason:** {reason}",
+            "- **Prompt Mode:** `blocked`",
             "- **Next Action:** Restore or create the missing source material before drafting, repair, style, or length work.",
             "",
             "## Loop Rules",
             "",
             "- Codex performs prose edits; this script only reports state and next action.",
             "- Required source files must exist before autonomous work can continue.",
+            "- After sources exist, build context packets before chapter-level prose edits.",
             "- Never pad prose, invent unsupported story, or force beat/scene word counts.",
         ]
     )

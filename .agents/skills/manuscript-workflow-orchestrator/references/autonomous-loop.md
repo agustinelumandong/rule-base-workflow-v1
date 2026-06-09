@@ -14,6 +14,12 @@ The loop is agent-driven. Python controls scanning, status, prioritization, and 
 6. Codex performs the next recommended action only when the report says `CONTINUE`.
 7. Re-run the loop after each draft, expansion, or repair pass.
 
+Before chapter-level prose edits, refresh the chapter context packet:
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py books/<book-slug> --chapter chapter-XX
+```
+
 ## Source Lock
 
 All revisions and expansions must use only:
@@ -40,16 +46,19 @@ Do not add unsupported names, motives, backstory, locations, lore, relationships
 
 - context validator reports `WARN` or `FAIL`
 - repair the named chapter before style work or expansion
+- use prompt mode `repair`
 
 `NEEDS_STYLE_REPAIR` means:
 
 - style scan catches banned words, dialogue tags, unresolved markers, internal-monologue phrases, fixed-count language, or modern/clinical terms
 - rewrite only the flagged line or passage
+- use prompt mode `style`
 
 `NEEDS_EXPANSION` means:
 
 - manuscript is below the target minimum
 - expand the recommended chapter from approved beats only
+- use prompt mode `expansion`
 
 `BLOCKED` means:
 
@@ -78,3 +87,18 @@ python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_lo
 When the loop returns `NEEDS_EXPANSION`, expand only inside approved beat boundaries. Add physical blocking, tactical movement, consequence, town reaction, restrained dialogue pressure, setting texture, and transitions.
 
 Do not pad. Do not force beat or scene word counts. Do not invent unsupported story to satisfy length.
+
+## Agent Checkpoint
+
+Every loop action should end with:
+
+```md
+## Agent Checkpoint
+
+- **Source Used:**
+- **Mode:**
+- **Changes Made:**
+- **Risks:**
+- **Next Action:**
+- **Stop/Continue:**
+```

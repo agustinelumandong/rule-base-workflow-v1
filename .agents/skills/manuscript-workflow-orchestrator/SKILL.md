@@ -38,6 +38,9 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Load [references/context-validator.md](references/context-validator.md) after chapter drafting, expansion, compilation, or revision to validate source match structure and generate AI semantic review prompts.
 - Load [references/length-checker.md](references/length-checker.md) after drafting, expansion, compilation, or revision passes to measure progress toward the book-level target.
 - Load [references/autonomous-loop.md](references/autonomous-loop.md) when the user asks to run the book, finish the manuscript, keep going until valid, or use an autonomous manuscript loop.
+- Load [references/context-packets.md](references/context-packets.md) before chapter-level drafting, repair, validation, style cleanup, or expansion.
+- Load [references/prompt-modes.md](references/prompt-modes.md) when choosing between planning, drafting, repair, style, validation, expansion, or final review work.
+- Load [references/token-budget.md](references/token-budget.md) when the task risks loading the full manuscript, full rulebook, or unrelated chapter files.
 
 ## Operating Rules
 
@@ -48,12 +51,17 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Run context validation before using length results to guide expansion.
 - Use the length checker as an advisory progress report only; never pad or invent story to satisfy a target.
 - Use the autonomous loop controller to decide stop/continue state after draft, repair, expansion, and validation passes. Codex performs prose edits; the script controls state and next action.
+- For chapter-level work, build or refresh `chapters/chapter-XX/context-packet.md` and use prompt modes to keep context compact.
 - For a full book check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`
 - For a length check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>`
 - For an autonomous loop check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/<book-slug> --target-min 30000 --target-max 31000`
+- For a context packet, run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py books/<book-slug> --chapter chapter-XX`
+- For a context budget check, run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_context_budget.py books/<book-slug> --chapter chapter-XX --mode drafting`
 - Mark missing facts as `UNKNOWN` unless the missing detail blocks drafting, then ask the user.
 - Use `.agents/skills/western-manuscript-style/` whenever drafting or revising Western prose.
 - Use `.agents/skills/humanizer/` after style/continuity passes when the draft sounds generic, padded, promotional, overexplained, or AI-written.

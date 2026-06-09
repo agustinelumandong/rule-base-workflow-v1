@@ -6,6 +6,34 @@
 - **Gemini (Optional):** Secondary review tool when an extra pass is needed for structural mapping, continuity checking, prompt review, or error detection.
 - **Note:** You can substitute these with any preferred AI tools.
 
+## Token-Balanced Operating Rules
+
+- Choose a prompt mode before loading context: `planning`, `drafting`, `repair`, `style`, `validation`, `expansion`, or `final`.
+- For chapter-level work, use `chapters/chapter-XX/context-packet.md` plus the chapter draft and scene breakdown instead of loading the full manuscript.
+- Do not load the full rulebook unless rebuilding planning artifacts, resolving a blocked source fact, or doing final review.
+- Refresh the context packet after changing `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, or the chapter `scene-breakdown.md`.
+- Use the compressed style lock for routine prompts: Literal Western prose; no AI echo words; no modern/clinical terms; no dialogue tags when action anchors are requested; behavior over thought; source-locked.
+- Validate context before style repair. Run style repair before length expansion.
+- End agent passes with: Source Used, Mode, Changes Made, Risks, Next Action, and Stop/Continue.
+
+## Context Packet And Rolling Continuity
+
+- A context packet is a compact chapter source bundle. It is not a new source of truth.
+- Each packet should include the source chapter anchor, chapter summary, relevant rulebook facts, mood/style summary, prior continuity out, next continuity need, and current scene breakdown.
+- After drafting or expanding a chapter, create or update `chapters/chapter-XX/continuity-out.md`.
+- The continuity-out file should record who is alive or injured, where key characters end, what changed, unresolved pressure, and what the next chapter must preserve.
+- The next chapter should use prior `continuity-out.md` instead of loading the full prior chapter draft.
+
+## Prompt Modes
+
+- **Planning:** Build or refresh rulebook, mood lock, chapter summaries, scene breakdowns, and drafting plans.
+- **Drafting:** Write prose from the context packet and approved scene breakdown only.
+- **Repair:** Fix validator, loop, source-drift, continuity, or beat-coverage issues only.
+- **Style:** Apply Western style and humanizer cleanup without changing story facts.
+- **Validation:** Compare draft against source files, rulebook, chapter summary, and scene breakdown.
+- **Expansion:** Deepen approved beats after validation passes; never add unsupported story.
+- **Final:** Whole-book review, compilation, or cross-chapter checks.
+
 ## Phase 0: Pre-Production & World-Building
 
 - **Create a Series Bible:** Before drafting a single word, establish a master document to ensure consistency. This must include your characters' physical descriptions, backstories, and highly specific setting details.
@@ -19,6 +47,7 @@
   - **NOTE: Plot and Emotion:** In addition to plot beats, explicitly prompt the AI to include "emotional beats" or "thematic check-ins" to ensure narrative resonance isn't lost to pure mechanics.
   - **Scope Guidance:** Use broad book or chapter targets only for planning. Do not require fixed numeric lengths for beats or scenes.
   - **Source-Determined Beat Count:** Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when needed. Stop when the chapter's required movement and continuity out are complete.
+  - **Token Balance:** For chapter-level beat work, use the chapter context packet when available instead of loading the full manuscript or full rulebook.
 - **Operator Intervention:** Review and manually edit these beats as they are generated to ensure the narrative stays on track before moving to the drafting phase.
 
 ## Phase 2: Structural Review & Continuity
@@ -122,7 +151,7 @@ Simplified, easy-to-follow version manuscript workflow broken down into plain En
 
 COPY AND PASTE THIS PROMPT TO GENERATE CHAPTER [X], BEAT [Y]:
 
-Write Beat [Beat Number] for Chapter [Chapter Number] of the western series following the exact outline below. Write the beat at the natural length needed to cover the required action, conflict, and emotional turn. Do not pad for word count. Do not invent extra context to reach length. Use only facts from `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and prior approved beats/scenes.
+Write Beat [Beat Number] for Chapter [Chapter Number] of the western series following the exact outline below. Write the beat at the natural length needed to cover the required action, conflict, and emotional turn. Do not pad for word count. Do not invent extra context to reach length. Use the chapter `context-packet.md` when available. Otherwise use only facts from `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and prior approved beats/scenes.
 
 Before generating beats for a chapter, derive the beat count from the chapter source. Do not use a fixed beat count across chapters. Create one beat for each required story movement, emotional turn, tactical transition, or continuity exit. Add a transition beat only if the chapter would otherwise skip needed context.
 
