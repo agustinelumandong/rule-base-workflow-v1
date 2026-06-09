@@ -19,6 +19,7 @@
 ## Reference-Guided Pacing
 
 - Optional reference books, such as `references/timber`, may be analyzed for high-level rhythm only: chapter length variation, scene density, opening/ending patterns, conflict escalation, quiet beats, and long/short chapter placement.
+- Root `references/` may be local and git-ignored. Missing reference books or generated reference analysis must not block the manuscript workflow.
 - Never copy reference prose, plot, characters, voice, exact scenes, exact turns, or exact chapter structure.
 - The current book source always wins: `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and chapter `scene-breakdown.md`.
 - Use `chapter-pacing-plan.md` to prevent every chapter from landing around the same size.

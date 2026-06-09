@@ -6,9 +6,11 @@ Use pacing ranges to avoid artificial same-size chapters while staying source-lo
 
 1. Current book source: `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and chapter `scene-breakdown.md`.
 2. Current book `chapter-pacing-plan.md`.
-3. Optional reference analysis such as `references/timber/analysis/pacing-calibration.md`.
+3. Optional local reference analysis such as `references/timber/analysis/pacing-calibration.md`.
 
 Reference rhythm is craft guidance only. It must not override the current book.
+
+Root `references/` may be git-ignored and unavailable. If optional reference analysis is missing, build `chapter-pacing-plan.md` from the current book source, chapter summaries, and scene breakdowns only.
 
 ## Elastic Chapter Classes
 

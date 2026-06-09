@@ -45,6 +45,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Use the local `.agents/skills/western-manuscript-style/` skill for reusable Western prose drafting, beat generation, dialogue cleanup, continuity review, and style-lock enforcement.
 - Use the local `.agents/skills/humanizer/` skill after Western style and continuity passes when a draft sounds generic, padded, promotional, overstructured, or AI-written. Preserve plot facts, POV, paragraph coverage, and Western tone.
 - Treat `books/<book-slug>/phase-0.md` as the default book source pattern.
+- Treat root `references/` as optional local material that may be git-ignored. Missing reference books or generated reference analysis must not block normal manuscript workflow.
 
 ## Validation Commands
 
@@ -74,6 +75,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   python .agents/skills/manuscript-workflow-orchestrator/scripts/plan_chapter_pacing.py books/<book-slug>
   ```
 - Use `chapter-pacing-plan.md` to avoid artificial same-size chapters. The current book source remains the authority.
+- If `references/` or `references/timber/analysis/` is missing, generate pacing from the current book source only.
 - Elastic ranges such as `~1000` mean natural supported ranges, not exact targets.
 - Longer chapters or beats must be justified by approved source movement: major conflict, reveal, consequence, moral pressure, rescue, siege, or climax.
 - Short chapters or beats are valid for setup, aftermath, transition, epilogue-style closure, or teaser pressure.

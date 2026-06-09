@@ -13,12 +13,15 @@ Use this skill when a reference Western should inform craft rhythm without becom
 - Do not copy or imitate reference prose, scenes, characters, names, voice, exact plot turns, or chapter structure.
 - Keep outputs compact and reusable across books.
 - Treat reference analysis as optional craft guidance. The current book's `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and `scene-breakdown.md` remain the source of truth.
+- Reference folders may be local, untracked, or git-ignored. If the reference folder is missing, skip reference calibration instead of blocking manuscript work.
 
 ## Default Workflow
 
 1. Run the analyzer on a split reference chapter folder.
 2. Store outputs under the reference folder's `analysis/` directory.
 3. Use the generated analysis only to calibrate natural variation, not to force a book to match the reference.
+
+If the folder is missing, report that reference calibration is unavailable and continue with the current book workflow when applicable.
 
 ## Command
 
