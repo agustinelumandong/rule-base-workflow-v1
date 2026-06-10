@@ -22,6 +22,8 @@ CLASS_RANGES = {
     "major": "~2900 (roughly 2500-3400 when source-supported)",
     "epilogue/teaser": "~600 (roughly 300-900 when source-supported)",
 }
+PACING_CLASS_RE = re.compile(r"(?im)^-\s+\*\*Pacing Class:\*\*\s+(.+?)\s*$")
+ELASTIC_RANGE_RE = re.compile(r"(?im)^-\s+\*\*Elastic Range:\*\*\s+(.+?)\s*$")
 
 MAJOR_TERMS = {
     "climax",
@@ -209,6 +211,16 @@ def chapter_word_guidance(text: str) -> str | None:
     return f"source suggests ~{words:,} words from `{evidence}` (elastic guidance only; do not force)"
 
 
+def explicit_scene_pacing(scene_text: str) -> tuple[str | None, str | None]:
+    class_match = PACING_CLASS_RE.search(scene_text)
+    range_match = ELASTIC_RANGE_RE.search(scene_text)
+    pacing_class = class_match.group(1).strip().rstrip(".") if class_match else None
+    elastic_range = None
+    if range_match:
+        elastic_range = range_match.group(1).split(";", 1)[0].strip()
+    return pacing_class, elastic_range
+
+
 def build_plan(book_folder: Path, reference_analysis: Path) -> str:
     src = source_path(book_folder)
     if src is None:
@@ -236,8 +248,13 @@ def build_plan(book_folder: Path, reference_analysis: Path) -> str:
         source_scope = "\n\n".join([source_section, summary_section]).strip()
         combined = "\n\n".join([source_scope, scene])
         beat_count = count_beats(scene)
-        pacing_class, reason = classify(slug, source_scope or combined, beat_count)
-        elastic_range = chapter_word_guidance(source_section) or CLASS_RANGES[pacing_class]
+        explicit_class, explicit_range = explicit_scene_pacing(scene)
+        if explicit_class in CLASS_RANGES:
+            pacing_class = explicit_class
+            reason = "explicit source-locked pacing from chapter scene breakdown"
+        else:
+            pacing_class, reason = classify(slug, source_scope or combined, beat_count)
+        elastic_range = explicit_range or chapter_word_guidance(source_section) or CLASS_RANGES[pacing_class]
         pacing.append(
             ChapterPacing(
                 slug=slug,

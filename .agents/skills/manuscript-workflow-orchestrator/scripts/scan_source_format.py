@@ -17,6 +17,10 @@ TARGET_RE = re.compile(
     r"(?i)(?:~|about|approximately|approx\.?|around)?\s*"
     r"(\d{1,3}(?:,\d{3})+|\d{4,6}|\d{1,3})\s*(k|thousand)?\s+words?"
 )
+BOOK_TARGET_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:book(?:-level)?|manuscript|novel|novella|total|target|length|word\s+count)\b"
+)
+NON_BOOK_TARGET_CONTEXT_RE = re.compile(r"(?i)\b(?:act|chapter|ch\.?|epilogue|scene|beat)\b")
 TITLE_FIELD_RE = re.compile(r"(?im)^\s*(?:\*\*)?title(?:\*\*)?\s*[:\-]\s*(.+?)\s*$")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
 CHAPTER_HEADING_RE = re.compile(
@@ -104,17 +108,29 @@ def first_target(text: str) -> tuple[int, str] | None:
     return normalize_target(match), match.group(0).strip()
 
 
+def first_book_target(text: str) -> tuple[int, str] | None:
+    for line in text.splitlines():
+        if not BOOK_TARGET_CONTEXT_RE.search(line):
+            continue
+        if NON_BOOK_TARGET_CONTEXT_RE.search(line):
+            continue
+        match = TARGET_RE.search(line)
+        if match:
+            return normalize_target(match), match.group(0).strip()
+    return None
+
+
 def resolve_target(book_folder: Path, source_text: str, user_target: int | None = None) -> TargetInfo:
     if user_target:
         return TargetInfo(user_target, "user", f"--target-words {user_target}")
 
-    source_target = first_target(source_text)
+    source_target = first_book_target(source_text)
     if source_target:
         words, evidence = source_target
         return TargetInfo(words, "source", evidence)
 
     rulebook_text = read_optional(book_folder / "rulebook.md")
-    rulebook_target = first_target(rulebook_text)
+    rulebook_target = first_book_target(rulebook_text)
     if rulebook_target:
         words, evidence = rulebook_target
         return TargetInfo(words, "rulebook", evidence)
