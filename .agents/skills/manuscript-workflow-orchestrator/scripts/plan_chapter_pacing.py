@@ -9,6 +9,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from scan_source_format import first_target
+
 
 SOURCE_NAMES = ("phase-0.md", "phase-00.md", "outline.md", "chapter-outline.md")
 CHAPTER_RE = re.compile(r"chapter-(\d+)", re.IGNORECASE)
@@ -23,6 +25,7 @@ CLASS_RANGES = {
 
 MAJOR_TERMS = {
     "climax",
+    "climactic",
     "showdown",
     "siege",
     "battle",
@@ -31,8 +34,11 @@ MAJOR_TERMS = {
 EXPANDED_TERMS = {
     "attack",
     "ambush",
+    "assault",
+    "confrontation",
     "raid",
     "reveal",
+    "rescue",
     "betrayal",
     "hostage",
     "escape",
@@ -159,21 +165,13 @@ def classify(slug: str, combined_text: str, beat_count: int) -> tuple[str, str]:
     major_hits = has_any(combined_text, MAJOR_TERMS)
     expanded_hits = has_any(combined_text, EXPANDED_TERMS)
     lean_hits = has_any(combined_text, LEAN_TERMS)
-    lower = combined_text.lower()
-    final_confrontation = bool(
-        re.search(r"\bfinal\s+(?:showdown|confrontation|battle|duel|fight)\b", lower)
-        or re.search(r"\b(?:last|central)\s+(?:showdown|confrontation|battle|duel|fight)\b", lower)
-    )
-    if major_hits or final_confrontation:
-        reason_bits = major_hits[:4]
-        if final_confrontation:
-            reason_bits.append("final confrontation")
-        return "major", "source includes major pressure: " + ", ".join(reason_bits)
-    if expanded_hits or beat_count >= 5:
+    if major_hits:
+        return "major", "source includes major pressure: " + ", ".join(major_hits[:4])
+    if expanded_hits or beat_count >= 7:
         reason = "source supports expanded treatment"
         if expanded_hits:
             reason += ": " + ", ".join(expanded_hits[:4])
-        if beat_count >= 5:
+        if beat_count >= 7:
             reason += f"; {beat_count} beat sections"
         return "expanded", reason
     if lean_hits and beat_count <= 2:
@@ -193,6 +191,24 @@ def expansion_permission(pacing_class: str) -> str:
     return "Keep closure compact unless the source requires a longer handoff."
 
 
+def source_scan_status(book_folder: Path) -> str:
+    scan_path = book_folder / "source-format-scan.md"
+    if not scan_path.exists():
+        return "No source-format-scan.md found; run scan_source_format.py before planning when possible."
+    scan_text = read_optional(scan_path)
+    if "Individual Chapter Word Counts:** present" in scan_text:
+        return "Loaded source-format-scan.md; source contains individual chapter word-count guidance."
+    return "Loaded source-format-scan.md; source does not appear to contain individual chapter word counts."
+
+
+def chapter_word_guidance(text: str) -> str | None:
+    target = first_target(text)
+    if not target:
+        return None
+    words, evidence = target
+    return f"source suggests ~{words:,} words from `{evidence}` (elastic guidance only; do not force)"
+
+
 def build_plan(book_folder: Path, reference_analysis: Path) -> str:
     src = source_path(book_folder)
     if src is None:
@@ -209,6 +225,7 @@ def build_plan(book_folder: Path, reference_analysis: Path) -> str:
         if reference_note
         else f"No optional reference analysis found at `{reference_analysis}`."
     )
+    scan_status = source_scan_status(book_folder)
 
     pacing: list[ChapterPacing] = []
     for folder in chapter_folders:
@@ -216,15 +233,17 @@ def build_plan(book_folder: Path, reference_analysis: Path) -> str:
         scene = read_optional(folder / "scene-breakdown.md")
         summary_section = extract_heading_section(summaries, slug)
         source_section = extract_heading_section(source_text, slug)
-        combined = "\n\n".join([source_section, summary_section, scene])
+        source_scope = "\n\n".join([source_section, summary_section]).strip()
+        combined = "\n\n".join([source_scope, scene])
         beat_count = count_beats(scene)
-        pacing_class, reason = classify(slug, combined, beat_count)
+        pacing_class, reason = classify(slug, source_scope or combined, beat_count)
+        elastic_range = chapter_word_guidance(source_section) or CLASS_RANGES[pacing_class]
         pacing.append(
             ChapterPacing(
                 slug=slug,
                 label=chapter_label(slug),
                 pacing_class=pacing_class,
-                elastic_range=CLASS_RANGES[pacing_class],
+                elastic_range=elastic_range,
                 reason=reason,
                 beat_count=beat_count,
             )
@@ -235,6 +254,7 @@ def build_plan(book_folder: Path, reference_analysis: Path) -> str:
         "",
         f"- **Book Folder:** `{book_folder}`",
         f"- **Source File:** `{src}`",
+        f"- **Source Format Scan:** {scan_status}",
         f"- **Reference Guidance:** {reference_status}",
         "- **Source Rule:** Current book source wins. Reference rhythm is optional craft guidance only.",
         "- **Length Rule:** Elastic ranges are not strict targets. Never pad or invent story to match them.",

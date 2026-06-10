@@ -2,6 +2,10 @@
 
 Use this to create `chapter-summaries.md` and chapter-folder scene breakdowns.
 
+Read `source-format-scan.md` before generating chapter summaries or beats. Use it to determine whether the source chapter list includes titles, summaries, hooks, tension notes, transition notes, or individual chapter word counts.
+
+If `source-format-scan.md` says a chapter detail is missing, do not invent it. Mark missing values as `UNKNOWN` unless the chapter source itself implies the detail clearly.
+
 ## `chapter-summaries.md`
 
 For each chapter and epilogue, include:
@@ -42,7 +46,9 @@ Do not use fixed numeric lengths. Use natural scope labels instead:
 - `action beat`
 - `emotional beat`
 
-When a chapter pacing plan exists, use it to avoid artificial same-size chapters. Pacing guidance is elastic. A `~1000` beat means a natural range such as roughly `900-1200`, not an exact target. If the source supports less, stop short. If the source supports more, allow more. Never pad, equalize chapter lengths, or invent story to hit a range.
+When a chapter pacing plan exists, use it to avoid artificial same-size chapters. Pacing guidance is elastic. A `~1000` beat means a natural range such as roughly `900-1200`, not an exact target. If the source supports less, stop short. If the source supports more, allow more. Never pad, force uniform chapter length, or invent story to hit a range.
+
+When the source scan shows individual chapter word counts, preserve those counts as advisory source guidance in pacing fields. When the source scan shows no individual chapter word counts, do not create exact chapter targets from the book-level target.
 
 Every beat must state the exact source chapter or scene detail it is based on. If a bridge fact is missing, write `UNKNOWN` instead of inventing the bridge.
 

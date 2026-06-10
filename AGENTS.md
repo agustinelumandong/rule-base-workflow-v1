@@ -46,6 +46,12 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Use the local `.agents/skills/humanizer/` skill after Western style and continuity passes when a draft sounds generic, padded, promotional, overstructured, or AI-written. Preserve plot facts, POV, paragraph coverage, and Western tone.
 - Treat `books/<book-slug>/phase-0.md` as the default book source pattern.
 - Treat root `references/` as optional local material that may be git-ignored. Missing reference books or generated reference analysis must not block normal manuscript workflow.
+- Before creating or refreshing planning artifacts, run:
+  ```bash
+  python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>
+  ```
+- Use `source-format-scan.md` to identify bible/outline structure, missing fields, chapter-list detail, and length target source before generating `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, or scene breakdowns.
+- If no user, source, or rulebook target exists, use `~30,000 words` as book-level planning guidance only. Do not turn that target into per-chapter quotas.
 
 ## Validation Commands
 
@@ -63,11 +69,6 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
   ```
 - Use length results only as book-level planning guidance. Never pad scenes, force fixed beat/chapter word counts, or invent unsupported story to close the gap.
-- After length checks, run the chapter rhythm checker when natural chapter variation matters:
-  ```bash
-  python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>
-  ```
-- If rhythm checker warns, rebalance by trimming or compressing approved material. Do not expand.
 
 ## Reference-Guided Pacing
 
@@ -84,7 +85,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Elastic ranges such as `~1000` mean natural supported ranges, not exact targets.
 - Longer chapters or beats must be justified by approved source movement: major conflict, reveal, consequence, moral pressure, rescue, siege, or climax.
 - Short chapters or beats are valid for setup, aftermath, transition, epilogue-style closure, or teaser pressure.
-- Never equalize all chapters to one average length.
+- Never force uniform chapter length.
 
 ## Token-Balanced Context
 
@@ -112,6 +113,5 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Treat `DONE` as the stop condition and `CONTINUE` as permission for the next Codex prose action.
 - Fix context problems before style problems, and fix style problems before length expansion.
 - If the loop reports `NEEDS_EXPANSION`, expand only inside approved chapter `scene-breakdown.md` beats using source-supported action, consequence, conflict, dialogue pressure, setting texture, and transitions.
-- If the loop reports `NEEDS_PACING_REBALANCE`, compress same-size or overlong chapters while preserving required story movement and context validator PASS.
 - If the loop reports `BLOCKED`, stop and ask for user direction.
 - The loop must never pad prose, invent unsupported facts, or create fixed beat/scene word counts.
