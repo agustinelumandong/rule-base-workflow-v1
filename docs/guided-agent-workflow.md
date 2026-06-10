@@ -9,6 +9,7 @@ The current system is a semi-autonomous manuscript workflow.
 It has strong reusable parts:
 
 - `books/<book-slug>/phase-0.md` as the main story source.
+- `source-format-scan.md` for detected bible/outline structure, missing fields, chapter-list detail, and target source.
 - `rulebook.md` for continuity, character facts, source hierarchy, unknowns, and length rules.
 - `mood-lock.md` for tone, vocabulary, style, and prose constraints.
 - `chapter-summaries.md` for chapter-level movement.
@@ -49,6 +50,7 @@ Use this layout for a book project:
 ```text
 books/<book-slug>/
 ├── phase-0.md
+├── source-format-scan.md
 ├── rulebook.md
 ├── mood-lock.md
 ├── chapter-summaries.md
@@ -80,14 +82,15 @@ Use sources in this order:
 
 1. The user's current instruction.
 2. `books/<book-slug>/phase-0.md`.
-3. `books/<book-slug>/rulebook.md`.
-4. `books/<book-slug>/mood-lock.md`.
-5. `books/<book-slug>/chapter-summaries.md`.
-6. `books/<book-slug>/chapter-pacing-plan.md` when present.
-7. The chapter's `scene-breakdown.md`.
-8. The current chapter draft.
-9. `docs/workflow-v5.md` for long-form workflow guidance.
-10. Optional local reference analysis under `references/<name>/analysis/` for craft rhythm only.
+3. `books/<book-slug>/source-format-scan.md`.
+4. `books/<book-slug>/rulebook.md`.
+5. `books/<book-slug>/mood-lock.md`.
+6. `books/<book-slug>/chapter-summaries.md`.
+7. `books/<book-slug>/chapter-pacing-plan.md` when present.
+8. The chapter's `scene-breakdown.md`.
+9. The current chapter draft.
+10. `docs/workflow-v5.md` for long-form workflow guidance.
+11. Optional local reference analysis under `references/<name>/analysis/` for craft rhythm only.
 
 If a fact is missing, do not invent it. Mark it as `UNKNOWN` in planning files, or ask the user if the missing fact blocks drafting.
 
@@ -98,18 +101,19 @@ Reference analysis is never a story source. It may guide pacing rhythm, but it m
 Use this flow when the user says something like "do this book," "expand the book," "validate everything," or "continue the manuscript."
 
 1. Scan the book folder.
-2. Read `phase-0.md`.
-3. Read or create `rulebook.md`.
-4. Read or create `mood-lock.md`.
-5. Read or create `chapter-summaries.md`.
-6. Read or create `chapter-pacing-plan.md` when uneven rhythm or reference-guided pacing is needed.
-7. Read or create each chapter's `scene-breakdown.md`.
-8. Draft or expand chapter files from their own scene breakdowns.
-9. Run context validation.
-10. Run length validation.
-11. Run style-risk scan.
-12. Fix any failures or warnings that matter.
-13. Report final status clearly.
+2. Run the source format scan.
+3. Read `phase-0.md` or the selected fallback outline.
+4. Read or create `rulebook.md`.
+5. Read or create `mood-lock.md`.
+6. Read or create `chapter-summaries.md`.
+7. Read or create `chapter-pacing-plan.md` when uneven rhythm or reference-guided pacing is needed.
+8. Read or create each chapter's `scene-breakdown.md`.
+9. Draft or expand chapter files from their own scene breakdowns.
+10. Run context validation.
+11. Run length validation.
+12. Run style-risk scan.
+13. Fix any failures or warnings that matter.
+14. Report final status clearly.
 
 ## Drafting Rules
 
