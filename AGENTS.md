@@ -63,6 +63,11 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
   ```
 - Use length results only as book-level planning guidance. Never pad scenes, force fixed beat/chapter word counts, or invent unsupported story to close the gap.
+- After length checks, run the chapter rhythm checker when natural chapter variation matters:
+  ```bash
+  python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>
+  ```
+- If rhythm checker warns, rebalance by trimming or compressing approved material. Do not expand.
 
 ## Reference-Guided Pacing
 
@@ -107,5 +112,6 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Treat `DONE` as the stop condition and `CONTINUE` as permission for the next Codex prose action.
 - Fix context problems before style problems, and fix style problems before length expansion.
 - If the loop reports `NEEDS_EXPANSION`, expand only inside approved chapter `scene-breakdown.md` beats using source-supported action, consequence, conflict, dialogue pressure, setting texture, and transitions.
+- If the loop reports `NEEDS_PACING_REBALANCE`, compress same-size or overlong chapters while preserving required story movement and context validator PASS.
 - If the loop reports `BLOCKED`, stop and ask for user direction.
 - The loop must never pad prose, invent unsupported facts, or create fixed beat/scene word counts.

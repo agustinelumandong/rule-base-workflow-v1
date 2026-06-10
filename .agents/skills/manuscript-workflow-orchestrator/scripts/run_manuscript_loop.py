@@ -18,6 +18,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import check_manuscript_length as length_checker  # noqa: E402
+import check_chapter_rhythm as rhythm_checker  # noqa: E402
 import validate_manuscript_context as context_validator  # noqa: E402
 
 
@@ -186,12 +187,20 @@ def mode_for_status(status: str) -> str:
         return "style"
     if status == "NEEDS_EXPANSION":
         return "expansion"
+    if status == "NEEDS_PACING_REBALANCE":
+        return "repair"
     if status == "DONE":
         return "final"
     return "blocked"
 
 
-def action_chapter(status: str, context_problem_chapters: list[str], expansion_chapter: str, style_issues: list[StyleIssue]) -> str | None:
+def action_chapter(
+    status: str,
+    context_problem_chapters: list[str],
+    expansion_chapter: str,
+    style_issues: list[StyleIssue],
+    rhythm_report: rhythm_checker.RhythmReport | None = None,
+) -> str | None:
     if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
         return context_problem_chapters[0]
     if status == "NEEDS_EXPANSION" and expansion_chapter != "NONE":
@@ -200,6 +209,10 @@ def action_chapter(status: str, context_problem_chapters: list[str], expansion_c
         for part in style_issues[0].path.parts:
             if part.startswith("chapter-") or part == "epilogue":
                 return part
+    if status == "NEEDS_PACING_REBALANCE" and rhythm_report:
+        candidates = rhythm_checker.trim_candidates(rhythm_report)
+        if candidates:
+            return rhythm_checker.slug_for_label(candidates[0].label)
     return None
 
 
@@ -208,6 +221,7 @@ def classify(
     book_failures: list[str],
     reports: list[context_validator.ChapterReport],
     style_issues: list[StyleIssue],
+    rhythm_report: rhythm_checker.RhythmReport,
     repair_attempts: dict[str, int],
     max_repair_attempts: int,
 ) -> tuple[str, str]:
@@ -227,6 +241,8 @@ def classify(
         return "NEEDS_EXPANSION", "Manuscript is below target minimum."
     if length_state.total_words > length_state.target_max:
         return "BLOCKED", "Manuscript is above target maximum; request trim/review before continuing."
+    if rhythm_report.issues:
+        return "NEEDS_PACING_REBALANCE", "Chapter rhythm checker found same-size or overlong-chapter warnings."
     return "DONE", "Manuscript is within target range with clean deterministic checks."
 
 
@@ -237,6 +253,7 @@ def render_report(
     book_failures: list[str],
     reports: list[context_validator.ChapterReport],
     style_issues: list[StyleIssue],
+    rhythm_report: rhythm_checker.RhythmReport,
     status: str,
     reason: str,
 ) -> str:
@@ -244,7 +261,7 @@ def render_report(
     expansion_chapter = choose_expansion_chapter(reports, length_state.counts)
     context_problem_chapters = issue_chapters(reports)
     prompt_mode = mode_for_status(status)
-    next_chapter = action_chapter(status, context_problem_chapters, expansion_chapter, style_issues)
+    next_chapter = action_chapter(status, context_problem_chapters, expansion_chapter, style_issues, rhythm_report)
     packet_command = (
         f"python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py {book_folder} --chapter {next_chapter}"
         if next_chapter
@@ -275,6 +292,16 @@ def render_report(
         next_action = (
             f"Expand `{expansion_chapter}` from its approved scene breakdown using source-supported action, consequence, dialogue pressure, setting texture, and transition."
         )
+    elif status == "NEEDS_PACING_REBALANCE":
+        decision = "CONTINUE"
+        candidates = rhythm_checker.trim_candidates(rhythm_report)
+        if candidates:
+            first = candidates[0]
+            next_action = (
+                f"Compress/rebalance `{rhythm_checker.slug_for_label(first.label)}` toward a leaner chapter shape from approved material; trim repeated action, overlong aftermath, or loose transitions without removing required story movement."
+            )
+        else:
+            next_action = "Review chapter rhythm warnings and trim over-even chapters without changing story facts."
     else:
         decision = "STOP"
         next_action = "Stop and ask the user for direction before editing prose."
@@ -338,11 +365,29 @@ def render_report(
     lines.extend(
         [
             "",
+            "## Rhythm State",
+            "",
+            f"- **Rhythm Status:** {rhythm_report.status}",
+            f"- **Normal Chapter Stdev:** {rhythm_report.stdev}",
+            f"- **Normal Chapters Under 1800:** {rhythm_report.under_1800}",
+            f"- **Normal Chapters Over 2400:** {rhythm_report.over_2400}",
+        ]
+    )
+    if rhythm_report.issues:
+        for issue in rhythm_report.issues:
+            lines.append(f"- WARN: {issue.message}")
+    else:
+        lines.append("- No chapter rhythm warnings.")
+
+    lines.extend(
+        [
+            "",
             "## Loop Rules",
             "",
             "- Codex performs prose edits; this script only reports state and next action.",
             "- Build or refresh the context packet before chapter-level prose edits.",
             "- Fix context before style; fix style before expansion.",
+            "- Fix chapter rhythm before final DONE when the manuscript looks artificially same-sized.",
             "- Expand only from approved source files and scene breakdowns.",
             "- Never pad prose, invent unsupported story, or force beat/scene word counts.",
             "- Stop if status is `DONE` or `BLOCKED`.",
@@ -385,11 +430,13 @@ def main() -> int:
         length_state = build_length_state(book_folder, args.target_min, args.target_max)
         book_passes, book_failures, reports = build_context_reports(book_folder)
         style_issues = scan_style_issues(book_folder)
+        rhythm_report = rhythm_checker.analyze(book_folder)
         status, reason = classify(
             length_state,
             book_failures,
             reports,
             style_issues,
+            rhythm_report,
             repair_attempts,
             args.max_repair_attempts,
         )
@@ -397,7 +444,7 @@ def main() -> int:
         print(render_blocked_report(book_folder, str(error)))
         return 2
 
-    print(render_report(book_folder, length_state, book_passes, book_failures, reports, style_issues, status, reason))
+    print(render_report(book_folder, length_state, book_passes, book_failures, reports, style_issues, rhythm_report, status, reason))
     return 2 if status == "BLOCKED" else 0
 
 

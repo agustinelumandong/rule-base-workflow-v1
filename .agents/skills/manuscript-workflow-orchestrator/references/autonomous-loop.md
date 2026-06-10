@@ -10,9 +10,10 @@ The loop is agent-driven. Python controls scanning, status, prioritization, and 
 2. Run context validation before any length decision.
 3. Run the style-risk scan against chapter drafts.
 4. Check manuscript length against the book-level target range.
-5. Decide the next state: `DONE`, `NEEDS_CONTEXT_REPAIR`, `NEEDS_STYLE_REPAIR`, `NEEDS_EXPANSION`, or `BLOCKED`.
-6. Codex performs the next recommended action only when the report says `CONTINUE`.
-7. Re-run the loop after each draft, expansion, or repair pass.
+5. Check chapter rhythm so the book does not pass with artificial same-size chapters.
+6. Decide the next state: `DONE`, `NEEDS_CONTEXT_REPAIR`, `NEEDS_STYLE_REPAIR`, `NEEDS_EXPANSION`, `NEEDS_PACING_REBALANCE`, or `BLOCKED`.
+7. Codex performs the next recommended action only when the report says `CONTINUE`.
+8. Re-run the loop after each draft, expansion, or repair pass.
 
 Before chapter-level prose edits, refresh the chapter context packet:
 
@@ -59,6 +60,12 @@ Do not add unsupported names, motives, backstory, locations, lore, relationships
 - manuscript is below the target minimum
 - expand the recommended chapter from approved beats only
 - use prompt mode `expansion`
+
+`NEEDS_PACING_REBALANCE` means:
+
+- manuscript meets total target but chapter rhythm looks too even
+- trim or compress recommended chapters from approved material only
+- use prompt mode `repair`
 
 `BLOCKED` means:
 

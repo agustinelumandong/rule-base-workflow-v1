@@ -38,6 +38,7 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Load [references/drafting-pipeline.md](references/drafting-pipeline.md) for Phase 1 through Phase 4 drafting, review, and polish.
 - Load [references/context-validator.md](references/context-validator.md) after chapter drafting, expansion, compilation, or revision to validate source match structure and generate AI semantic review prompts.
 - Load [references/length-checker.md](references/length-checker.md) after drafting, expansion, compilation, or revision passes to measure progress toward the book-level target.
+- Load [references/chapter-rhythm-checker.md](references/chapter-rhythm-checker.md) after length checks when chapter lengths look too even, all normal chapters are over 2000 words, or the user wants natural long/short chapter variation.
 - Load [references/autonomous-loop.md](references/autonomous-loop.md) when the user asks to run the book, finish the manuscript, keep going until valid, or use an autonomous manuscript loop.
 - Load [references/context-packets.md](references/context-packets.md) before chapter-level drafting, repair, validation, style cleanup, or expansion.
 - Load [references/prompt-modes.md](references/prompt-modes.md) when choosing between planning, drafting, repair, style, validation, expansion, or final review work.
@@ -54,12 +55,15 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Use `chapter-pacing-plan.md` to avoid artificial same-size chapters, while keeping the current book source as the authority.
 - Run context validation before using length results to guide expansion.
 - Use the length checker as an advisory progress report only; never pad or invent story to satisfy a target.
+- Use the rhythm checker to catch artificial same-size chapters before final acceptance.
 - Use the autonomous loop controller to decide stop/continue state after draft, repair, expansion, and validation passes. Codex performs prose edits; the script controls state and next action.
 - For chapter-level work, build or refresh `chapters/chapter-XX/context-packet.md` and use prompt modes to keep context compact.
 - For a full book check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`
 - For a length check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>`
+- For a chapter rhythm check, run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>`
 - For an autonomous loop check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/<book-slug> --target-min 30000 --target-max 31000`
 - For a context packet, run:
@@ -68,6 +72,8 @@ For a target folder such as `books/tex-cade/`, create or update:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_context_budget.py books/<book-slug> --chapter chapter-XX --mode drafting`
 - For a chapter pacing plan, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/plan_chapter_pacing.py books/<book-slug>`
+- To compile chapter drafts into one Markdown manuscript, run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/compile_manuscript.py books/<book-slug>`
 - Mark missing facts as `UNKNOWN` unless the missing detail blocks drafting, then ask the user.
 - Use `.agents/skills/western-manuscript-style/` whenever drafting or revising Western prose.
 - Use `.agents/skills/humanizer/` after style/continuity passes when the draft sounds generic, padded, promotional, overexplained, or AI-written.

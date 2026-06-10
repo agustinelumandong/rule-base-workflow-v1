@@ -25,9 +25,6 @@ MAJOR_TERMS = {
     "climax",
     "showdown",
     "siege",
-    "rescue",
-    "confrontation",
-    "final",
     "battle",
     "duel",
 }
@@ -162,8 +159,16 @@ def classify(slug: str, combined_text: str, beat_count: int) -> tuple[str, str]:
     major_hits = has_any(combined_text, MAJOR_TERMS)
     expanded_hits = has_any(combined_text, EXPANDED_TERMS)
     lean_hits = has_any(combined_text, LEAN_TERMS)
-    if major_hits:
-        return "major", "source includes major pressure: " + ", ".join(major_hits[:4])
+    lower = combined_text.lower()
+    final_confrontation = bool(
+        re.search(r"\bfinal\s+(?:showdown|confrontation|battle|duel|fight)\b", lower)
+        or re.search(r"\b(?:last|central)\s+(?:showdown|confrontation|battle|duel|fight)\b", lower)
+    )
+    if major_hits or final_confrontation:
+        reason_bits = major_hits[:4]
+        if final_confrontation:
+            reason_bits.append("final confrontation")
+        return "major", "source includes major pressure: " + ", ".join(reason_bits)
     if expanded_hits or beat_count >= 5:
         reason = "source supports expanded treatment"
         if expanded_hits:
