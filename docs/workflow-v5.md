@@ -24,7 +24,7 @@
 - The current book source always wins: `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and chapter `scene-breakdown.md`.
 - Use `chapter-pacing-plan.md` to prevent every chapter from landing around the same size.
 - Elastic ranges are planning guidance. `~1000` means a natural supported range such as roughly `900-1200`, not an exact target.
-- Never pad, equalize chapter lengths, or invent unsupported story to hit a range.
+- Never pad, force uniform chapter length, or invent unsupported story to hit a range.
 
 ## Context Packet And Rolling Continuity
 
@@ -46,6 +46,9 @@
 
 ## Phase 0: Pre-Production & World-Building
 
+- **Run a Source Format Scan:** Before building the rulebook, scan the source bible or outline and create `source-format-scan.md`. Use it to identify which sections are present, which fields are missing, whether the chapter list has titles/summaries/hooks/tension/transition notes, and whether the source provides individual chapter word counts.
+- **Resolve the Book-Level Target:** Use a user-provided target first, then the source bible target, then an existing rulebook target. If none exists, default to `~30,000 words` as book-level planning guidance only.
+- **Do Not Force Uniform Length:** If the source has chapter word counts, preserve them as elastic guidance. If the source only has a total target, do not turn it into per-chapter quotas.
 - **Create a Series Bible:** Before drafting a single word, establish a master document to ensure consistency. This must include your characters' physical descriptions, backstories, and highly specific setting details.
 - **Establish the Tone:** Include specific "Western" tonal requirements in your initial foundation prompts to firmly establish the correct historical and regional atmosphere from the very start.
 

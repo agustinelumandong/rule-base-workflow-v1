@@ -219,6 +219,12 @@ Run length validation after context validation:
 python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
 ```
 
+Run chapter rhythm validation after length validation when chapter variation matters:
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>
+```
+
 Run style-risk scan on chapter drafts:
 
 ```bash
@@ -229,6 +235,7 @@ Expected final state:
 
 - context validator returns `PASS`
 - length checker has no warnings
+- rhythm checker has no warnings when natural chapter variation is part of the goal
 - style-risk scan returns no matches
 
 ## How To Ask The Agent
@@ -283,6 +290,7 @@ Stop a guided pass when:
 
 - the target length range is reached
 - context validator passes
+- rhythm checker passes when chapter variation is required
 - style-risk scan is clean
 - the requested chapter or book task is complete
 
