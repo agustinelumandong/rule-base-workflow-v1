@@ -1,2 +1,6 @@
-references
+/references/
 .vscode
+*.code-workspace
+__pycache__
+docs
+tests

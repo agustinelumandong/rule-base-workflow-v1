@@ -9,11 +9,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-
-TARGET_RE = re.compile(
-    r"(?i)(?:~|about|approximately|approx\.?)?\s*"
-    r"(\d{1,3}(?:,\d{3})+|\d{4,6})\s+words?"
-)
+from scan_source_format import TargetInfo, resolve_target, source_path
 
 
 @dataclass(frozen=True)
@@ -40,19 +36,10 @@ def word_count(path: Path) -> int:
     return len(path.read_text(encoding="utf-8").split())
 
 
-def find_target(book_folder: Path) -> int:
-    source_paths = [book_folder / "phase-0.md", book_folder / "rulebook.md"]
-    existing_sources = [path for path in source_paths if path.exists()]
-    if not existing_sources:
-        raise RuntimeError("Missing phase-0.md or rulebook.md; cannot detect target.")
-
-    for path in existing_sources:
-        text = path.read_text(encoding="utf-8")
-        match = TARGET_RE.search(text)
-        if match:
-            return int(match.group(1).replace(",", ""))
-
-    raise RuntimeError("Could not detect a book-level word target.")
+def find_target(book_folder: Path) -> TargetInfo:
+    src = source_path(book_folder)
+    source_text = src.read_text(encoding="utf-8") if src else ""
+    return resolve_target(book_folder, source_text)
 
 
 def chapter_sort_key(path: Path) -> tuple[int, str]:
@@ -90,10 +77,10 @@ def pct(value: float) -> str:
     return f"{value:.1f}%"
 
 
-def build_report(book_folder: Path, target: int, counts: list[DraftCount]) -> str:
+def build_report(book_folder: Path, target: TargetInfo, counts: list[DraftCount]) -> str:
     total = sum(item.words for item in counts)
-    remaining = max(target - total, 0)
-    complete = (total / target * 100) if target else 0
+    remaining = max(target.words - total, 0)
+    complete = (total / target.words * 100) if target.words else 0
     normal_chapters = [item for item in counts if not item.is_epilogue]
     chapter_average = (
         round(sum(item.words for item in normal_chapters) / len(normal_chapters))
@@ -106,7 +93,9 @@ def build_report(book_folder: Path, target: int, counts: list[DraftCount]) -> st
         "# Manuscript Length Report",
         "",
         f"- **Book Folder:** `{book_folder}`",
-        f"- **Target Words:** {target}",
+        f"- **Target Words:** {target.words}",
+        f"- **Target Source:** {target.source}",
+        f"- **Target Evidence:** {target.evidence}",
         f"- **Current Words:** {total}",
         f"- **Remaining Words:** {remaining}",
         f"- **Complete:** {pct(complete)}",
@@ -124,7 +113,7 @@ def build_report(book_folder: Path, target: int, counts: list[DraftCount]) -> st
     lines.extend(["", "## Warnings", ""])
 
     warnings: list[str] = []
-    if total < target * 0.90:
+    if total < target.words * 0.90:
         warnings.append(
             f"Total draft is below 90% of target; expansion is needed without padding or invented story."
         )

@@ -72,8 +72,14 @@ INTERNAL_MONOLOGUE_PHRASES = [
 
 DIALOGUE_TAG_RE = re.compile(r'"\s*(?:said|asked|shouted|whispered|muttered|replied)\b', re.IGNORECASE)
 BEAT_RE = re.compile(r"^## BEAT\s+\d+:", re.MULTILINE)
-PHASE_CHAPTER_RE = re.compile(r"^## (Chapter\s+(\d+):[^\n]+|Epilogue Teaser)\s*$", re.MULTILINE)
+PHASE_CHAPTER_RE = re.compile(
+    r"^\s*(?:#{1,6}\s*)?(?:\*\*)?"
+    r"(Chapter\s+(\d+):[^\n]+|Epilogue(?:\s+Teaser)?(?::[^\n]+)?)"
+    r"(?:\*\*)?\s*$",
+    re.MULTILINE,
+)
 FIELD_RE = re.compile(r"^- \*\*(Source Anchor|Required Story Movement):\*\* (.+)$", re.MULTILINE)
+EXIT_HOOK_PREFIX_RE = re.compile(r"^Exit hook / transition required by source:\s*", re.IGNORECASE)
 
 STOPWORDS = {
     "about",
@@ -275,7 +281,7 @@ def parse_phase_chapters(book_folder: Path) -> dict[str, str]:
         next_heading = re.search(r"^##\s+", text[start:next_chapter_start], re.MULTILINE)
         end = start + next_heading.start() if next_heading else next_chapter_start
         body = text[start:end].strip()
-        if heading == "Epilogue Teaser":
+        if heading.lower().startswith("epilogue"):
             slug = "epilogue"
         else:
             number = int(match.group(2))
@@ -285,7 +291,13 @@ def parse_phase_chapters(book_folder: Path) -> dict[str, str]:
 
 
 def extract_scene_fields(scene_text: str) -> list[str]:
-    return [match.group(2).strip() for match in FIELD_RE.finditer(scene_text)]
+    fields: list[str] = []
+    for match in FIELD_RE.finditer(scene_text):
+        field = match.group(2).strip()
+        field = EXIT_HOOK_PREFIX_RE.sub("", field).strip()
+        if field:
+            fields.append(field)
+    return fields
 
 
 def validate_required_book_files(book_folder: Path) -> tuple[list[str], list[str]]:

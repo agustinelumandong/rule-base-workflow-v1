@@ -6,8 +6,49 @@
 - **Gemini (Optional):** Secondary review tool when an extra pass is needed for structural mapping, continuity checking, prompt review, or error detection.
 - **Note:** You can substitute these with any preferred AI tools.
 
+## Token-Balanced Operating Rules
+
+- Choose a prompt mode before loading context: `planning`, `drafting`, `repair`, `style`, `validation`, `expansion`, or `final`.
+- For chapter-level work, use `chapters/chapter-XX/context-packet.md` plus the chapter draft and scene breakdown instead of loading the full manuscript.
+- Do not load the full rulebook unless rebuilding planning artifacts, resolving a blocked source fact, or doing final review.
+- Refresh the context packet after changing `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, or the chapter `scene-breakdown.md`.
+- Use the compressed style lock for routine prompts: Literal Western prose; no AI echo words; no modern/clinical terms; no dialogue tags when action anchors are requested; behavior over thought; source-locked.
+- Validate context before style repair. Run style repair before length expansion.
+- End agent passes with: Source Used, Mode, Changes Made, Risks, Next Action, and Stop/Continue.
+
+## Reference-Guided Pacing
+
+- Optional reference books, such as `references/timber`, may be analyzed for high-level rhythm only: chapter length variation, scene density, opening/ending patterns, conflict escalation, quiet beats, and long/short chapter placement.
+- Root `references/` may be local and git-ignored. Missing reference books or generated reference analysis must not block the manuscript workflow.
+- Never copy reference prose, plot, characters, voice, exact scenes, exact turns, or exact chapter structure.
+- The current book source always wins: `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and chapter `scene-breakdown.md`.
+- Use `chapter-pacing-plan.md` to prevent every chapter from landing around the same size.
+- Elastic ranges are planning guidance. `~1000` means a natural supported range such as roughly `900-1200`, not an exact target.
+- Never pad, force uniform chapter length, or invent unsupported story to hit a range.
+
+## Context Packet And Rolling Continuity
+
+- A context packet is a compact chapter source bundle. It is not a new source of truth.
+- Each packet should include the source chapter anchor, chapter summary, relevant rulebook facts, mood/style summary, prior continuity out, next continuity need, and current scene breakdown.
+- After drafting or expanding a chapter, create or update `chapters/chapter-XX/continuity-out.md`.
+- The continuity-out file should record who is alive or injured, where key characters end, what changed, unresolved pressure, and what the next chapter must preserve.
+- The next chapter should use prior `continuity-out.md` instead of loading the full prior chapter draft.
+
+## Prompt Modes
+
+- **Planning:** Build or refresh rulebook, mood lock, chapter summaries, scene breakdowns, and drafting plans.
+- **Drafting:** Write prose from the context packet and approved scene breakdown only.
+- **Repair:** Fix validator, loop, source-drift, continuity, or beat-coverage issues only.
+- **Style:** Apply Western style and humanizer cleanup without changing story facts.
+- **Validation:** Compare draft against source files, rulebook, chapter summary, and scene breakdown.
+- **Expansion:** Deepen approved beats after validation passes; never add unsupported story.
+- **Final:** Whole-book review, compilation, or cross-chapter checks.
+
 ## Phase 0: Pre-Production & World-Building
 
+- **Run a Source Format Scan:** Before building the rulebook, scan the source bible or outline and create `source-format-scan.md`. Use it to identify which sections are present, which fields are missing, whether the chapter list has titles/summaries/hooks/tension/transition notes, and whether the source provides individual chapter word counts.
+- **Resolve the Book-Level Target:** Use a user-provided target first, then the source bible target, then an existing rulebook target. If none exists, default to `~30,000 words` as book-level planning guidance only.
+- **Do Not Force Uniform Length:** If the source has chapter word counts, preserve them as elastic guidance. If the source only has a total target, do not turn it into per-chapter quotas.
 - **Create a Series Bible:** Before drafting a single word, establish a master document to ensure consistency. This must include your characters' physical descriptions, backstories, and highly specific setting details.
 - **Establish the Tone:** Include specific "Western" tonal requirements in your initial foundation prompts to firmly establish the correct historical and regional atmosphere from the very start.
 
@@ -19,6 +60,8 @@
   - **NOTE: Plot and Emotion:** In addition to plot beats, explicitly prompt the AI to include "emotional beats" or "thematic check-ins" to ensure narrative resonance isn't lost to pure mechanics.
   - **Scope Guidance:** Use broad book or chapter targets only for planning. Do not require fixed numeric lengths for beats or scenes.
   - **Source-Determined Beat Count:** Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when needed. Stop when the chapter's required movement and continuity out are complete.
+  - **Elastic Pacing:** If `chapter-pacing-plan.md` exists, use its pacing class to decide which chapters and beats deserve lean, standard, expanded, or major treatment. Treat all ranges as flexible and source-supported.
+  - **Token Balance:** For chapter-level beat work, use the chapter context packet when available instead of loading the full manuscript or full rulebook.
 - **Operator Intervention:** Review and manually edit these beats as they are generated to ensure the narrative stays on track before moving to the drafting phase.
 
 ## Phase 2: Structural Review & Continuity
@@ -122,9 +165,11 @@ Simplified, easy-to-follow version manuscript workflow broken down into plain En
 
 COPY AND PASTE THIS PROMPT TO GENERATE CHAPTER [X], BEAT [Y]:
 
-Write Beat [Beat Number] for Chapter [Chapter Number] of the western series following the exact outline below. Write the beat at the natural length needed to cover the required action, conflict, and emotional turn. Do not pad for word count. Do not invent extra context to reach length. Use only facts from `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and prior approved beats/scenes.
+Write Beat [Beat Number] for Chapter [Chapter Number] of the western series following the exact outline below. Write the beat at the natural length needed to cover the required action, conflict, and emotional turn. Do not pad for word count. Do not invent extra context to reach length. Use the chapter `context-packet.md` when available. Otherwise use only facts from `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and prior approved beats/scenes.
 
 Before generating beats for a chapter, derive the beat count from the chapter source. Do not use a fixed beat count across chapters. Create one beat for each required story movement, emotional turn, tactical transition, or continuity exit. Add a transition beat only if the chapter would otherwise skip needed context.
+
+If `chapter-pacing-plan.md` exists, use it as optional pacing guidance. Add elastic pacing fields only when they help the chapter avoid artificial sameness. Do not treat `~1000`, `~1600`, or any range as a hard target. Stop short when the source runs out; allow more only when the approved beat requires it.
 
 ## SOURCE CONTEXT LOCK
 
@@ -133,6 +178,14 @@ Before generating beats for a chapter, derive the beat count from the chapter so
 - **Required Story Movement:** [What must change by the end of this beat.]
 - **Continuity Out:** [What must remain true for the next beat or scene.]
 - **Do Not Invent:** [Names, places, events, motives, or lore the AI must not add.]
+
+## PACING GUIDANCE
+
+- **Pacing Class:** [lean, standard, expanded, major, epilogue/teaser, or UNKNOWN.]
+- **Elastic Range:** [Optional natural range such as `~1000`, meaning roughly `900-1200` only if source-supported.]
+- **Why This Beat Is Short/Long:** [Story reason based on source movement, not word-count pressure.]
+- **Expansion Permission:** [What may be deepened without adding unsupported story.]
+- **Reference Rhythm Note:** [Optional high-level rhythm note; do not copy reference content.]
 
 ## NARRATIVE CONTEXT
 
@@ -160,6 +213,14 @@ Before generating beats for a chapter, derive the beat count from the chapter so
 - **Required Story Movement:** [What must change by the end of this beat.]
 - **Continuity Out:** [What must remain true for the next beat or scene.]
 - **Do Not Invent:** [Names, places, events, motives, or lore the AI must not add.]
+
+### Pacing Guidance
+
+- **Pacing Class:** [lean, standard, expanded, major, epilogue/teaser, or UNKNOWN.]
+- **Elastic Range:** [Optional natural range such as `~1000`, meaning roughly `900-1200` only if source-supported.]
+- **Why This Beat Is Short/Long:** [Story reason based on source movement, not word-count pressure.]
+- **Expansion Permission:** [What may be deepened without adding unsupported story.]
+- **Reference Rhythm Note:** [Optional high-level rhythm note; do not copy reference content.]
 
 ### Beat Instructions
 

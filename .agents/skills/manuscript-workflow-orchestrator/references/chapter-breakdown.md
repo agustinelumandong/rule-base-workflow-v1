@@ -2,6 +2,10 @@
 
 Use this to create `chapter-summaries.md` and chapter-folder scene breakdowns.
 
+Read `source-format-scan.md` before generating chapter summaries or beats. Use it to determine whether the source chapter list includes titles, summaries, hooks, tension notes, transition notes, or individual chapter word counts.
+
+If `source-format-scan.md` says a chapter detail is missing, do not invent it. Mark missing values as `UNKNOWN` unless the chapter source itself implies the detail clearly.
+
 ## `chapter-summaries.md`
 
 For each chapter and epilogue, include:
@@ -30,6 +34,7 @@ Generate beats from the source chapter outline. Each beat should contain:
 - Do Not Invent: names, places, motives, lore, or events the agent must not add.
 - Context Match Check: source match, no skipped plot movement, no unsupported additions, prior continuity preserved, next beat set up without invented context.
 - POV owner if clear from source; otherwise mark `UNKNOWN`.
+- Optional pacing fields when useful: Pacing Class, Elastic Range, Why This Beat Is Short/Long, Expansion Permission, and Reference Rhythm Note.
 
 Beat count is source-determined. Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when the story would otherwise jump past necessary context. Stop when the chapter's required movement and continuity out are complete.
 
@@ -40,6 +45,10 @@ Do not use fixed numeric lengths. Use natural scope labels instead:
 - `transition beat`
 - `action beat`
 - `emotional beat`
+
+When a chapter pacing plan exists, use it to avoid artificial same-size chapters. Pacing guidance is elastic. A `~1000` beat means a natural range such as roughly `900-1200`, not an exact target. If the source supports less, stop short. If the source supports more, allow more. Never pad, force uniform chapter length, or invent story to hit a range.
+
+When the source scan shows individual chapter word counts, preserve those counts as advisory source guidance in pacing fields. When the source scan shows no individual chapter word counts, do not create exact chapter targets from the book-level target.
 
 Every beat must state the exact source chapter or scene detail it is based on. If a bridge fact is missing, write `UNKNOWN` instead of inventing the bridge.
 
@@ -57,6 +66,14 @@ Use this shape for every beat:
 - **Required Story Movement:** [What must change by the end of this beat.]
 - **Continuity Out:** [What must remain true for the next beat or scene.]
 - **Do Not Invent:** [Names, places, events, motives, or lore the agent must not add.]
+
+### Pacing Guidance
+
+- **Pacing Class:** [lean, standard, expanded, major, epilogue/teaser, or UNKNOWN.]
+- **Elastic Range:** [Optional natural range such as `~1000`, meaning roughly `900-1200` only if source-supported.]
+- **Why This Beat Is Short/Long:** [Story reason based on source movement, not word-count pressure.]
+- **Expansion Permission:** [What may be deepened without adding unsupported story.]
+- **Reference Rhythm Note:** [Optional high-level rhythm note; do not copy reference content.]
 
 ### Beat Instructions
 
@@ -83,6 +100,7 @@ For each chapter, list scenes with:
 - POV.
 - Location.
 - Scene purpose.
+- Pacing class and elastic range when useful.
 - Opening action or pressure.
 - Conflict.
 - Required story facts.

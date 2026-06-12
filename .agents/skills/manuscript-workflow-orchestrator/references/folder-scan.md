@@ -24,6 +24,7 @@ If none exist, stop and report the missing source file. Do not infer a manuscrip
 
 Create or update these files in the same target folder:
 
+- `source-format-scan.md`
 - `rulebook.md`
 - `mood-lock.md`
 - `chapter-summaries.md`
@@ -32,6 +33,25 @@ Create or update these files in the same target folder:
 - `chapters/chapter-XX/chapter-XX.md`
 
 Do not put book-specific artifacts in the project root.
+
+## Source Format Scan
+
+Before generating `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, or scene breakdowns, run:
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>
+```
+
+Use `source-format-scan.md` to identify the source shape. Different bibles may have different section names, missing context, act structure, chapter word counts, hooks, tension notes, or transition notes.
+
+Target priority:
+
+1. User-provided target, if supplied to the scan with `--target-words`.
+2. Source bible or outline target.
+3. Existing `rulebook.md` target.
+4. Default `~30,000 words`.
+
+The target is book-level planning guidance only. Never turn it into per-chapter quotas.
 
 ## Scan Checklist
 
