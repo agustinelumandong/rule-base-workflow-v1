@@ -9,6 +9,7 @@ Review `{chapter_draft}` against these sources:
 - `{mood_lock}`
 - `{chapter_summaries}`
 - `{scene_breakdown}`
+- `research-pack.md` (if present in the context packet)
 
 ## Required Review
 
@@ -21,6 +22,7 @@ Answer these questions:
 5. Does POV stay controlled and avoid head-hopping?
 6. Does the Western style lock hold?
 7. Does the expansion deepen approved material instead of padding?
+8. Are all period-specific details (weapons, transport, medical remedies, technology) historically accurate and grounded in the research facts? If any detail is missing, unverified, or incorrect, flag it as `[RESEARCH NEEDED]` in the Failures section.
 
 ## Output Format
 

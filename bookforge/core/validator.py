@@ -307,6 +307,30 @@ def check_em_dash_anchors(text: str) -> list[str]:
     return warnings
 
 
+def check_unprofiled_period_terms(text: str, book_folder: Path) -> list[str]:
+    warnings: list[str] = []
+    research_file = book_folder / "research-pack.md"
+    research_content = ""
+    if research_file.exists():
+        research_content = research_file.read_text(encoding="utf-8").lower()
+        
+    watchwords = [
+        "winchester", "sharps", "colt", "peacemaker", "remington", "derringer", 
+        "stagecoach", "locomotive", "telegraph", "carbolic", "laudanum", "morphia"
+    ]
+    
+    draft_words = set(re.findall(r"\b[a-zA-Z]+\b", text.lower()))
+    
+    for word in watchwords:
+        if word in draft_words:
+            if word not in research_content:
+                warnings.append(
+                    f"Draft mentions period term '{word}' which is not documented in research-pack.md. "
+                    f"Please add it to the research pack to verify historical accuracy."
+                )
+    return warnings
+
+
 def check_context_lock_unknowns(scene_text: str) -> list[str]:
     findings: list[str] = []
     in_lock = False
@@ -431,6 +455,11 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
     em_dash_warnings = check_em_dash_anchors(text)
     if em_dash_warnings:
         warnings.extend(em_dash_warnings)
+
+    book_folder = chapter.folder.parent.parent
+    period_warnings = check_unprofiled_period_terms(text, book_folder)
+    if period_warnings:
+        warnings.extend(period_warnings)
 
     return passes, warnings, failures
 

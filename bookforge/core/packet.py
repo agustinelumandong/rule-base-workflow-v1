@@ -188,6 +188,46 @@ def pacing_excerpt(book_folder: Path, slug: str) -> str:
     return lines or "No matching pacing row found. Use source scope only; do not force uniform chapter length."
 
 
+def relevant_research_excerpt(book_folder: Path, scene_breakdown_text: str) -> str:
+    research_file = book_folder / "research-pack.md"
+    if not research_file.exists():
+        return ""
+    
+    content = research_file.read_text(encoding="utf-8")
+    sections = re.split(r"^##\s+", content, flags=re.MULTILINE)
+    
+    section_map: dict[str, str] = {}
+    for section in sections[1:]:
+        lines = section.splitlines()
+        if not lines:
+            continue
+        title = lines[0].strip()
+        section_map[title] = "## " + section.strip()
+        
+    keyword_map = {
+        "Weapons & Ammo": ["weapon", "ammo", "gun", "rifle", "pistol", "revolver", "shoot", "fire", "shot", "colt", "winchester", "sharps", "bullet", "cartridge"],
+        "Travel & Transport": ["travel", "transport", "stagecoach", "horse", "ride", "gallop", "train", "wagon", "rail", "road", "track", "trail", "saddle", "stage"],
+        "Medicine & Survival": ["medicine", "survival", "doctor", "wound", "treat", "injured", "hurt", "acid", "carbolic", "pain", "whiskey", "morphia", "laudanum", "bandage", "bleed"],
+        "Clothing & Gear": ["clothing", "gear", "garb", "shirt", "trousers", "boots", "hat", "canvas", "leather", "belt", "holster"]
+    }
+    
+    breakdown_words = set(re.findall(r"\b[a-zA-Z]+\b", scene_breakdown_text.lower()))
+    
+    active_sections: list[str] = []
+    for title, sec_content in section_map.items():
+        keywords = keyword_map.get(title, [])
+        title_words = [w.lower() for w in re.findall(r"\b[a-zA-Z]+\b", title) if len(w) > 3]
+        keywords.extend(title_words)
+        
+        if any(kw in breakdown_words for kw in keywords):
+            active_sections.append(sec_content)
+            
+    if not active_sections:
+        return ""
+        
+    return "\n\n".join(active_sections)
+
+
 def render_packet(book_folder: Path, slug: str) -> str:
     src = source_path(book_folder)
     if src is None:
@@ -217,6 +257,9 @@ def render_packet(book_folder: Path, slug: str) -> str:
     next_cont = next_continuity_need(book_folder, slug)
     next_comp = compress_text(next_cont)
     scene_bd_comp = compress_text(scene_breakdown or "MISSING: scene-breakdown.md")
+    
+    research_excerpt = relevant_research_excerpt(book_folder, scene_breakdown or "")
+    research_comp = compress_text(research_excerpt)
 
     lines = [
         f"# Context Packet: {slug}",
@@ -247,6 +290,10 @@ def render_packet(book_folder: Path, slug: str) -> str:
         "## Relevant Rulebook Facts",
         "",
         word_excerpt(rulebook_comp, 900),
+        "",
+        "## Relevant Research Facts",
+        "",
+        word_excerpt(research_comp, 600),
         "",
         "## Mood And Tone Summary",
         "",
