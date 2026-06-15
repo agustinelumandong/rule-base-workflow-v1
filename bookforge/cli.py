@@ -14,6 +14,7 @@ from bookforge.core import compiler as compiler_module
 from bookforge.core import scanner as scanner_module
 from bookforge.core import rhythm as rhythm_module
 from bookforge.core import chain as chain_module
+from bookforge.core import analytics as analytics_module
 from bookforge import config
 
 
@@ -173,6 +174,59 @@ def cmd_compile(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_analytics(args: argparse.Namespace) -> int:
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    data = analytics_module.load_analytics(book_folder)
+    file_analytics = analytics_module.get_project_file_analytics(book_folder)
+
+    print(f"# BookForge Analytics: {book_folder.name}")
+    print("")
+    print("## Cumulative API Token Log")
+    print(f"- **Total Orchestration Runs:** {data['total_runs']}")
+    print(f"- **Last Model Used:** `{data['last_model_used']}`")
+    print(f"- **Total Cumulative Tokens:** {data['total_input_tokens'] + data['total_output_tokens']:,} ({data['total_input_tokens']:,} In / {data['total_output_tokens']:,} Out)")
+    print("")
+    print("## Project Files Metrics")
+    print("| File | Lines | Words | Characters | Est. Tokens |")
+    print("| --- | --- | --- | --- | --- |")
+    
+    for name in ["outline", "rulebook", "mood_lock", "chapter_summaries", "research_pack"]:
+        if name in file_analytics:
+            f = file_analytics[name]
+            m = f["metrics"]
+            print(f"| {f['filename']} | {m['lines']} | {m['words']} | {m['chars']} | {m['tokens']} |")
+            
+    for chap in file_analytics.get("chapters", []):
+        for f_key in ["scene_breakdown", "draft", "continuity_out"]:
+            if f_key in chap["files"]:
+                f = chap["files"][f_key]
+                m = f["metrics"]
+                print(f"| {chap['slug']}/{f['filename']} | {m['lines']} | {m['words']} | {m['chars']} | {m['tokens']} |")
+                
+    return 0
+
+
+def cmd_log_run(args: argparse.Namespace) -> int:
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    analytics_module.log_run(
+        book_folder=book_folder,
+        model=args.model,
+        input_tokens=args.input_tokens,
+        output_tokens=args.output_tokens,
+        action=args.action
+    )
+    print(f"Successfully logged run metrics for model '{args.model}' under '{args.action}'.")
+    return 0
+
+
 def cmd_tui(args: argparse.Namespace) -> int:
     from bookforge.tui import BookForgeTUI
     tui = BookForgeTUI()
@@ -212,6 +266,18 @@ def main() -> int:
     # tui
     subparsers.add_parser("tui", help="Launch interactive Terminal User Interface (TUI)")
 
+    # analytics
+    parser_analytics = subparsers.add_parser("analytics", help="Show file size metrics and cumulative token usage")
+    parser_analytics.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+
+    # log-run
+    parser_log = subparsers.add_parser("log-run", help="Log token metrics for an LLM run manually or programmatically")
+    parser_log.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_log.add_argument("--model", required=True, help="LLM Model used (e.g. gpt-4o, claude-3-5-sonnet)")
+    parser_log.add_argument("--input-tokens", type=int, required=True, help="Number of prompt/input tokens")
+    parser_log.add_argument("--output-tokens", type=int, required=True, help="Number of completion/output tokens")
+    parser_log.add_argument("--action", default="orchestration", help="Action performed (e.g., validate, draft, repair)")
+
     args = parser.parse_args()
 
     commands = {
@@ -220,6 +286,8 @@ def main() -> int:
         "run-loop": cmd_run_loop,
         "compile": cmd_compile,
         "tui": cmd_tui,
+        "analytics": cmd_analytics,
+        "log-run": cmd_log_run,
     }
 
     try:

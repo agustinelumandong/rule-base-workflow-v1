@@ -7,6 +7,7 @@ import os
 import sys
 import tty
 import termios
+import re
 from pathlib import Path
 
 from bookforge.core import validator, loop, length, rhythm, compiler, scanner, chain
@@ -112,6 +113,10 @@ class BookForgeTUI:
                     self.render_dashboard()
                     key = get_key()
                     self.handle_dashboard_key(key)
+                elif self.state == "ANALYTICS":
+                    self.render_analytics()
+                    key = get_key()
+                    self.handle_analytics_key(key)
                 else:
                     # Fallback
                     self.state = "BOOK_LIST"
@@ -223,14 +228,26 @@ class BookForgeTUI:
             else:
                 print(f"     Status: {COLOR_GREEN}PASS{RESET}")
 
-        print(f"\n  {COLOR_GRAY}{'─' * 66}{RESET}")
+        # Fetch and render the status line
+        from bookforge.core import analytics as analytics_module
+        analytics_data = analytics_module.load_analytics(book_folder)
+        model_str = analytics_data.get("last_model_used", "unknown")
+        total_in = analytics_data.get("total_input_tokens", 0)
+        total_out = analytics_data.get("total_output_tokens", 0)
+        total_runs = analytics_data.get("total_runs", 0)
+        
+        print(f"\n  {BG_BLUE} Model: {model_str:<12} | Tokens: {total_in + total_out:,} ({total_in:,} In / {total_out:,} Out) | Runs: {total_runs:<3} {RESET}")
+
+        print(f"  {COLOR_GRAY}{'─' * 66}{RESET}")
         print(f"  {BOLD}[s]{RESET} Run Validation   {BOLD}[l]{RESET} Run Loop   {BOLD}[c]{RESET} Compile Manuscript")
-        print(f"  {BOLD}[b]{RESET} Back to list      {BOLD}[q]{RESET} Quit")
+        print(f"  {BOLD}[a]{RESET} View Analytics    {BOLD}[b]{RESET} Back to list      {BOLD}[q]{RESET} Quit")
 
     def handle_dashboard_key(self, key: str) -> None:
         assert self.current_book is not None
         if key == "q":
             raise KeyboardInterrupt()
+        elif key == "a":
+            self.state = "ANALYTICS"
         elif key == "b":
             self.state = "BOOK_LIST"
         elif key == "s":
@@ -372,5 +389,48 @@ class BookForgeTUI:
             else:
                 print(f"  {line}")
 
+    def render_analytics(self) -> None:
+        assert self.current_book is not None
+        book_folder = self.current_book
+        self.draw_header(f"Project Analytics: {book_folder.name}")
 
-import re
+        from bookforge.core import analytics as analytics_module
+        file_analytics = analytics_module.get_project_file_analytics(book_folder)
+        analytics_data = analytics_module.load_analytics(book_folder)
+
+        print(f"  {BOLD}Cumulative API Token Stats:{RESET}")
+        print(f"    • Total runs logged: {COLOR_CYAN}{analytics_data['total_runs']}{RESET}")
+        print(f"    • Active/Last Model: {COLOR_CYAN}{analytics_data['last_model_used']}{RESET}")
+        print(f"    • Total Tokens:      {COLOR_CYAN}{analytics_data['total_input_tokens'] + analytics_data['total_output_tokens']:,}{RESET} ({analytics_data['total_input_tokens']:,} In / {analytics_data['total_output_tokens']:,} Out)")
+        print()
+
+        print(f"  {BOLD}Individual File Metrics:{RESET}")
+        print(f"    {COLOR_GRAY}{'─' * 62}{RESET}")
+        print(f"    {COLOR_CYAN}{'File':<30} | {'Lines':<5} | {'Words':<6} | {'Tokens':<6}{RESET}")
+        print(f"    {COLOR_GRAY}{'─' * 62}{RESET}")
+
+        for name in ["outline", "rulebook", "mood_lock", "chapter_summaries", "research_pack"]:
+            if name in file_analytics:
+                f = file_analytics[name]
+                m = f["metrics"]
+                print(f"    {f['filename']:<30} | {m['lines']:<5} | {m['words']:<6} | {m['tokens']:<6}")
+
+        for chap in file_analytics.get("chapters", []):
+            for f_key in ["scene_breakdown", "draft", "continuity_out"]:
+                if f_key in chap["files"]:
+                    f = chap["files"][f_key]
+                    m = f["metrics"]
+                    path_label = f"{chap['slug']}/{f['filename']}"
+                    if len(path_label) > 30:
+                        path_label = path_label[:27] + "..."
+                    print(f"    {path_label:<30} | {m['lines']:<5} | {m['words']:<6} | {m['tokens']:<6}")
+
+        print(f"\n  {COLOR_GRAY}{'─' * 66}{RESET}")
+        print(f"  {BOLD}[b]{RESET} Back to Dashboard   {BOLD}[q]{RESET} Quit")
+
+    def handle_analytics_key(self, key: str) -> None:
+        if key == "q":
+            raise KeyboardInterrupt()
+        elif key == "b":
+            self.state = "DASHBOARD"
+
