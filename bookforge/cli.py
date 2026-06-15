@@ -18,6 +18,7 @@ from bookforge.core import analytics as analytics_module
 from bookforge.core import series as series_module
 from bookforge.core import action as action_module
 from bookforge.core import persona as persona_module
+from bookforge.core import repair as repair_module
 from bookforge import config
 
 
@@ -271,6 +272,14 @@ def cmd_init_action(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_repair(args: argparse.Namespace) -> int:
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+    return repair_module.run_repair_wizard(book_folder, args.chapter_slug)
+
+
 def cmd_check_persona(args: argparse.Namespace) -> int:
     book_folder = Path(args.book_folder)
     persona_name = args.persona
@@ -352,6 +361,11 @@ def main() -> int:
     parser_check_persona.add_argument("--action", required=True, help="Action being performed (e.g., draft)")
     parser_check_persona.add_argument("--projected-tokens", type=int, default=0, help="Projected prompt/input tokens")
 
+    # repair
+    parser_repair = subparsers.add_parser("repair", help="Run interactive repair wizard to fix scene logistics and inventory")
+    parser_repair.add_argument("book_folder", help="Path to book folder")
+    parser_repair.add_argument("chapter_slug", help="Slug of the chapter to repair (e.g., chapter-01)")
+
     args = parser.parse_args()
 
     commands = {
@@ -364,6 +378,7 @@ def main() -> int:
         "log-run": cmd_log_run,
         "init-action": cmd_init_action,
         "check-persona": cmd_check_persona,
+        "repair": cmd_repair,
     }
 
     try:
