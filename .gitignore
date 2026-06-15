@@ -4,3 +4,5 @@
 __pycache__
 docs
 tests
+!bookforge/genre_packs/western/
+!.agents/skills/
