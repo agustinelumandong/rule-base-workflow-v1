@@ -14,6 +14,7 @@ from pathlib import Path
 
 from bookforge.core.prompts import load_prompt_template
 from bookforge.core import action
+from bookforge.core import world as world_module
 
 REQUIRED_BOOK_FILES = ["phase-0.md", "rulebook.md", "mood-lock.md", "chapter-summaries.md"]
 BEAT_REQUIRED_MARKERS = ["### Source Context Lock", "### Beat Instructions"]
@@ -537,6 +538,43 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
                     report.passes.extend([f"[{title}] {p}" for p in c_passes])
                     report.warnings.extend([f"[{title}] {w}" for w in c_warnings])
                     report.failures.extend([f"[{title}] {f}" for f in c_failures])
+
+    # Validate world state and physical logistics (locations, inventory, travel)
+    if chapter.scene_breakdown.exists() and chapter.draft.exists():
+        book_folder = chapter.folder.parent.parent
+        world_state = world_module.load_world_state(book_folder)
+        scenes = world_module.discover_scenes_from_breakdown(chapter.scene_breakdown)
+        draft_text = read_text(chapter.draft)
+        
+        # Split draft text by scene headings if possible
+        scene_drafts = {}
+        draft_sections = re.split(r"(?im)^(?=##|###|scene\s+\d+)", draft_text)
+        current_key = "default"
+        for sec in draft_sections:
+            lines = sec.splitlines()
+            if lines:
+                match = re.search(r"(?i)scene[-_ ]*(\d+|\w+)", lines[0])
+                if match:
+                    current_key = f"scene-{match.group(1).lower()}".replace("-combat", "")
+                    scene_drafts[current_key] = sec
+                    continue
+            scene_drafts[current_key] = scene_drafts.get(current_key, "") + "\n" + sec
+            
+        for scene in scenes:
+            scene_id = scene["id"]
+            title = scene["title"]
+            # get specific scene draft or fallback to full text
+            scene_draft = scene_drafts.get(scene_id, draft_text)
+            
+            w_failures, w_warnings = world_module.validate_scene_world_state(scene, scene_draft, world_state)
+            if not w_failures and not w_warnings:
+                report.passes.append(f"Physical logistics validated for scene: {title}")
+            else:
+                report.failures.extend([f"[{title}] {f}" for f in w_failures])
+                report.warnings.extend([f"[{title}] {w}" for w in w_warnings])
+                
+        # Save updated world state after checking the chapter
+        world_module.save_world_state(book_folder, world_state)
 
     draft_passes, draft_warnings, draft_failures = validate_draft(chapter)
     report.passes.extend(draft_passes)
