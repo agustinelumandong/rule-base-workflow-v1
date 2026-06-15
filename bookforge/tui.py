@@ -10,7 +10,7 @@ import termios
 import re
 from pathlib import Path
 
-from bookforge.core import validator, loop, length, rhythm, compiler, scanner, chain
+from bookforge.core import validator, loop, length, rhythm, compiler, scanner, chain, series
 
 # ANSI escape codes for styling
 CLEAR_SCREEN = "\033[H\033[J"
@@ -63,15 +63,20 @@ def get_key() -> str:
 
 
 def discover_books(root_dir: Path = Path("books")) -> list[Path]:
-    """Finds all book folders that contain a source outline format file."""
+    """Finds all book folders that contain a source outline format file, supporting nested series subfolders."""
     if not root_dir.exists():
         return []
     books = []
     for item in sorted(root_dir.iterdir()):
         if item.is_dir():
-            # Check if any source files exist
+            # Check if any source files exist in the immediate directory
             if any((item / name).exists() for name in scanner.SOURCE_NAMES):
                 books.append(item)
+            else:
+                # Check 1 level deeper for series subfolders
+                for subitem in sorted(item.iterdir()):
+                    if subitem.is_dir() and any((subitem / name).exists() for name in scanner.SOURCE_NAMES):
+                        books.append(subitem)
     return books
 
 
@@ -138,6 +143,9 @@ class BookForgeTUI:
         print(f"  Navigate with {COLOR_CYAN}Arrow Keys{RESET} and press {COLOR_CYAN}Enter{RESET} to select:\n")
         
         for idx, book in enumerate(self.books):
+            series_info = series.get_series_info(book)
+            series_prefix = f"[{series_info['name']}] " if series_info else ""
+
             title = book.name
             # Attempt to read title from phase-0.md
             outline_path = scanner.source_path(book)
@@ -150,8 +158,9 @@ class BookForgeTUI:
                 except Exception:
                     pass
 
+            display_title = f"{series_prefix}{title}"
             if idx == self.selected_index:
-                print(f"  {BG_CYAN} > {title:<60} {RESET}")
+                print(f"  {BG_CYAN} > {display_title:<60} {RESET}")
             else:
                 print(f"    - {title}")
 
@@ -173,7 +182,11 @@ class BookForgeTUI:
     def render_dashboard(self) -> None:
         assert self.current_book is not None
         book_folder = self.current_book
-        self.draw_header(f"Dashboard: {book_folder.name}")
+        series_info = series.get_series_info(book_folder)
+        header_title = f"Dashboard: {book_folder.name}"
+        if series_info:
+            header_title = f"[{series_info['name']}] {header_title}"
+        self.draw_header(header_title)
 
         # If status check hasn't run yet, offer to run it
         if "gaps" not in self.status_cache:

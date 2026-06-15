@@ -15,6 +15,7 @@ from bookforge.core import scanner as scanner_module
 from bookforge.core import rhythm as rhythm_module
 from bookforge.core import chain as chain_module
 from bookforge.core import analytics as analytics_module
+from bookforge.core import series as series_module
 from bookforge import config
 
 
@@ -26,6 +27,11 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     book_folder.mkdir(parents=True, exist_ok=True)
     
+    # 1. Copy shared series resources first if book is nested in a series folder
+    copied_resources = series_module.copy_shared_series_resources(book_folder)
+    for res in copied_resources:
+        print(res)
+
     # Source files to create
     template_files = {
         "phase-0.md": "phase-0.md",
@@ -39,6 +45,10 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     for filename, dest_name in template_files.items():
         dest_path = book_folder / dest_name
+        # Skip if file was already created by shared series resources
+        if dest_path.exists():
+            continue
+
         # 1. Try to copy from default example first
         src_example = book_example_dir / filename
         if src_example.exists():
@@ -56,6 +66,12 @@ def cmd_init(args: argparse.Namespace) -> int:
         # 3. Fallback stub
         dest_path.write_text(f"# {book_folder.name.replace('-', ' ').title()}\n\nStub file for {filename}.\n", encoding="utf-8")
         print(f"Created: {dest_path} (fallback stub)")
+
+    # 2. Perform continuity carry-forward from a completed book if requested
+    if hasattr(args, "carry_from") and args.carry_from:
+        carry_from_path = Path(args.carry_from)
+        carry_msg = series_module.carry_forward_book_continuity(carry_from_path, book_folder)
+        print(carry_msg)
 
     # Create chapters structure stub
     chapters_dir = book_folder / "chapters"
@@ -244,6 +260,7 @@ def main() -> int:
     # init
     parser_init = subparsers.add_parser("init", help="Initialize a new book structure")
     parser_init.add_argument("book_folder", help="Path to book folder (e.g. books/my-book)")
+    parser_init.add_argument("--carry-from", help="Optional path to completed prior book in the series")
 
     # status
     parser_status = subparsers.add_parser("status", help="Show pipeline diagnostics and validations")
