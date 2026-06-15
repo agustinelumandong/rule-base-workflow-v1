@@ -232,7 +232,8 @@ CATEGORIES: list[tuple[str, list[str]]] = [
     ("UNRESOLVED", validator.UNRESOLVED_MARKERS),
 ]
 
-ING_OPENER_RE = re.compile(r"^([A-Z][a-z]{5,}ing)[\s,]")
+ING_OPENER_RE = re.compile(r"^([A-Z][A-Za-z]{2,}ing)\b[\s,]")
+ING_OPENER_EXCLUSIONS = {"during", "bring", "ring", "sing", "thing", "spring"}
 DIALOGUE_TAG_RE = validator.DIALOGUE_TAG_RE
 
 
@@ -256,7 +257,8 @@ def scan_file(path: Path) -> list[tuple[int, str, str]]:
         if DIALOGUE_TAG_RE.search(line):
             violations.append((line_num, "DIALOGUE TAG", stripped[:120]))
 
-        if ING_OPENER_RE.match(stripped):
+        opener = ING_OPENER_RE.match(stripped)
+        if opener and opener.group(1).lower() not in ING_OPENER_EXCLUSIONS:
             violations.append((line_num, "ING OPENER", stripped[:120]))
 
     return violations
@@ -483,5 +485,4 @@ def main_source_format() -> int:
     output.write_text(build_report(scan), encoding="utf-8")
     print(f"Wrote {output}")
     return 0
-
 

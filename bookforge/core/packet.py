@@ -124,19 +124,89 @@ def optimize_character_profiles(rulebook_text: str, active_characters: list[str]
             title = h.group(2)
             # Find next heading with same or higher level
             next_heading_pattern = re.compile(
-                r"^(#{1," + str(level) + r"})\s+(.+?)\s*$",
+                r"^#{1," + str(level) + r"}\s+(.+?)\s*$",
                 re.MULTILINE
             )
-            next_headings = list(next_heading_pattern.finditer(optimized_text[h.start() + 1:]))
+            section_tail = optimized_text[h.end():]
+            next_headings = list(next_heading_pattern.finditer(section_tail))
             end = len(optimized_text)
             if next_headings:
-                end = h.start() + 1 + next_headings[0].start()
+                end = h.end() + next_headings[0].start()
             optimized_text = (
                 optimized_text[:h.start()]
                 + f"\n[Profile for inactive character '{title}' excluded to optimize context budget]\n"
                 + optimized_text[end:]
             )
     return optimized_text
+
+
+def relevant_rulebook_excerpt_from_text(book_folder: Path, slug: str, rulebook_text: str, scene_breakdown_text: str) -> str:
+    parts = []
+    for label in ("Source Hierarchy", "Length Handling", "Do Not Invent", "POV", "Expansion Rules"):
+        section = extract_named_section(rulebook_text, label)
+        if section:
+            parts.append(section)
+
+    char_section = extract_named_section(rulebook_text, "Characters") or extract_named_section(rulebook_text, "Dramatis Personae")
+    if char_section:
+        world_state = world_module.load_world_state(book_folder)
+        all_chars = list(world_state.get("characters", {}).keys())
+        active_chars = [
+            char for char in all_chars
+            if re.search(rf"\b{re.escape(char)}\b", scene_breakdown_text, re.IGNORECASE)
+        ] or all_chars
+        parts.append(optimize_character_profiles(char_section, active_chars, all_chars))
+
+        from bookforge.core import relationship as relationship_module
+        active_rels = []
+        for rel in relationship_module.load_relationships(book_folder):
+            sub = rel.get("subject", "").lower()
+            obj = rel.get("object", "").lower()
+            if sub in active_chars and obj in active_chars:
+                active_rels.append(rel)
+        if active_rels:
+            rel_lines = ["\n### Active Character Relationships"]
+            for rel in active_rels:
+                rel_lines.append(f"- **{rel['subject']}** {rel['relation']} **{rel['object']}**")
+            parts.append("\n".join(rel_lines))
+
+        subgenre_rules = load_subgenre_rules(book_folder)
+        if subgenre_rules:
+            parts.append(subgenre_rules)
+
+    chapter_section = extract_heading_section(rulebook_text, slug)
+    if chapter_section:
+        parts.append(chapter_section)
+    if not parts:
+        parts.append(extract_matching_lines(rulebook_text, ["source", "length", "invent", "pov", slug]))
+    return word_excerpt("\n\n".join(part for part in parts if part.strip()), 900)
+
+
+def build_context_packet(
+    book_folder: Path,
+    rulebook_text: str | None = None,
+    scene_breakdown_text: str | None = None,
+    slug: str = "chapter-01",
+) -> str:
+    if rulebook_text is None and scene_breakdown_text is None:
+        return render_packet(book_folder, slug)
+
+    scene_breakdown_text = scene_breakdown_text or ""
+    rulebook_text = rulebook_text if rulebook_text is not None else read_optional(book_folder / "rulebook.md")
+    rulebook_excerpt = relevant_rulebook_excerpt_from_text(book_folder, slug, rulebook_text, scene_breakdown_text)
+    return "\n".join(
+        [
+            f"# Context Packet: {slug}",
+            "",
+            "## Relevant Rulebook Facts",
+            "",
+            rulebook_excerpt,
+            "",
+            "## Scene Breakdown",
+            "",
+            scene_breakdown_text,
+        ]
+    ).rstrip() + "\n"
 
 
 def relevant_rulebook_excerpt(book_folder: Path, slug: str, scene_breakdown_text: str = "") -> str:
@@ -413,8 +483,8 @@ def load_subgenre_rules(book_folder: Path) -> str:
             
         rules = [
             f"### Active Subgenre Guidelines: {genre.capitalize()} ({subgenre.capitalize()})",
-            f"- **Tone:** {sub_info.get('tone', 'unknown')}",
-            f"- **Focus:** {sub_info.get('focus', 'unknown')}",
+            f"- Tone: {sub_info.get('tone', 'unknown')}",
+            f"- Focus: {sub_info.get('focus', 'unknown')}",
             "- **Typical Conflicts:** " + ", ".join(sub_info.get("common_conflicts", []))
         ]
         

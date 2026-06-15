@@ -44,13 +44,15 @@ def validate_dialogue_style(draft_text: str) -> tuple[list[str], list[str]]:
                     f"Dialogue Tag Warning: Discouraged dialogue tag '{tag}' used directly after dialogue: '\"{quote_content[:15]}...\" {following_text[:15]}'"
                 )
 
-        # Check for em dash spacing if an em dash is used
-        # Spaced em dashes should be flagged as AI generated.
+        # Check for em dash spacing if an em dash is used.
         if "--" in following_text or "—" in following_text:
-            # Check if there is any space on either side of the em dash
-            if re.search(r'\s+—|—\s+|\s+--|--\s+', following_text):
+            if "--" in following_text:
                 failures.append(
-                    f"Em Dash Formatting Failure: Spaced em-dash found in '\"{quote_content[:15]}...\" {following_text[:20]}'. Spaced em-dashes indicate AI-generated text. Use unspaced em-dash instead."
+                    f"Em Dash Formatting Failure: Use em-dash `—` instead of double-hyphen `--` in '\"{quote_content[:15]}...\" {following_text[:20]}'."
+                )
+            elif not re.match(r"^—\s+\S", following_text):
+                failures.append(
+                    f"Em Dash Formatting Failure: Incorrect em-dash anchor spacing in '\"{quote_content[:15]}...\" {following_text[:20]}'. Use `\"Dialogue.\" — Action`."
                 )
 
     return failures, warnings

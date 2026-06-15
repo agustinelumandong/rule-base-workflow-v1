@@ -47,19 +47,22 @@ MODERN_OR_CLINICAL_WORDS = [
 INTERNAL_MONOLOGUE_PHRASES = ["he felt", "he realized", "he thought", "she felt", "she realized", "she thought"]
 
 DIALOGUE_TAG_RE = re.compile(
-    r"\b(said|asked|shouted|whispered|cried|replied|exclaimed|called|muttered|grumbled|demanded)\b",
+    r'"[^"]*"\s*(?:—\s*)?(?:[A-Z][A-Za-z\'-]*\s+)?'
+    r"(said|asked|shouted|whispered|cried|replied|exclaimed|called|muttered|grumbled|demanded)\b"
+    r'|'
+    r"\b(said|asked|shouted|whispered|cried|replied|exclaimed|called|muttered|grumbled|demanded)\s*,\s*\"[^\"]*\"",
     re.IGNORECASE,
 )
 
 PHASE_CHAPTER_RE = re.compile(
-    r"^(?:\*\*|###\s*)Chapter\s+(\d+)[:\s].+$|^(?:\*\*|###\s*)Epilogue[:\s].+$",
-    re.MULTILINE | re.IGNORECASE,
+    r"(?im)^\s*(?:#{1,6}\s*)?(?:\*\*)?(Chapter\s+(\d+)|Epilogue(?:\s+Teaser)?)(?:\*\*)?(?:\s*[:\-].*)?$"
 )
 
 FIELD_RE = re.compile(r"^- \*\*(Source Anchor|Required Story Movement):\*\* (.+)$", re.MULTILINE)
 EXIT_HOOK_PREFIX_RE = re.compile(r"^Exit hook / transition required by source:\s*", re.IGNORECASE)
 
-ING_OPENER_RE = re.compile(r"(?m)^([A-Z][a-z]{5,}ing)[\s,]")
+ING_OPENER_RE = re.compile(r"(?m)^([A-Z][A-Za-z]{2,}ing)\b[\s,]")
+ING_OPENER_EXCLUSIONS = {"during", "bring", "ring", "sing", "thing", "spring"}
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 PRONOUN_FIXED = frozenset({"he", "she", "they", "it"})
 PRONOUN_LOOP_MIN_RUN = 3
@@ -80,7 +83,7 @@ STOPWORDS = {
 BEAT_RE = re.compile(r"^##\s+BEAT\s+\d+[:\s]", re.MULTILINE | re.IGNORECASE)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ChapterFiles:
     slug: str
     label: str
@@ -88,6 +91,45 @@ class ChapterFiles:
     draft: Path
     scene_breakdown: Path
     drafting_plan: Path
+
+    def __init__(
+        self,
+        slug: str | Path,
+        label: str | None = None,
+        folder: Path | None = None,
+        draft: Path | None = None,
+        scene_breakdown: Path | None = None,
+        drafting_plan: Path | None = None,
+    ):
+        if isinstance(slug, Path) and label is None and folder is None:
+            folder = slug
+            slug_value = folder.name
+        else:
+            slug_value = str(slug)
+            folder = folder or Path(slug_value)
+
+        if label is None:
+            if slug_value == "epilogue":
+                label = "Epilogue"
+            else:
+                match = re.match(r"chapter-(\d+)", slug_value)
+                label = f"Chapter {int(match.group(1)):02d}" if match else slug_value.replace("-", " ").title()
+
+        if draft is None:
+            draft_name = "epilogue.md" if slug_value == "epilogue" else f"{slug_value}.md"
+            draft = folder / draft_name
+            legacy_draft = folder / "draft.md"
+            if not draft.exists() and legacy_draft.exists():
+                draft = legacy_draft
+        scene_breakdown = scene_breakdown or folder / "scene-breakdown.md"
+        drafting_plan = drafting_plan or folder / "drafting-plan.md"
+
+        object.__setattr__(self, "slug", slug_value)
+        object.__setattr__(self, "label", label)
+        object.__setattr__(self, "folder", folder)
+        object.__setattr__(self, "draft", draft)
+        object.__setattr__(self, "scene_breakdown", scene_breakdown)
+        object.__setattr__(self, "drafting_plan", drafting_plan)
 
 
 @dataclass
@@ -204,7 +246,7 @@ def parse_phase_chapters(book_folder: Path) -> dict[str, str]:
     matches = list(PHASE_CHAPTER_RE.finditer(text))
     sections: dict[str, str] = {}
     for index, match in enumerate(matches):
-        heading = match.group(1) if match.group(1) else "epilogue"
+        heading = match.group(1)
         start = match.end()
         next_chapter_start = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         next_heading = re.search(r"^##\s+", text[start:next_chapter_start], re.MULTILINE)
@@ -213,7 +255,7 @@ def parse_phase_chapters(book_folder: Path) -> dict[str, str]:
         if heading.lower().startswith("epilogue"):
             slug = "epilogue"
         else:
-            number = int(match.group(1))
+            number = int(match.group(2))
             slug = f"chapter-{number:02d}"
         sections[slug] = body
     return sections
@@ -235,8 +277,8 @@ def check_ing_openers(text: str) -> list[str]:
         stripped = line.strip()
         if not stripped:
             continue
-        match = re.match(r"([A-Z][a-z]{5,}ing)[\s,]", stripped)
-        if match:
+        match = re.match(r"([A-Z][A-Za-z]{2,}ing)\b[\s,]", stripped)
+        if match and match.group(1).lower() not in ING_OPENER_EXCLUSIONS:
             samples.append(stripped[:100])
             if len(samples) >= 5:
                 break
@@ -288,19 +330,43 @@ def check_pronoun_loops(text: str) -> list[str]:
     return findings
 
 
+def dialogue_tags(text: str) -> list[str]:
+    found: set[str] = set()
+    for match in DIALOGUE_TAG_RE.finditer(text):
+        tag = match.group(1) or match.group(2)
+        if tag:
+            found.add(tag.lower())
+    return sorted(found)
+
+
 def check_em_dash_anchors(text: str) -> list[str]:
     warnings: list[str] = []
     for line_num, line in enumerate(text.splitlines(), 1):
         if '"' in line:
-            # Flag any spaced em dashes (spaces on either side) as AI tells
-            if re.search(r'\s+—|—\s+|\s+--|--\s+', line):
-                warnings.append(
-                    f"Line {line_num}: Spaced em-dash found: spaced em-dashes indicate AI-generated text. Use unspaced em-dash instead."
-                )
             # Check for double/triple hyphens: -- or ---
             if '--' in line:
                 warnings.append(f"Line {line_num}: Use em-dash `—` instead of double-hyphen `--`")
+                continue
+            for match in re.finditer(r'"[^"]*"\s*—\s*\S?', line):
+                if not re.search(r'"[^"]*"\s—\s\S', match.group(0)):
+                    warnings.append(
+                        f"Line {line_num}: Incorrect em-dash anchor spacing. Use `\"Dialogue.\" — Action`."
+                    )
     return warnings
+
+
+def forbidden_length_language(text: str) -> list[str]:
+    findings: list[str] = []
+    patterns = {
+        "word count": r"\bword counts?\b",
+        "quota": r"\bquotas?\b",
+        "target": r"\b(?:target|minimum|maximum)\s+(?:word|words|length)\b",
+        "fixed words": r"\b\d[\d,]*\s+words?\b",
+    }
+    for label, pattern in patterns.items():
+        if re.search(pattern, text, re.IGNORECASE):
+            findings.append(label)
+    return findings
 
 
 def check_unprofiled_period_terms(text: str, book_folder: Path) -> list[str]:
@@ -430,7 +496,7 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
         return passes, warnings, [f"Draft `{chapter.draft}` is empty."]
     passes.append("Draft exists and is non-empty.")
     
-    forbidden_length = contains_any(text, FORBIDDEN_LENGTH_LANGUAGE)
+    forbidden_length = forbidden_length_language(text)
     if forbidden_length:
         failures.append(f"Draft contains forbidden length language: {', '.join(forbidden_length)}.")
     unresolved = contains_any(text, UNRESOLVED_MARKERS, case_sensitive=True)
@@ -495,9 +561,9 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
     internal_phrases = contains_any(text, INTERNAL_MONOLOGUE_PHRASES)
     if internal_phrases:
         warnings.append(f"Draft contains internal-monologue phrase(s): {', '.join(internal_phrases)}.")
-    dialogue_tags = sorted(set(match.group(0).strip() for match in DIALOGUE_TAG_RE.finditer(text)))
-    if dialogue_tags:
-        warnings.append(f"Draft may contain unwanted dialogue tag(s): {', '.join(dialogue_tags)}.")
+    found_dialogue_tags = dialogue_tags(text)
+    if found_dialogue_tags:
+        warnings.append(f"Draft may contain unwanted dialogue tag(s): {', '.join(found_dialogue_tags)}.")
 
     ing_samples = check_ing_openers(text)
     if ing_samples:
@@ -527,11 +593,13 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
             pass
             
     all_chars = []
-    try:
-        world_state = world_module.load_world_state(book_folder)
-        all_chars = list(world_state.get("characters", {}).keys())
-    except Exception:
-        pass
+    world_state_path = book_folder / "world-state.json"
+    if world_state_path.exists():
+        try:
+            world_state = world_module.load_world_state(book_folder)
+            all_chars = list(world_state.get("characters", {}).keys())
+        except Exception:
+            pass
 
     v_failures, v_warnings = voice_module.validate_dialogue_style(text)
     failures.extend(v_failures)
@@ -624,7 +692,8 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
     # Validate world state and physical logistics (locations, inventory, travel)
     if chapter.scene_breakdown.exists() and chapter.draft.exists():
         book_folder = chapter.folder.parent.parent
-        world_state = world_module.load_world_state(book_folder)
+        world_state_path = book_folder / "world-state.json"
+        world_state = world_module.load_world_state(book_folder) if world_state_path.exists() else None
         
         # Load relationships
         from bookforge.core import relationship as relationship_module
@@ -647,27 +716,28 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
                     continue
             scene_drafts[current_key] = scene_drafts.get(current_key, "") + "\n" + sec
             
-        for scene in scenes:
-            scene_id = scene["id"]
-            title = scene["title"]
-            # get specific scene draft or fallback to full text
-            scene_draft = scene_drafts.get(scene_id, draft_text)
-            
-            w_failures, w_warnings = world_module.validate_scene_world_state(scene, scene_draft, world_state)
-            
-            # Validate typed relationships
-            rel_failures, rel_warnings = relationship_module.validate_relationships_prose(scene, scene_draft, relationships)
-            w_failures.extend(rel_failures)
-            w_warnings.extend(rel_warnings)
-            
-            if not w_failures and not w_warnings:
-                report.passes.append(f"Physical logistics & relationships validated for scene: {title}")
-            else:
-                report.failures.extend([f"[{title}] {f}" for f in w_failures])
-                report.warnings.extend([f"[{title}] {w}" for w in w_warnings])
+        if world_state is not None:
+            for scene in scenes:
+                scene_id = scene["id"]
+                title = scene["title"]
+                # get specific scene draft or fallback to full text
+                scene_draft = scene_drafts.get(scene_id, draft_text)
                 
-        # Save updated world state after checking the chapter
-        world_module.save_world_state(book_folder, world_state)
+                w_failures, w_warnings = world_module.validate_scene_world_state(scene, scene_draft, world_state)
+                
+                # Validate typed relationships
+                rel_failures, rel_warnings = relationship_module.validate_relationships_prose(scene, scene_draft, relationships)
+                w_failures.extend(rel_failures)
+                w_warnings.extend(rel_warnings)
+                
+                if not w_failures and not w_warnings:
+                    report.passes.append(f"Physical logistics & relationships validated for scene: {title}")
+                else:
+                    report.failures.extend([f"[{title}] {f}" for f in w_failures])
+                    report.warnings.extend([f"[{title}] {w}" for w in w_warnings])
+                    
+            # Save updated world state after checking the chapter
+            world_module.save_world_state(book_folder, world_state)
 
     draft_passes, draft_warnings, draft_failures = validate_draft(chapter)
     report.passes.extend(draft_passes)
@@ -791,4 +861,3 @@ def main() -> int:
     reports = [validate_chapter(chapter, phase_sections) for chapter in chapters]
     print(render_report(book_folder, book_passes, book_failures, reports))
     return 1 if overall_status(book_failures, reports) == "FAIL" else 0
-

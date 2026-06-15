@@ -273,6 +273,7 @@ def validate_scene_world_state(
                     warnings.append(
                         f"Location Inconsistency: '{char_name.capitalize()}' is mentioned in the draft but is at '{char_loc}' (scene takes place at '{scene_loc}')."
                     )
+                    break
 
     # 3. Item Presence in Prose Check
     # Verify that if a character is described using a weapon/item, they actually own it in inventory

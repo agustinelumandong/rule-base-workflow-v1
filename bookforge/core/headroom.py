@@ -26,7 +26,18 @@ def compress_text(text: str) -> str:
         try:
             # Official headroom typically exposes a compress function or class
             if hasattr(headroom, "compress"):
-                return headroom.compress(text)
+                result = headroom.compress(text)
+                if isinstance(result, str):
+                    return result
+                for attr in ("text", "content", "compressed", "output"):
+                    value = getattr(result, attr, None)
+                    if isinstance(value, str):
+                        return value
+                if isinstance(result, dict):
+                    for key in ("text", "content", "compressed", "output"):
+                        value = result.get(key)
+                        if isinstance(value, str):
+                            return value
         except Exception:
             pass # Fall back to local compression on failure
             
