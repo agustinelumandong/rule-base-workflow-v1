@@ -15,6 +15,7 @@ from pathlib import Path
 from bookforge.core.prompts import load_prompt_template
 from bookforge.core import action
 from bookforge.core import world as world_module
+from bookforge.core import voice as voice_module
 
 REQUIRED_BOOK_FILES = ["phase-0.md", "rulebook.md", "mood-lock.md", "chapter-summaries.md"]
 BEAT_REQUIRED_MARKERS = ["### Source Context Lock", "### Beat Instructions"]
@@ -462,6 +463,36 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
     period_warnings = check_unprofiled_period_terms(text, book_folder)
     if period_warnings:
         warnings.extend(period_warnings)
+
+    # Advanced Voice, Dialogue, and POV checks
+    pov_character = ""
+    if chapter.scene_breakdown.exists():
+        try:
+            sb_text = read_text(chapter.scene_breakdown)
+            pov_match = re.search(r"(?i)^\s*[\-\*]\s*POV:\s*(\w+)", sb_text, re.MULTILINE)
+            if pov_match:
+                pov_character = pov_match.group(1).lower()
+        except Exception:
+            pass
+            
+    all_chars = []
+    try:
+        world_state = world_module.load_world_state(book_folder)
+        all_chars = list(world_state.get("characters", {}).keys())
+    except Exception:
+        pass
+
+    v_failures, v_warnings = voice_module.validate_dialogue_style(text)
+    failures.extend(v_failures)
+    warnings.extend(v_warnings)
+    
+    if pov_character and all_chars:
+        pov_failures = voice_module.validate_pov_locking(text, pov_character, all_chars)
+        failures.extend(pov_failures)
+        
+    so_failures, so_warnings = voice_module.validate_sentence_openers(text)
+    failures.extend(so_failures)
+    warnings.extend(so_warnings)
 
     return passes, warnings, failures
 
