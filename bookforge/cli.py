@@ -19,6 +19,7 @@ from bookforge.core import series as series_module
 from bookforge.core import action as action_module
 from bookforge.core import persona as persona_module
 from bookforge.core import repair as repair_module
+from bookforge.core import relationship as relationship_module
 from bookforge import config
 
 
@@ -280,6 +281,22 @@ def cmd_repair(args: argparse.Namespace) -> int:
     return repair_module.run_repair_wizard(book_folder, args.chapter_slug)
 
 
+def cmd_add_relation(args: argparse.Namespace) -> int:
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+    rel = relationship_module.add_relationship(
+        book_folder=book_folder,
+        subject=args.subject,
+        relation=args.relation,
+        obj=args.object,
+        source_artifact=args.source
+    )
+    print(f"Added relationship: {rel['subject']} {rel['relation']} {rel['object']} (source: {rel['source_artifact']})")
+    return 0
+
+
 def cmd_check_persona(args: argparse.Namespace) -> int:
     book_folder = Path(args.book_folder)
     persona_name = args.persona
@@ -366,6 +383,14 @@ def main() -> int:
     parser_repair.add_argument("book_folder", help="Path to book folder")
     parser_repair.add_argument("chapter_slug", help="Slug of the chapter to repair (e.g., chapter-01)")
 
+    # add-relation
+    parser_add_rel = subparsers.add_parser("add-relation", help="Add a typed relationship between entities")
+    parser_add_rel.add_argument("book_folder", help="Path to book folder")
+    parser_add_rel.add_argument("subject", help="Subject entity (e.g. harlan)")
+    parser_add_rel.add_argument("relation", help="Relationship type (e.g. distrusts)")
+    parser_add_rel.add_argument("object", help="Object entity (e.g. darin)")
+    parser_add_rel.add_argument("--source", default="manual", help="Source of relationship fact")
+
     args = parser.parse_args()
 
     commands = {
@@ -379,6 +404,7 @@ def main() -> int:
         "init-action": cmd_init_action,
         "check-persona": cmd_check_persona,
         "repair": cmd_repair,
+        "add-relation": cmd_add_relation,
     }
 
     try:

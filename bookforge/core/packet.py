@@ -176,6 +176,21 @@ def relevant_rulebook_excerpt(book_folder: Path, slug: str, scene_breakdown_text
         opt_char_section = optimize_character_profiles(char_section, active_chars, all_chars)
         parts.append(opt_char_section)
 
+        # Inject active relationships
+        from bookforge.core import relationship as relationship_module
+        all_rels = relationship_module.load_relationships(book_folder)
+        active_rels = []
+        for rel in all_rels:
+            sub = rel.get("subject", "").lower()
+            obj = rel.get("object", "").lower()
+            if sub in active_chars and obj in active_chars:
+                active_rels.append(rel)
+        if active_rels:
+            rel_lines = ["\n### Active Character Relationships"]
+            for rel in active_rels:
+                rel_lines.append(f"- **{rel['subject']}** {rel['relation']} **{rel['object']}**")
+            parts.append("\n".join(rel_lines))
+
     chapter_section = extract_heading_section(text, slug)
     if chapter_section:
         parts.append(chapter_section)

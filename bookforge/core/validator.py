@@ -566,6 +566,11 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
     if chapter.scene_breakdown.exists() and chapter.draft.exists():
         book_folder = chapter.folder.parent.parent
         world_state = world_module.load_world_state(book_folder)
+        
+        # Load relationships
+        from bookforge.core import relationship as relationship_module
+        relationships = relationship_module.load_relationships(book_folder)
+        
         scenes = world_module.discover_scenes_from_breakdown(chapter.scene_breakdown)
         draft_text = read_text(chapter.draft)
         
@@ -590,8 +595,14 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
             scene_draft = scene_drafts.get(scene_id, draft_text)
             
             w_failures, w_warnings = world_module.validate_scene_world_state(scene, scene_draft, world_state)
+            
+            # Validate typed relationships
+            rel_failures, rel_warnings = relationship_module.validate_relationships_prose(scene, scene_draft, relationships)
+            w_failures.extend(rel_failures)
+            w_warnings.extend(rel_warnings)
+            
             if not w_failures and not w_warnings:
-                report.passes.append(f"Physical logistics validated for scene: {title}")
+                report.passes.append(f"Physical logistics & relationships validated for scene: {title}")
             else:
                 report.failures.extend([f"[{title}] {f}" for f in w_failures])
                 report.warnings.extend([f"[{title}] {w}" for w in w_warnings])

@@ -263,6 +263,14 @@ class BookForgeTUI:
                             invs.append(f"{char.capitalize()}: {items}")
                     if invs:
                         print(f"     Inventory: {'; '.join(invs)}")
+
+                    from bookforge.core import relationship as relationship_module
+                    relationships = relationship_module.load_relationships(book_folder)
+                    if relationships:
+                        rels = []
+                        for r in relationships:
+                            rels.append(f"{r['subject'].capitalize()} {r['relation']} {r['object'].capitalize()}")
+                        print(f"     Relationships: {'; '.join(rels)}")
             except Exception as e:
                 print(f"     Status: {COLOR_RED}Error loading logistics: {e}{RESET}")
 
