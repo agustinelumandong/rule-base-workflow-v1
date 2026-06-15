@@ -6,6 +6,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from bookforge.core.headroom import compress_text
+
 SOURCE_NAMES = ("phase-0.md", "phase-00.md", "outline.md", "chapter-outline.md")
 COMPRESSED_STYLE_LOCK = (
     "Literal Western prose; no AI echo words; no modern/clinical terms; "
@@ -203,6 +205,19 @@ def render_packet(book_folder: Path, slug: str) -> str:
     source_section = extract_heading_section(source_text, slug) or "MISSING: source chapter section."
     mood_lock = read_optional(book_folder / "mood-lock.md") or "MISSING: mood-lock.md"
 
+    source_sec_comp = compress_text(source_section)
+    chapter_sum_comp = compress_text(chapter_summary)
+    rulebook_excerpt = relevant_rulebook_excerpt(book_folder, slug)
+    rulebook_comp = compress_text(rulebook_excerpt)
+    mood_lock_comp = compress_text(mood_lock)
+    pacing_guidance = pacing_excerpt(book_folder, slug)
+    pacing_comp = compress_text(pacing_guidance)
+    prior_cont = prior_continuity(book_folder, slug)
+    prior_comp = compress_text(prior_cont)
+    next_cont = next_continuity_need(book_folder, slug)
+    next_comp = compress_text(next_cont)
+    scene_bd_comp = compress_text(scene_breakdown or "MISSING: scene-breakdown.md")
+
     lines = [
         f"# Context Packet: {slug}",
         "",
@@ -223,35 +238,35 @@ def render_packet(book_folder: Path, slug: str) -> str:
         "",
         "## Source Chapter Anchor",
         "",
-        word_excerpt(source_section, 700),
+        word_excerpt(source_sec_comp, 700),
         "",
         "## Chapter Summary",
         "",
-        word_excerpt(chapter_summary, 450),
+        word_excerpt(chapter_sum_comp, 450),
         "",
         "## Relevant Rulebook Facts",
         "",
-        relevant_rulebook_excerpt(book_folder, slug),
+        word_excerpt(rulebook_comp, 900),
         "",
         "## Mood And Tone Summary",
         "",
-        word_excerpt(mood_lock, 450),
+        word_excerpt(mood_lock_comp, 450),
         "",
         "## Pacing Guidance",
         "",
-        pacing_excerpt(book_folder, slug),
+        pacing_comp,
         "",
         "## Prior Continuity Out",
         "",
-        prior_continuity(book_folder, slug),
+        word_excerpt(prior_comp, 450),
         "",
         "## Next Continuity Need",
         "",
-        next_continuity_need(book_folder, slug),
+        word_excerpt(next_comp, 350),
         "",
         "## Scene Breakdown",
         "",
-        word_excerpt(scene_breakdown or "MISSING: scene-breakdown.md", 2200),
+        word_excerpt(scene_bd_comp, 2200),
         "",
         "## Agent Checkpoint",
         "",
