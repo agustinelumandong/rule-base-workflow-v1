@@ -433,6 +433,55 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
     modern_words = contains_any(text, MODERN_OR_CLINICAL_WORDS)
     if modern_words:
         warnings.append(f"Draft contains modern/clinical word(s): {', '.join(modern_words)}.")
+
+    # Dynamic historical etymology check
+    HISTORICAL_DICTIONARY = {
+        "flashlight": 1899,
+        "telephone": 1876,
+        "teletype": 1902,
+        "automobile": 1897,
+        "subway": 1897,
+        "zipper": 1893,
+        "airplane": 1903,
+        "radio": 1895,
+        "motel": 1925,
+        "cinema": 1895,
+        "computer": 1940,
+        "plastic": 1907,
+        "radar": 1935,
+        "television": 1927,
+        "camera": 1888,
+        "dynamite": 1867,
+        "barbed wire": 1874,
+        "barbed-wire": 1874,
+        "phonograph": 1877,
+        "typewriter": 1868,
+    }
+
+    # Extract book year from phase-0.md
+    book_folder = chapter.folder.parent.parent
+    phase_0_path = book_folder / "phase-0.md"
+    book_year = 1880
+    if phase_0_path.exists():
+        p0_text = phase_0_path.read_text(encoding="utf-8")
+        match = re.search(r"(?i)Period:\s*.*?(\d{4})", p0_text)
+        if match:
+            book_year = int(match.group(1))
+        else:
+            match_general = re.search(r"\b(18\d{2}|1900)\b", p0_text)
+            if match_general:
+                book_year = int(match_general.group(1))
+
+    detected_anachronisms = []
+    text_lower = text.lower()
+    for word, invention_year in HISTORICAL_DICTIONARY.items():
+        if invention_year > book_year:
+            if re.search(rf"\b{re.escape(word)}\b", text_lower):
+                detected_anachronisms.append(f"'{word}' (invented in {invention_year})")
+                
+    if detected_anachronisms:
+        warnings.append(f"Draft contains era-inconsistent word(s) for year {book_year}: {', '.join(detected_anachronisms)}.")
+
     internal_phrases = contains_any(text, INTERNAL_MONOLOGUE_PHRASES)
     if internal_phrases:
         warnings.append(f"Draft contains internal-monologue phrase(s): {', '.join(internal_phrases)}.")

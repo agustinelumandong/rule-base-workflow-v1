@@ -186,21 +186,72 @@ def validate_scene_combat(draft_path: Path, plan_path: Path) -> tuple[list[str],
     for word in shot_keywords:
         prose_shot_mentions += len(re.findall(rf"\b{re.escape(word)}\w*", draft.lower()))
 
+    WEAPON_CAPACITIES = {
+        "colt": 6,
+        "revolver": 6,
+        "six-gun": 6,
+        "winchester": 15,
+        "henry": 16,
+        "spencer": 7,
+        "remington": 6,
+        "shotgun": 2,
+        "derringer": 2,
+        "springfield": 1
+    }
+
     # Check for excessive ammunition usage relative to capacity
     for name, data in combatants.items():
+        weapon = data.get("weapon", "").lower()
         max_cap = data.get("ammo_loaded", 6)
+        for w_key, cap in WEAPON_CAPACITIES.items():
+            if w_key in weapon:
+                max_cap = cap
+                break
+
         # Calculate shots fired by this person in the plan
         shooter_shots = sum(item.get("shots_fired", 0) for item in shot_sequence if item.get("shooter") == name)
         
-        # Check if shooter fired more than capacity without reloads
+        # Check if shooter fired more than capacity without reloads in plan
         reloads_count = sum(r.get("ammo_added", 0) for r in plan.get("reloads", []) if r.get("combatant") == name)
         
         if shooter_shots > max_cap + reloads_count:
             failures.append(
-                f"Combatant '{name}' fired {shooter_shots} shots, which exceeds loaded capacity ({max_cap}) plus reloads ({reloads_count})."
+                f"Combatant '{name}' fired {shooter_shots} shots in action plan, which exceeds loaded capacity ({max_cap}) plus reloads ({reloads_count})."
             )
         else:
-            passes.append(f"Combatant '{name}' shot counts ({shooter_shots}) are within weapon capacity constraint.")
+            passes.append(f"Combatant '{name}' plan shot counts ({shooter_shots}) are within weapon capacity constraint.")
+
+        # Check actual prose shots vs capacity
+        sentences = re.split(r"[.!?]\s+", draft)
+        prose_shots = 0
+        prose_reloads = 0
+        active_subject = False
+        
+        shot_kws = ["fired", "shot", "shoot", "blasted", "discharged", "cracked", "squeezed", "let loose", "report", "bang"]
+        reload_kws = ["reload", "reloaded", "reloading", "shoved", "stuffed", "fed", "loaded"]
+        
+        # Determine all combatant names to detect subject switching
+        all_names = [n.lower() for n in combatants.keys()]
+        
+        for sent in sentences:
+            sent_lower = sent.lower()
+            if name.lower() in sent_lower:
+                active_subject = True
+            elif any(other in sent_lower for other in all_names if other != name.lower()):
+                active_subject = False
+                
+            if active_subject:
+                if any(kw in sent_lower for kw in shot_kws):
+                    prose_shots += 1
+                if any(kw in sent_lower for kw in reload_kws):
+                    prose_reloads += 1
+                    
+        if prose_shots > max_cap and prose_reloads == 0:
+            failures.append(
+                f"Prose validation: Combatant '{name}' fired ~{prose_shots} times in the prose, exceeding weapon capacity ({max_cap}) without any reload described."
+            )
+        elif prose_shots > 0:
+            passes.append(f"Prose validation: Combatant '{name}' fired {prose_shots} times (capacity {max_cap}, reloads {prose_reloads}) in the draft.")
 
     # Warn if the shot density seems mismatched
     if total_plan_shots > 0:
