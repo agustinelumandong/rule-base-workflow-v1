@@ -17,6 +17,7 @@ from bookforge.core import chain as chain_module
 from bookforge.core import analytics as analytics_module
 from bookforge.core import series as series_module
 from bookforge.core import action as action_module
+from bookforge.core import persona as persona_module
 from bookforge import config
 
 
@@ -270,6 +271,29 @@ def cmd_init_action(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_check_persona(args: argparse.Namespace) -> int:
+    book_folder = Path(args.book_folder)
+    persona_name = args.persona
+    model = args.model
+    action = args.action
+    projected_tokens = args.projected_tokens
+
+    is_allowed, reason = persona_module.check_persona_capabilities(
+        book_folder=book_folder,
+        persona_name=persona_name,
+        model=model,
+        action=action,
+        projected_input_tokens=projected_tokens
+    )
+
+    if not is_allowed:
+        print(f"REJECTED: {reason}")
+        return 1
+
+    print(f"AUTHORIZED: {reason}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="BookForge: A Production-Ready Manuscript Workflow Pipeline",
@@ -320,6 +344,14 @@ def main() -> int:
     parser_init_action.add_argument("chapter_folder", help="Path to chapter folder (e.g. books/my-book/chapters/chapter-01)")
     parser_init_action.add_argument("--scene", required=True, help="Scene ID or name (e.g. scene-2)")
 
+    # check-persona
+    parser_check_persona = subparsers.add_parser("check-persona", help="Validate an LLM call against the persona registry")
+    parser_check_persona.add_argument("book_folder", help="Path to book folder")
+    parser_check_persona.add_argument("--persona", required=True, help="Persona name (e.g., planner, writer, reviewer)")
+    parser_check_persona.add_argument("--model", required=True, help="LLM model (e.g., gpt-4o)")
+    parser_check_persona.add_argument("--action", required=True, help="Action being performed (e.g., draft)")
+    parser_check_persona.add_argument("--projected-tokens", type=int, default=0, help="Projected prompt/input tokens")
+
     args = parser.parse_args()
 
     commands = {
@@ -331,6 +363,7 @@ def main() -> int:
         "analytics": cmd_analytics,
         "log-run": cmd_log_run,
         "init-action": cmd_init_action,
+        "check-persona": cmd_check_persona,
     }
 
     try:
