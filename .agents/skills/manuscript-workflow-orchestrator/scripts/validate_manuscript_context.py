@@ -81,6 +81,27 @@ PHASE_CHAPTER_RE = re.compile(
 FIELD_RE = re.compile(r"^- \*\*(Source Anchor|Required Story Movement):\*\* (.+)$", re.MULTILINE)
 EXIT_HOOK_PREFIX_RE = re.compile(r"^Exit hook / transition required by source:\s*", re.IGNORECASE)
 
+# A4: -ing sentence opener (minimum 7 chars to exclude King, Ring, Sing, etc.)
+ING_OPENER_RE = re.compile(r"(?m)^([A-Z][a-z]{5,}ing)[\s,]")
+
+# A5: sentence splitting for pronoun-loop detection
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+PRONOUN_FIXED = frozenset({"he", "she", "they", "it"})
+PRONOUN_LOOP_MIN_RUN = 3
+
+# A6: context-lock section marker
+CONTEXT_LOCK_MARKER = "### Source Context Lock"
+CONTEXT_LOCK_END_MARKER = "###"
+
+# Continuity-out required sections (A2)
+CONTINUITY_OUT_REQUIRED_SECTIONS = [
+    "## Characters",
+    "## Locations",
+    "## Changes",
+    "## Unresolved Pressure",
+    "## Next Chapter Must Know",
+]
+
 STOPWORDS = {
     "about",
     "after",
@@ -300,6 +321,114 @@ def extract_scene_fields(scene_text: str) -> list[str]:
     return fields
 
 
+# ---------------------------------------------------------------------------
+# New helper functions: A2, A4, A5, A6
+# ---------------------------------------------------------------------------
+
+def check_ing_openers(text: str) -> list[str]:
+    """Return up to 5 samples of lines starting with an -ing verb opener (A4)."""
+    samples: list[str] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        match = re.match(r"([A-Z][a-z]{5,}ing)[\s,]", stripped)
+        if match:
+            samples.append(stripped[:100])
+            if len(samples) >= 5:
+                break
+    return samples
+
+
+def extract_proper_names(text: str, word_limit: int = 200) -> set[str]:
+    """Extract candidate proper names from the first N words of a draft (A5)."""
+    words = text.split()[:word_limit]
+    names: set[str] = set()
+    for word in words:
+        clean = re.sub(r"[^A-Za-z]", "", word)
+        if clean and clean[0].isupper() and len(clean) > 3 and clean.lower() not in STOPWORDS:
+            names.add(clean.lower())
+    return names
+
+
+def check_pronoun_loops(text: str) -> list[str]:
+    """Return descriptions of 3+ consecutive sentences starting with the same token (A5)."""
+    sentences = SENTENCE_SPLIT_RE.split(text)
+    proper_names = extract_proper_names(text)
+    watch_tokens = PRONOUN_FIXED | proper_names
+    findings: list[str] = []
+    run_token: str | None = None
+    run_count = 0
+    for sentence in sentences:
+        stripped = sentence.strip()
+        if not stripped:
+            run_token = None
+            run_count = 0
+            continue
+        first_word_match = re.match(r"([A-Za-z]+)", stripped)
+        if not first_word_match:
+            run_token = None
+            run_count = 0
+            continue
+        token = first_word_match.group(1).lower()
+        if token not in watch_tokens:
+            run_token = None
+            run_count = 0
+            continue
+        if token == run_token:
+            run_count += 1
+        else:
+            run_token = token
+            run_count = 1
+        if run_count == PRONOUN_LOOP_MIN_RUN:
+            findings.append(
+                f"{run_count}+ consecutive sentences starting with '{first_word_match.group(1)}'"
+            )
+    return findings
+
+
+def check_context_lock_unknowns(scene_text: str) -> list[str]:
+    """Return findings for UNKNOWN/TBD/TODO inside Source Context Lock blocks (A6)."""
+    findings: list[str] = []
+    in_lock = False
+    for line in scene_text.splitlines():
+        if CONTEXT_LOCK_MARKER in line:
+            in_lock = True
+            continue
+        if in_lock and line.strip().startswith(CONTEXT_LOCK_END_MARKER):
+            in_lock = False
+            continue
+        if in_lock:
+            for marker in UNRESOLVED_MARKERS:
+                if marker in line:
+                    field_match = re.match(r"\s*-\s*\*\*(.+?):\*\*", line)
+                    field_name = field_match.group(1) if field_match else "context field"
+                    findings.append(f"`{field_name}` contains `{marker}`")
+                    break
+    return findings
+
+
+def validate_continuity_out(chapter: ChapterFiles) -> tuple[list[str], list[str]]:
+    """Warn if a chapter has a non-empty draft but is missing continuity-out.md (A2)."""
+    passes: list[str] = []
+    warnings: list[str] = []
+    if not chapter.draft.exists():
+        return passes, warnings
+    draft_text = chapter.draft.read_text(encoding="utf-8")
+    if not draft_text.strip():
+        return passes, warnings
+    continuity_path = chapter.folder / "continuity-out.md"
+    if not continuity_path.exists():
+        warnings.append(
+            "`continuity-out.md` is missing. The next chapter context packet will lack reliable handoff data."
+        )
+    elif not continuity_path.read_text(encoding="utf-8").strip():
+        warnings.append("`continuity-out.md` exists but is empty.")
+    else:
+        passes.append("`continuity-out.md` present and non-empty.")
+    return passes, warnings
+
+
 def validate_required_book_files(book_folder: Path) -> tuple[list[str], list[str]]:
     passes: list[str] = []
     failures: list[str] = []
@@ -336,6 +465,14 @@ def validate_scene_breakdown(chapter: ChapterFiles) -> tuple[list[str], list[str
             )
     if not failures:
         passes.append("Scene breakdown includes required context-lock structure for every beat.")
+
+    # A6: check for UNKNOWN/TBD/TODO inside context-lock fields
+    lock_unknowns = check_context_lock_unknowns(text)
+    if lock_unknowns:
+        for finding in lock_unknowns:
+            failures.append(f"Context-lock field has unresolved marker: {finding}")
+    elif beats:
+        passes.append("No unresolved markers in context-lock fields.")
 
     return passes, failures
 
@@ -377,6 +514,20 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
     dialogue_tags = sorted(set(match.group(0).strip() for match in DIALOGUE_TAG_RE.finditer(text)))
     if dialogue_tags:
         warnings.append(f"Draft may contain unwanted dialogue tag(s): {', '.join(dialogue_tags)}.")
+
+    # A4: -ing sentence openers
+    ing_samples = check_ing_openers(text)
+    if ing_samples:
+        warnings.append(
+            f"Draft contains -ing sentence opener(s): {' | '.join(ing_samples[:3])}"
+        )
+
+    # A5: pronoun/name sentence loops
+    pronoun_loops = check_pronoun_loops(text)
+    if pronoun_loops:
+        warnings.append(
+            f"Draft contains pronoun/name sentence loop(s): {'; '.join(pronoun_loops)}"
+        )
 
     return passes, warnings, failures
 
@@ -454,6 +605,11 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
     report.passes.extend(source_passes)
     report.warnings.extend(source_warnings)
     report.failures.extend(source_failures)
+
+    # A2: continuity-out.md check
+    continuity_passes, continuity_warnings = validate_continuity_out(chapter)
+    report.passes.extend(continuity_passes)
+    report.warnings.extend(continuity_warnings)
 
     return report
 

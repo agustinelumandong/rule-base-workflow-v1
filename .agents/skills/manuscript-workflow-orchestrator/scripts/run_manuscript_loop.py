@@ -19,6 +19,10 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import check_manuscript_length as length_checker  # noqa: E402
 import validate_manuscript_context as context_validator  # noqa: E402
+import json
+from datetime import datetime
+import check_continuity_chain
+import check_chapter_rhythm
 
 
 STYLE_TERMS = (
@@ -186,6 +190,8 @@ def choose_expansion_chapter(
 def mode_for_status(status: str) -> str:
     if status == "NEEDS_CONTEXT_REPAIR":
         return "repair"
+    if status == "NEEDS_CONTINUITY_REPAIR":
+        return "repair"
     if status == "NEEDS_STYLE_REPAIR":
         return "style"
     if status == "NEEDS_EXPANSION":
@@ -195,9 +201,20 @@ def mode_for_status(status: str) -> str:
     return "blocked"
 
 
-def action_chapter(status: str, context_problem_chapters: list[str], expansion_chapter: str, style_issues: list[StyleIssue]) -> str | None:
+def action_chapter(
+    status: str,
+    context_problem_chapters: list[str],
+    expansion_chapter: str,
+    style_issues: list[StyleIssue],
+    continuity_failures: list[str],
+) -> str | None:
     if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
         return context_problem_chapters[0]
+    if status == "NEEDS_CONTINUITY_REPAIR" and continuity_failures:
+        # Extract chapter slug from first failure, e.g., "chapter-01" from "chapter-01 is missing continuity-out.md"
+        match = re.match(r"(chapter-\d+|epilogue)", continuity_failures[0])
+        if match:
+            return match.group(1)
     if status == "NEEDS_EXPANSION" and expansion_chapter != "NONE":
         return expansion_chapter
     if status == "NEEDS_STYLE_REPAIR" and style_issues:
@@ -214,6 +231,7 @@ def classify(
     style_issues: list[StyleIssue],
     repair_attempts: dict[str, int],
     max_repair_attempts: int,
+    continuity_failures: list[str],
 ) -> tuple[str, str]:
     problem_chapters = issue_chapters(reports)
     repeated_blockers = [
@@ -225,6 +243,8 @@ def classify(
         return "BLOCKED", f"Repair attempt limit reached for: {', '.join(repeated_blockers)}."
     if any(report.failures or report.warnings for report in reports):
         return "NEEDS_CONTEXT_REPAIR", "Context validator reported chapter failures or warnings."
+    if continuity_failures:
+        return "NEEDS_CONTINUITY_REPAIR", f"Continuity chain check failed: {continuity_failures[0]}."
     if style_issues:
         return "NEEDS_STYLE_REPAIR", "Style-risk scan found flagged draft lines."
     if length_state.total_words < length_state.target_min:
@@ -243,12 +263,19 @@ def render_report(
     style_issues: list[StyleIssue],
     status: str,
     reason: str,
+    continuity_failures: list[str],
 ) -> str:
     context_status = context_validator.overall_status(book_failures, reports)
     expansion_chapter = choose_expansion_chapter(reports, length_state.counts)
     context_problem_chapters = issue_chapters(reports)
     prompt_mode = mode_for_status(status)
-    next_chapter = action_chapter(status, context_problem_chapters, expansion_chapter, style_issues)
+    next_chapter = action_chapter(
+        status,
+        context_problem_chapters,
+        expansion_chapter,
+        style_issues,
+        continuity_failures,
+    )
     packet_command = (
         f"python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py {book_folder} --chapter {next_chapter}"
         if next_chapter
@@ -269,6 +296,11 @@ def render_report(
             f"Repair context issues in `{context_problem_chapters[0]}` before length or style work."
             if context_problem_chapters
             else "Repair context issues reported by the validator before length or style work."
+        )
+    elif status == "NEEDS_CONTINUITY_REPAIR":
+        decision = "CONTINUE"
+        next_action = (
+            f"Write or repair the missing/invalid `continuity-out.md` for `{next_chapter}`."
         )
     elif status == "NEEDS_STYLE_REPAIR":
         decision = "CONTINUE"
@@ -331,6 +363,16 @@ def render_report(
         for warning in report.warnings:
             lines.append(f"- WARN `{report.chapter.slug}`: {warning}")
 
+    # Advisory Rhythm Check (C1)
+    try:
+        rhythm_report = check_chapter_rhythm.analyze(book_folder)
+        if rhythm_report.issues:
+            lines.extend(["", "## Advisory Rhythm Note", ""])
+            for issue in rhythm_report.issues:
+                lines.append(f"- {issue.message}")
+    except Exception:
+        pass
+
     lines.extend(["", "## Style State", ""])
     if style_issues:
         lines.append(f"- **Style Status:** WARN")
@@ -379,6 +421,30 @@ def render_blocked_report(book_folder: Path, reason: str) -> str:
     )
 
 
+def load_persistent_repairs(book_folder: Path) -> dict[str, int]:
+    state_file = book_folder / "loop-state.json"
+    if not state_file.exists():
+        return {}
+    try:
+        data = json.loads(state_file.read_text(encoding="utf-8"))
+        return data.get("repair_attempts", {})
+    except Exception:
+        return {}
+
+
+def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], status: str) -> None:
+    state_file = book_folder / "loop-state.json"
+    data = {
+        "repair_attempts": repair_attempts,
+        "last_run": datetime.utcnow().isoformat() + "Z",
+        "last_status": status
+    }
+    try:
+        state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
 def main() -> int:
     args = parse_args()
     book_folder = Path(args.book_folder)
@@ -386,11 +452,37 @@ def main() -> int:
         print(render_blocked_report(book_folder, "Book folder not found."))
         return 2
 
+    # Load persistent state
+    persistent_attempts = load_persistent_repairs(book_folder)
+
+    # Parse CLI override attempts
     try:
-        repair_attempts = parse_repair_attempts(args.repair_attempt)
+        cli_attempts = parse_repair_attempts(args.repair_attempt)
+    except RuntimeError as error:
+        print(render_blocked_report(book_folder, str(error)))
+        return 2
+
+    # Merge: CLI arguments override persistent state
+    repair_attempts = {**persistent_attempts, **cli_attempts}
+
+    try:
         length_state = build_length_state(book_folder, args.target_min, args.target_max)
         book_passes, book_failures, reports = build_context_reports(book_folder)
         style_issues = scan_style_issues(book_folder)
+
+        # check continuity-out files
+        continuity_failures: list[str] = []
+        chapters = context_validator.discover_chapters(book_folder)
+        for chapter in chapters:
+            if chapter.draft.exists() and chapter.draft.read_text(encoding="utf-8").strip():
+                continuity_path = chapter.folder / "continuity-out.md"
+                if not continuity_path.exists():
+                    continuity_failures.append(f"{chapter.slug} is missing continuity-out.md")
+                else:
+                    errors = check_continuity_chain.check_continuity_out_content(continuity_path)
+                    if errors:
+                        continuity_failures.append(f"{chapter.slug} has invalid continuity-out.md: {', '.join(errors)}")
+
         status, reason = classify(
             length_state,
             book_failures,
@@ -398,12 +490,28 @@ def main() -> int:
             style_issues,
             repair_attempts,
             args.max_repair_attempts,
+            continuity_failures,
         )
+
+        # Update repair attempts in memory and save
+        context_problem_chapters = issue_chapters(reports)
+        if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
+            current_repairing = context_problem_chapters[0]
+            repair_attempts[current_repairing] = repair_attempts.get(current_repairing, 0) + 1
+        
+        # Reset any chapter that is clean/passes validation
+        for report in reports:
+            slug = report.chapter.slug
+            if not report.failures and not report.warnings and slug in repair_attempts:
+                repair_attempts[slug] = 0
+
+        save_persistent_repairs(book_folder, repair_attempts, status)
+
     except RuntimeError as error:
         print(render_blocked_report(book_folder, str(error)))
         return 2
 
-    print(render_report(book_folder, length_state, book_passes, book_failures, reports, style_issues, status, reason))
+    print(render_report(book_folder, length_state, book_passes, book_failures, reports, style_issues, status, reason, continuity_failures))
     return 2 if status == "BLOCKED" else 0
 
 

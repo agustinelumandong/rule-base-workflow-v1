@@ -44,6 +44,7 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Load [references/prompt-modes.md](references/prompt-modes.md) when choosing between planning, drafting, repair, style, validation, expansion, or final review work.
 - Load [references/token-budget.md](references/token-budget.md) when the task risks loading the full manuscript, full rulebook, or unrelated chapter files.
 - Load [references/pacing-ranges.md](references/pacing-ranges.md) when the user asks for uneven chapter rhythm, reference-guided pacing, elastic beat ranges, or help deciding which chapters deserve longer treatment.
+- Load [references/continuity-out-template.md](references/continuity-out-template.md) when writing or reviewing `continuity-out.md` files after chapter drafting.
 
 ## Operating Rules
 
@@ -77,3 +78,10 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Use `.agents/skills/western-manuscript-style/` whenever drafting or revising Western prose.
 - Use `.agents/skills/humanizer/` after style/continuity passes when the draft sounds generic, padded, promotional, overexplained, or AI-written.
 - Humanizer cleanup must preserve plot, continuity, POV, Western tone, and source facts; it is a polish pass, not a rewrite license.
+- After drafting or expanding a chapter, write `continuity-out.md` using the required template in [references/continuity-out-template.md](references/continuity-out-template.md).
+- For a fast style scan (with line numbers), run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_banned_words.py books/<book-slug>`
+- For a continuity chain check, run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_continuity_chain.py books/<book-slug>`
+- For a chapter gap check (source vs folders), run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_gaps.py books/<book-slug>`
