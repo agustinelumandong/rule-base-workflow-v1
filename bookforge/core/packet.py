@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from bookforge.core.headroom import compress_text
+from bookforge.core import world as world_module
 
 SOURCE_NAMES = ("phase-0.md", "phase-00.md", "outline.md", "chapter-outline.md")
 COMPRESSED_STYLE_LOCK = (
@@ -115,7 +116,38 @@ def chapter_draft_path(folder: Path, slug: str) -> Path:
     return folder / f"{slug}.md"
 
 
-def relevant_rulebook_excerpt(book_folder: Path, slug: str) -> str:
+def optimize_character_profiles(rulebook_text: str, active_characters: list[str], all_characters: list[str]) -> str:
+    """Removes details for characters that are not active in this chapter's breakdown."""
+    inactive_characters = [c for c in all_characters if c not in active_characters]
+    optimized_text = rulebook_text
+    for char in inactive_characters:
+        # Match ### CharName or ## CharName headings
+        pattern = re.compile(
+            r"^(#{2,4})\s+(" + re.escape(char) + r"|character:\s*" + re.escape(char) + r")\s*$",
+            re.MULTILINE | re.IGNORECASE
+        )
+        headings = list(pattern.finditer(optimized_text))
+        for h in reversed(headings):
+            level = len(h.group(1))
+            title = h.group(2)
+            # Find next heading with same or higher level
+            next_heading_pattern = re.compile(
+                r"^(#{1," + str(level) + r"})\s+(.+?)\s*$",
+                re.MULTILINE
+            )
+            next_headings = list(next_heading_pattern.finditer(optimized_text[h.start() + 1:]))
+            end = len(optimized_text)
+            if next_headings:
+                end = h.start() + 1 + next_headings[0].start()
+            optimized_text = (
+                optimized_text[:h.start()]
+                + f"\n[Profile for inactive character '{title}' excluded to optimize context budget]\n"
+                + optimized_text[end:]
+            )
+    return optimized_text
+
+
+def relevant_rulebook_excerpt(book_folder: Path, slug: str, scene_breakdown_text: str = "") -> str:
     text = read_optional(book_folder / "rulebook.md")
     if not text:
         return "MISSING: rulebook.md"
@@ -124,6 +156,26 @@ def relevant_rulebook_excerpt(book_folder: Path, slug: str) -> str:
         section = extract_named_section(text, label)
         if section:
             parts.append(section)
+            
+    # Optimize Character Profiles using world-state
+    char_section = extract_named_section(text, "Characters") or extract_named_section(text, "Dramatis Personae")
+    if char_section:
+        world_state = world_module.load_world_state(book_folder)
+        all_chars = list(world_state.get("characters", {}).keys())
+        
+        # Scan scene breakdown for active character mentions
+        active_chars = []
+        for char in all_chars:
+            if re.search(rf"\b{re.escape(char)}\b", scene_breakdown_text, re.IGNORECASE):
+                active_chars.append(char)
+                
+        # If no active characters were parsed (e.g. empty breakdown), fallback to all
+        if not active_chars:
+            active_chars = all_chars
+            
+        opt_char_section = optimize_character_profiles(char_section, active_chars, all_chars)
+        parts.append(opt_char_section)
+
     chapter_section = extract_heading_section(text, slug)
     if chapter_section:
         parts.append(chapter_section)
@@ -247,7 +299,7 @@ def render_packet(book_folder: Path, slug: str) -> str:
 
     source_sec_comp = compress_text(source_section)
     chapter_sum_comp = compress_text(chapter_summary)
-    rulebook_excerpt = relevant_rulebook_excerpt(book_folder, slug)
+    rulebook_excerpt = relevant_rulebook_excerpt(book_folder, slug, scene_breakdown)
     rulebook_comp = compress_text(rulebook_excerpt)
     mood_lock_comp = compress_text(mood_lock)
     pacing_guidance = pacing_excerpt(book_folder, slug)
