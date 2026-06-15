@@ -26,7 +26,10 @@ Do not invent continuity facts when source material is missing. Mark assumptions
 4. For drafting, write scene by scene instead of generating whole chapters at once.
 5. Avoid fixed numeric length targets unless the user explicitly asks for them.
 6. Lock each scene to the requested POV. Avoid head-hopping or switching perspectives mid-scene.
-7. After drafting, check continuity for names, timeline, setting, character facts, injuries, weapons, horses, geography, and prior events.
+7. After drafting and before finalizing, verify the three mandatory checks:
+   - **Hallucinations:** Check for unauthorized backstory, character lore, or motives not in the outline/bible.
+   - **Plot Consistency:** Check consistent names, roles, and locations. Verify no modern concepts, clinical words, or slang are used.
+   - **Temporal Logic:** Check realistic travel durations, time of day tracking, and a believable recovery timeline for injuries.
 8. Run a dialogue/voice pass when characters speak. Keep each character's diction distinct and consistent with their role.
 9. For final polish, make targeted edits. Do not regenerate broad passages unless the user asks for a rewrite.
 
@@ -42,4 +45,5 @@ Do not invent continuity facts when source material is missing. Mark assumptions
 - Lock POV per scene.
 - Keep dialogue short and direct.
 - Avoid generic AI filler, modern vocabulary drift, and overexplained psychology.
+- Avoid plots involving syndicates, water rights, land grabs, property disputes, and shady business schemes. Focus on classic Western adventure themes (manhunts, outlaws, robberies, betrayals, trail survival).
 - Preserve the user's plot intent and established tone.

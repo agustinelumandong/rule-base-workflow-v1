@@ -72,3 +72,26 @@ Avoid Texas slang unless the user specifically requests it.
 - Avoid fleeing or begging survivors unless the user explicitly asks for that beat.
 - Avoid formulaic aftermaths.
 - Track weapons, wounds, positions, and who can see what.
+
+## Narrative Conflict Restrictions & Variety
+
+- Do not write plots or conflicts around syndicates, water rights fights, land grabs, property disputes, organized corruption, business conspiracies, or shady business schemes.
+- Prioritize classic Western adventure themes and situations, such as:
+  - Gunfighters drifting into town
+  - Marshals getting gunned down by murderers
+  - Outlaws threatening a town
+  - Bounty hunters tracking dangerous fugitives
+  - Revenge plots
+  - Rescue missions
+  - Manhunts
+  - Stagecoach or train robberies
+  - Family feuds
+  - Missing person cases
+  - Strangers with violent pasts
+  - Killers hiding in plain sight
+  - Escaped convicts
+  - Cattle rustlers
+  - Border trouble
+  - Personal betrayal
+  - Survival on the trail
+

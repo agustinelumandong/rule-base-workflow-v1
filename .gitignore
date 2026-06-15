@@ -1,11 +1,32 @@
+# Local manuscript references
 /references/
-.vscode
+
+# IDE configurations
+.vscode/
 *.code-workspace
-__pycache__
-docs
-tests
+
+# Python cache & testing
+__pycache__/
+.pytest_cache/
+tests/
+
+# Documentation & drafts
+docs/
+
+# Explicit tracking overrides
 !bookforge/genre_packs/western/
 !.agents/skills/
-tests/*.py
+
+# Build & package distribution
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Logs & temp files
 *.log
 *.tmp

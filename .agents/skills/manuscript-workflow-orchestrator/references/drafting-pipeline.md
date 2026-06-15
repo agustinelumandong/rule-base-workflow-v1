@@ -15,6 +15,10 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 ## Phase 2: Structural Review And Continuity
 
 - Build `chapters/chapter-XX/scene-breakdown.md`.
+- Verify the three mandatory workflow checks:
+  1. **Hallucinations:** No unauthorized backstory, character lore, or motives not in the outline/bible.
+  2. **Plot Consistency:** Names, roles, and locations are consistent. Avoid modern terminology.
+  3. **Temporal Logic:** Travel duration is realistic, time of day is tracked logically, and injury recovery timeline is believable.
 - Check names, locations, weapons, injuries, horses, timeline, and character knowledge.
 - Add transition notes between scenes.
 - Run a pre-draft beat verification pass before any scene prose is drafted.
@@ -34,7 +38,11 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 - After drafting or expanding a chapter, run the context validator before treating the chapter as approved.
 - After drafting or expanding a chapter, run the length checker to measure book-level progress without turning the result into a scene target.
 - Lock each scene to the selected POV.
-- Run a post-beat context check before drafting each scene. Confirm the scene follows the approved beat and does not add unsupported characters, locations, motives, or backstory.
+- Run a post-beat context check before drafting each scene. Confirm the scene follows the approved beat and does not add unsupported characters, locations, motives, or backstory. Verify:
+  1. **Hallucinations:** The scene does not add unauthorized lore, backstory, or motives not in the outline/bible.
+  2. **Plot Consistency:** Consistent character names, roles, and locations. No modern terminology.
+  3. **Temporal Logic:** Travel duration, time of day, and chronological sequence of events (e.g. injury recovery) are realistic.
+  4. **Conflict Variety:** No syndicates, land grabs, water rights fights, or shady business schemes. Focuses on classic Western adventures.
 - Use `.agents/skills/western-manuscript-style/` for Western prose, dialogue, action, and revision rules.
 - After each scene, run targeted checks for continuity, dialogue voice, POV drift, and style drift.
 - Use `.agents/skills/humanizer/` only after the Western style pass if the scene still sounds generic, padded, promotional, overstructured, or AI-written.

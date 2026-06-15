@@ -46,6 +46,17 @@ MODERN_OR_CLINICAL_WORDS = [
 
 INTERNAL_MONOLOGUE_PHRASES = ["he felt", "he realized", "he thought", "she felt", "she realized", "she thought"]
 
+FORBIDDEN_CONFLICT_PATTERNS = {
+    "water rights": r"\bwater\s+rights?\b",
+    "syndicate": r"\bsyndicates?\b",
+    "land grab": r"\bland\s*grabs?\b",
+    "business scheme": r"\bbusiness\s+schemes?\b",
+    "organized corruption": r"\borganized\s+corruption\b",
+    "property dispute": r"\bproperty\s+disputes?\b",
+    "business conspiracy": r"\bbusiness\s+conspirac(?:y|ies)\b",
+    "syndicate-style": r"\bsyndicate-style\b",
+}
+
 DIALOGUE_TAG_RE = re.compile(
     r'"[^"]*"\s*(?:—\s*)?(?:[A-Z][A-Za-z\'-]*\s+)?'
     r"(said|asked|shouted|whispered|cried|replied|exclaimed|called|muttered|grumbled|demanded)\b"
@@ -369,6 +380,15 @@ def forbidden_length_language(text: str) -> list[str]:
     return findings
 
 
+def check_forbidden_conflicts(text: str) -> list[str]:
+    findings: list[str] = []
+    text_lower = text.lower()
+    for label, pattern in FORBIDDEN_CONFLICT_PATTERNS.items():
+        if re.search(pattern, text_lower):
+            findings.append(f"Forbidden conflict theme/term '{label}' found in draft.")
+    return findings
+
+
 def check_unprofiled_period_terms(text: str, book_folder: Path) -> list[str]:
     warnings: list[str] = []
     research_file = book_folder / "research-pack.md"
@@ -502,6 +522,9 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
     unresolved = contains_any(text, UNRESOLVED_MARKERS, case_sensitive=True)
     if unresolved:
         failures.append(f"Draft contains unresolved marker(s): {', '.join(unresolved)}.")
+    forbidden_conflicts = check_forbidden_conflicts(text)
+    if forbidden_conflicts:
+        failures.extend(forbidden_conflicts)
     echo_words = contains_any(text, BANNED_AI_ECHO_WORDS)
     if echo_words:
         warnings.append(f"Draft contains banned AI echo word(s): {', '.join(echo_words)}.")

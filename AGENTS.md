@@ -11,11 +11,36 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Draft scene by scene instead of generating an entire chapter at once.
 - Do not use fixed numeric length targets for individual scenes during drafting; let the scene reach its natural length.
 - Keep each scene locked to the requested POV. Avoid head-hopping or switching perspectives mid-scene.
-- After drafting, run a continuity pass for names, timeline, setting, character facts, injuries, weapons, and prior events.
+- Before drafting and before finalizing each chapter, run these three mandatory workflow checks:
+  1. **Hallucinations:** Verify that the prose contains no unauthorized facts, backstories, motives, or relationships not explicitly present in the outline/bible.
+  2. **Plot Consistency:** Verify character names, roles, and locations remain consistent. Ensure all modern terms, concepts, and clinical language are strictly avoided.
+  3. **Temporal Logic:** Verify travel times are realistic, time of day and sequence of events are tracked logically, and recovery timelines for injuries are believable.
 - Run a dialogue and voice pass so each character keeps a distinct voice, dialect, and manner of speaking.
 - When compiling scenes, preserve all intended story content and make transitions smooth.
 - When revising, preserve the established tone and style. Do not flatten the prose with generic cleanup.
 - For final polish, prefer targeted/manual edits over full regeneration unless the user explicitly asks for a rewrite.
+
+## Western Conflict & Narrative Variety
+
+- Do not use plots centered around land grabs, water rights fights, syndicate-style villains, organized corruption, property disputes, business conspiracies, or shady business/corporate schemes.
+- Prioritize classic Western adventure themes and situations, such as:
+  - Gunfighters drifting into town
+  - Marshals getting gunned down by murderers
+  - Outlaws threatening a town
+  - Bounty hunters tracking dangerous fugitives
+  - Revenge plots
+  - Rescue missions
+  - Manhunts
+  - Stagecoach or train robberies
+  - Family feuds
+  - Missing person cases
+  - Strangers with violent pasts
+  - Killers hiding in plain sight
+  - Escaped convicts
+  - Cattle rustlers
+  - Border trouble
+  - Personal betrayal
+  - Survival on the trail
 
 ## Western Prose Style Lock
 

@@ -23,6 +23,10 @@ Answer these questions:
 6. Does the Western style lock hold?
 7. Does the expansion deepen approved material instead of padding?
 8. Are all period-specific details (weapons, transport, medical remedies, technology) historically accurate and grounded in the research facts? If any detail is missing, unverified, or incorrect, flag it as `[RESEARCH NEEDED]` in the Failures section.
+9. **Conflict Variety Check:** Does the chapter avoid syndicates, water rights fights, land grabs, property disputes, and shady business schemes or conspiracies? Does it focus on classic Western adventures (e.g. outlaws, manhunts, robberies, betrayals, trail survival, border trouble)?
+10. **Hallucination Check:** Does the chapter introduce any unauthorized character history, lore, or backstory not present in the outline/bible?
+11. **Plot and Character Consistency Check:** Are character names, roles, and locations consistent? Are all modern concepts, vocabulary, and slang avoided?
+12. **Temporal Logic Check:** Is the travel duration realistic? Is the time of day and chronological order of events clear? Is there a believable timeline for injury recovery, arrivals, and confrontations?
 
 ## Output Format
 
