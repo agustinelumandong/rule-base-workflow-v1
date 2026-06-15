@@ -12,6 +12,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from bookforge.core.prompts import load_prompt_template
+
 REQUIRED_BOOK_FILES = ["phase-0.md", "rulebook.md", "mood-lock.md", "chapter-summaries.md"]
 BEAT_REQUIRED_MARKERS = ["### Source Context Lock", "### Beat Instructions"]
 
@@ -282,6 +284,29 @@ def check_pronoun_loops(text: str) -> list[str]:
     return findings
 
 
+def check_em_dash_anchors(text: str) -> list[str]:
+    warnings: list[str] = []
+    # Find any quotes followed by dashes, e.g. "— or " - or " --
+    for line_num, line in enumerate(text.splitlines(), 1):
+        if '"' in line:
+            # Check for em-dashes next to quotes without proper spacing
+            if '"—' in line:
+                warnings.append(f"Line {line_num}: Missing space before em-dash: `\"—`")
+            if '—"' in line:
+                warnings.append(f"Line {line_num}: Missing space after em-dash: `—\"`")
+            # Check for double/triple hyphens: -- or ---
+            if '--' in line:
+                warnings.append(f"Line {line_num}: Use em-dash `—` instead of double-hyphen `--`")
+            # Check for incorrect spacing around em-dash anchor
+            # A correct anchor pattern is `." — ` or `," — ` or `?" — ` or `!" — `
+            for match in re.finditer(r'"\s*(—)\s*([a-zA-Z])', line):
+                full_match = match.group(0)
+                # Check if the match is exactly '" — X' (single space before and after em-dash)
+                if not re.match(r'^"\s—\s[a-zA-Z]', full_match):
+                    warnings.append(f"Line {line_num}: Incorrect em-dash anchor spacing: `{full_match}` (should be `\" — X`)")
+    return warnings
+
+
 def check_context_lock_unknowns(scene_text: str) -> list[str]:
     findings: list[str] = []
     in_lock = False
@@ -402,6 +427,10 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
     pronoun_loops = check_pronoun_loops(text)
     if pronoun_loops:
         warnings.append(f"Draft contains pronoun/name sentence loop(s): {'; '.join(pronoun_loops)}")
+
+    em_dash_warnings = check_em_dash_anchors(text)
+    if em_dash_warnings:
+        warnings.extend(em_dash_warnings)
 
     return passes, warnings, failures
 
@@ -534,56 +563,16 @@ def build_ai_prompt(book_folder: Path, chapter: ChapterFiles) -> str:
         if not path.exists():
             raise RuntimeError(f"Cannot build AI prompt; missing `{path}`.")
 
-    return f"""# AI Chapter Context Review Prompt
-
-Use Codex / ChatGPT 5.5 as the primary reviewer. Gemini is optional secondary review only.
-
-Review `{chapter.draft}` against these sources:
-
-- `{book_folder / "phase-0.md"}`
-- `{book_folder / "rulebook.md"}`
-- `{book_folder / "mood-lock.md"}`
-- `{book_folder / "chapter-summaries.md"}`
-- `{chapter.scene_breakdown}`
-
-## Required Review
-
-Answer these questions:
-
-1. Does the chapter cover every approved beat in the scene breakdown?
-2. Does any scene skip required story movement?
-3. Does the chapter invent unsupported names, locations, motives, lore, backstory, or plot bridges?
-4. Does continuity in/out match the prior and next chapter requirements?
-5. Does POV stay controlled and avoid head-hopping?
-6. Does the Western style lock hold?
-7. Does the expansion deepen approved material instead of padding?
-
-## Output Format
-
-Return a Markdown report with exactly these sections:
-
-```md
-# {chapter.label} Context Review
-
-## Passes
-
-- [List source-locked items that pass.]
-
-## Warnings
-
-- [List concerns that do not block drafting.]
-
-## Failures
-
-- [List source drift, skipped beats, unsupported invention, or style violations that must be fixed.]
-
-## Required Fixes
-
-- [List concrete edits needed before continuing.]
-```
-
-If a fact is missing from source, mark it `UNKNOWN`; do not invent it.
-"""
+    template = load_prompt_template("validation/ai_review_prompt.md")
+    return template.format(
+        chapter_draft=chapter.draft,
+        phase_0=book_folder / "phase-0.md",
+        rulebook=book_folder / "rulebook.md",
+        mood_lock=book_folder / "mood-lock.md",
+        chapter_summaries=book_folder / "chapter-summaries.md",
+        scene_breakdown=chapter.scene_breakdown,
+        chapter_label=chapter.label,
+    )
 
 
 def main() -> int:

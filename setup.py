@@ -11,5 +11,8 @@ setup(
             "bf=bookforge.cli:main",  # Also support short alias 'bf'
         ],
     },
+    package_data={
+        "bookforge": ["prompts/**/*.md"],
+    },
     python_requires=">=3.8",
 )
