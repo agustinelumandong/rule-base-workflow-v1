@@ -111,7 +111,14 @@ def validate_sentence_openers(draft_text: str) -> tuple[list[str], list[str]]:
         if first_word_match:
             word = first_word_match.group(0)
             # Filter out common non-gerund starters like "During"
-            if word.lower() not in ["during", "bring", "ring", "sing", "thing", "spring"]:
+            exclusions = {
+                "during", "bring", "ring", "sing", "thing", "spring",
+                "morning", "evening", "nothing", "something", "everything", "anything",
+                "king", "wing", "sling", "string", "cling", "fling", "sting", "swing", "wring",
+                "lightning", "awning", "ceiling", "lining", "sterling", "cunning", "darling",
+                "sibling", "sapling", "farthing", "inkling", "shilling", "herring", "pudding"
+            }
+            if word.lower() not in exclusions:
                 failures.append(
                     f"Sentence Opener Failure: Discouraged '-ing' word opener in: '{sentence[:50]}...'"
                 )

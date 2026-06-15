@@ -73,7 +73,13 @@ FIELD_RE = re.compile(r"^- \*\*(Source Anchor|Required Story Movement):\*\* (.+)
 EXIT_HOOK_PREFIX_RE = re.compile(r"^Exit hook / transition required by source:\s*", re.IGNORECASE)
 
 ING_OPENER_RE = re.compile(r"(?m)^([A-Z][A-Za-z]{2,}ing)\b[\s,]")
-ING_OPENER_EXCLUSIONS = {"during", "bring", "ring", "sing", "thing", "spring"}
+ING_OPENER_EXCLUSIONS = {
+    "during", "bring", "ring", "sing", "thing", "spring",
+    "morning", "evening", "nothing", "something", "everything", "anything",
+    "king", "wing", "sling", "string", "cling", "fling", "sting", "swing", "wring",
+    "lightning", "awning", "ceiling", "lining", "sterling", "cunning", "darling",
+    "sibling", "sapling", "farthing", "inkling", "shilling", "herring", "pudding"
+}
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
 PRONOUN_FIXED = frozenset({"he", "she", "they", "it"})
 PRONOUN_LOOP_MIN_RUN = 3

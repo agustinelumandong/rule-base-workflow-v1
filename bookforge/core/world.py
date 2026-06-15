@@ -282,7 +282,7 @@ def validate_scene_world_state(
         
         # Check weapon usage in draft
         # e.g., if draft mentions "Darin shot" or "Darin raised his Colt", does Darin have a colt or revolver?
-        char_pattern = re.compile(rf"\b{re.escape(char_name)}\b.*?\b(shot|fired|pulled|raised|drew)\b.*?\b(colt|winchester|rifle|pistol|revolver|pocket_watch|watch|key|map)\b", re.IGNORECASE | re.DOTALL)
+        char_pattern = re.compile(rf"\b{re.escape(char_name)}\b.*?\b(shot|fired|pulled|raised|drew)\b.*?\b(colt|winchester|rifle|pistol|revolver|pocket_watch|watch|key|map)\b", re.IGNORECASE)
         
         for match in char_pattern.finditer(draft_text):
             used_keyword = match.group(2).lower()
