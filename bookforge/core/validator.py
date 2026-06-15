@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bookforge.core.prompts import load_prompt_template
+from bookforge.core import action
 
 REQUIRED_BOOK_FILES = ["phase-0.md", "rulebook.md", "mood-lock.md", "chapter-summaries.md"]
 BEAT_REQUIRED_MARKERS = ["### Source Context Lock", "### Beat Instructions"]
@@ -515,17 +516,38 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
         report.failures.append(f"Missing or empty `{chapter.drafting_plan}`.")
     else:
         report.passes.append("Drafting plan exists.")
+    
     scene_passes, scene_failures = validate_scene_breakdown(chapter)
     report.passes.extend(scene_passes)
     report.failures.extend(scene_failures)
+
+    # Validate action plans if there are any combat scenes defined
+    if chapter.scene_breakdown.exists():
+        combat_scenes = action.discover_combat_scenes(chapter.scene_breakdown)
+        for c_scene in combat_scenes:
+            scene_id = c_scene["id"]
+            title = c_scene["title"]
+            plan_path = action.get_action_plan_path(chapter.folder, scene_id)
+            if not plan_path.exists():
+                report.failures.append(f"Combat scene '{title}' is defined, but missing action plan: `{plan_path.name}`.")
+            else:
+                report.passes.append(f"Found combat plan for scene: {title}")
+                if chapter.draft.exists():
+                    c_passes, c_warnings, c_failures = action.validate_scene_combat(chapter.draft, plan_path)
+                    report.passes.extend([f"[{title}] {p}" for p in c_passes])
+                    report.warnings.extend([f"[{title}] {w}" for w in c_warnings])
+                    report.failures.extend([f"[{title}] {f}" for f in c_failures])
+
     draft_passes, draft_warnings, draft_failures = validate_draft(chapter)
     report.passes.extend(draft_passes)
     report.warnings.extend(draft_warnings)
     report.failures.extend(draft_failures)
+    
     source_passes, source_warnings, source_failures = validate_source_alignment(chapter, phase_sections)
     report.passes.extend(source_passes)
     report.warnings.extend(source_warnings)
     report.failures.extend(source_failures)
+    
     continuity_passes, continuity_warnings = validate_continuity_out(chapter)
     report.passes.extend(continuity_passes)
     report.warnings.extend(continuity_warnings)

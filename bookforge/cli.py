@@ -16,6 +16,7 @@ from bookforge.core import rhythm as rhythm_module
 from bookforge.core import chain as chain_module
 from bookforge.core import analytics as analytics_module
 from bookforge.core import series as series_module
+from bookforge.core import action as action_module
 from bookforge import config
 
 
@@ -250,6 +251,25 @@ def cmd_tui(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_init_action(args: argparse.Namespace) -> int:
+    import re
+    chapter_folder = Path(args.chapter_folder)
+    scene_id = args.scene
+    
+    # Extract scene_id clean name
+    match = re.search(r"(?i)scene[-_ ]*(\d+|\w+)", scene_id)
+    if match:
+        clean_scene_id = f"scene-{match.group(1).lower()}"
+    else:
+        clean_scene_id = "scene-" + re.sub(r"[^a-z0-9]+", "-", scene_id.lower()).strip("-")
+    
+    clean_scene_id = clean_scene_id.replace("-combat", "")
+
+    plan_path = action_module.init_action_plan(chapter_folder, clean_scene_id)
+    print(f"Initialized template action plan for scene '{scene_id}' in: {plan_path}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="BookForge: A Production-Ready Manuscript Workflow Pipeline",
@@ -295,6 +315,11 @@ def main() -> int:
     parser_log.add_argument("--output-tokens", type=int, required=True, help="Number of completion/output tokens")
     parser_log.add_argument("--action", default="orchestration", help="Action performed (e.g., validate, draft, repair)")
 
+    # init-action
+    parser_init_action = subparsers.add_parser("init-action", help="Initialize a combat action plan template")
+    parser_init_action.add_argument("chapter_folder", help="Path to chapter folder (e.g. books/my-book/chapters/chapter-01)")
+    parser_init_action.add_argument("--scene", required=True, help="Scene ID or name (e.g. scene-2)")
+
     args = parser.parse_args()
 
     commands = {
@@ -305,6 +330,7 @@ def main() -> int:
         "tui": cmd_tui,
         "analytics": cmd_analytics,
         "log-run": cmd_log_run,
+        "init-action": cmd_init_action,
     }
 
     try:
