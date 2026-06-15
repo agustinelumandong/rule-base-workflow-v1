@@ -191,6 +191,11 @@ def relevant_rulebook_excerpt(book_folder: Path, slug: str, scene_breakdown_text
                 rel_lines.append(f"- **{rel['subject']}** {rel['relation']} **{rel['object']}**")
             parts.append("\n".join(rel_lines))
 
+        # Inject subgenre guidelines
+        subgenre_rules = load_subgenre_rules(book_folder)
+        if subgenre_rules:
+            parts.append(subgenre_rules)
+
     chapter_section = extract_heading_section(text, slug)
     if chapter_section:
         parts.append(chapter_section)
@@ -392,6 +397,43 @@ def render_packet(book_folder: Path, slug: str) -> str:
         "- **Stop/Continue:**",
     ]
     return "\n".join(lines).rstrip() + "\n"
+
+
+def load_subgenre_rules(book_folder: Path) -> str:
+    try:
+        world_state = world_module.load_world_state(book_folder)
+    except Exception:
+        world_state = {}
+    genre = world_state.get("genre", "western").lower()
+    subgenre = world_state.get("subgenre", "classic").lower()
+    
+    import yaml
+    config_path = Path(__file__).resolve().parent.parent / "genre_packs" / genre / f"{genre}_subgenre_config.yaml"
+    if not config_path.exists():
+        return ""
+        
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        sub_info = config.get("subgenres", {}).get(subgenre)
+        if not sub_info:
+            return ""
+            
+        rules = [
+            f"### Active Subgenre Guidelines: {genre.capitalize()} ({subgenre.capitalize()})",
+            f"- **Tone:** {sub_info.get('tone', 'unknown')}",
+            f"- **Focus:** {sub_info.get('focus', 'unknown')}",
+            "- **Typical Conflicts:** " + ", ".join(sub_info.get("common_conflicts", []))
+        ]
+        
+        prompt_blocks_path = Path(__file__).resolve().parent.parent / "genre_packs" / genre / f"{genre}_prompt_blocks.md"
+        if prompt_blocks_path.exists():
+            prompt_text = prompt_blocks_path.read_text(encoding="utf-8")
+            rules.append(f"\n{prompt_text}")
+            
+        return "\n".join(rules)
+    except Exception as e:
+        return f"\n[Error loading subgenre rules: {e}]\n"
 
 
 def main() -> int:
