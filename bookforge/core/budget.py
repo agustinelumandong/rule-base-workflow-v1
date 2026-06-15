@@ -21,11 +21,9 @@ def chapter_draft(folder: Path, slug: str) -> Path:
 
 
 def source_file(book_folder: Path) -> Path:
-    for name in ("phase-0.md", "phase-00.md", "outline.md", "chapter-outline.md"):
-        path = book_folder / name
-        if path.exists():
-            return path
-    return book_folder / "phase-0.md"
+    from bookforge.core.scanner import source_path
+    path = source_path(book_folder)
+    return path if path else book_folder / "phase-0.md"
 
 
 def mode_files(book_folder: Path, slug: str | None, mode: str) -> tuple[list[Path], list[str]]:

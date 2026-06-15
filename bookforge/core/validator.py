@@ -17,7 +17,7 @@ from bookforge.core import action
 from bookforge.core import world as world_module
 from bookforge.core import voice as voice_module
 
-REQUIRED_BOOK_FILES = ["phase-0.md", "rulebook.md", "mood-lock.md", "chapter-summaries.md"]
+REQUIRED_BOOK_FILES = ["rulebook.md", "mood-lock.md", "chapter-summaries.md"]
 BEAT_REQUIRED_MARKERS = ["### Source Context Lock", "### Beat Instructions"]
 
 UNRESOLVED_MARKERS = ["UNKNOWN", "TBD", "TODO", "FIXME"]
@@ -196,9 +196,10 @@ def discover_chapters(book_folder: Path) -> list[ChapterFiles]:
 
 
 def parse_phase_chapters(book_folder: Path) -> dict[str, str]:
-    phase_path = book_folder / "phase-0.md"
-    if not phase_path.exists():
-        raise RuntimeError("Missing phase-0.md outlining source.")
+    from bookforge.core.scanner import source_path
+    phase_path = source_path(book_folder)
+    if not phase_path:
+        raise RuntimeError("Missing outlining source.")
     text = read_text(phase_path)
     matches = list(PHASE_CHAPTER_RE.finditer(text))
     sections: dict[str, str] = {}
@@ -369,6 +370,14 @@ def validate_continuity_out(chapter: ChapterFiles) -> tuple[list[str], list[str]
 def validate_required_book_files(book_folder: Path) -> tuple[list[str], list[str]]:
     passes: list[str] = []
     failures: list[str] = []
+
+    from bookforge.core.scanner import source_path
+    src = source_path(book_folder)
+    if src and src.read_text(encoding="utf-8").strip():
+        passes.append(f"Found outline source file at `{src.relative_to(book_folder.parent)}`.")
+    else:
+        failures.append("Missing or empty outline source file (e.g. phase-0.md or phase-0/*.md).")
+
     for relative_path in REQUIRED_BOOK_FILES:
         path = book_folder / relative_path
         if path.exists() and path.read_text(encoding="utf-8").strip():
@@ -458,11 +467,12 @@ def validate_draft(chapter: ChapterFiles) -> tuple[list[str], list[str], list[st
         "typewriter": 1868,
     }
 
-    # Extract book year from phase-0.md
+    # Extract book year from outline
     book_folder = chapter.folder.parent.parent
-    phase_0_path = book_folder / "phase-0.md"
+    from bookforge.core.scanner import source_path
+    phase_0_path = source_path(book_folder)
     book_year = 1880
-    if phase_0_path.exists():
+    if phase_0_path and phase_0_path.exists():
         p0_text = phase_0_path.read_text(encoding="utf-8")
         match = re.search(r"(?i)Period:\s*.*?(\d{4})", p0_text)
         if match:
@@ -723,8 +733,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_ai_prompt(book_folder: Path, chapter: ChapterFiles) -> str:
+    from bookforge.core.scanner import source_path
+    src = source_path(book_folder)
+    if not src:
+        raise RuntimeError("Missing outlining source.")
     source_paths = [
-        book_folder / "phase-0.md",
+        src,
         book_folder / "rulebook.md",
         book_folder / "mood-lock.md",
         book_folder / "chapter-summaries.md",
@@ -738,7 +752,7 @@ def build_ai_prompt(book_folder: Path, chapter: ChapterFiles) -> str:
     template = load_prompt_template("validation/ai_review_prompt.md")
     return template.format(
         chapter_draft=chapter.draft,
-        phase_0=book_folder / "phase-0.md",
+        phase_0=src,
         rulebook=book_folder / "rulebook.md",
         mood_lock=book_folder / "mood-lock.md",
         chapter_summaries=book_folder / "chapter-summaries.md",

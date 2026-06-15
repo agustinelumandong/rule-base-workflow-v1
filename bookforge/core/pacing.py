@@ -7,9 +7,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from bookforge.core.scanner import first_target
+from bookforge.core.scanner import first_target, source_path
 
-SOURCE_NAMES = ("phase-0.md", "phase-00.md", "outline.md", "chapter-outline.md")
 CHAPTER_RE = re.compile(r"chapter-(\d+)", re.IGNORECASE)
 
 CLASS_RANGES = {
@@ -72,14 +71,6 @@ class ChapterPacing:
 
 def read_optional(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
-
-
-def source_path(book_folder: Path) -> Path | None:
-    for name in SOURCE_NAMES:
-        path = book_folder / name
-        if path.exists():
-            return path
-    return None
 
 
 def chapter_number(slug: str) -> int | None:

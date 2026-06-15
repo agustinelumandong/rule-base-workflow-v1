@@ -20,8 +20,9 @@ def chapter_sort_key(path: Path) -> tuple[int, str]:
 
 
 def read_title(book_folder: Path) -> str | None:
-    phase_path = book_folder / "phase-0.md"
-    if not phase_path.exists():
+    from bookforge.core.scanner import source_path
+    phase_path = source_path(book_folder)
+    if not phase_path:
         return None
 
     for line in phase_path.read_text(encoding="utf-8").splitlines():

@@ -77,6 +77,15 @@ def source_path(book_folder: Path) -> Path | None:
         path = book_folder / name
         if path.exists():
             return path
+    
+    # Try checking inside phase-0/ subdirectory
+    phase_0_dir = book_folder / "phase-0"
+    if phase_0_dir.is_dir():
+        md_files = list(phase_0_dir.glob("*.md"))
+        if md_files:
+            md_files.sort()
+            return md_files[0]
+            
     return None
 
 

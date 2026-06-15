@@ -8,8 +8,8 @@ from pathlib import Path
 
 from bookforge.core.headroom import compress_text
 from bookforge.core import world as world_module
+from bookforge.core.scanner import source_path
 
-SOURCE_NAMES = ("phase-0.md", "phase-00.md", "outline.md", "chapter-outline.md")
 COMPRESSED_STYLE_LOCK = (
     "Literal Western prose; no AI echo words; no modern/clinical terms; "
     "no dialogue tags when action anchors are requested; behavior over thought; source-locked."
@@ -72,14 +72,6 @@ def extract_matching_lines(text: str, labels: list[str], limit: int = 80) -> str
         if any(label.lower() in line.lower() for label in labels):
             matches.append(line)
     return "\n".join(matches[:limit]).strip()
-
-
-def source_path(book_folder: Path) -> Path | None:
-    for name in SOURCE_NAMES:
-        path = book_folder / name
-        if path.exists():
-            return path
-    return None
 
 
 def chapter_sort_key(path: Path) -> tuple[int, str]:
