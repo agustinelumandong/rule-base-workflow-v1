@@ -289,24 +289,16 @@ def check_pronoun_loops(text: str) -> list[str]:
 
 def check_em_dash_anchors(text: str) -> list[str]:
     warnings: list[str] = []
-    # Find any quotes followed by dashes, e.g. "— or " - or " --
     for line_num, line in enumerate(text.splitlines(), 1):
         if '"' in line:
-            # Check for em-dashes next to quotes without proper spacing
-            if '"—' in line:
-                warnings.append(f"Line {line_num}: Missing space before em-dash: `\"—`")
-            if '—"' in line:
-                warnings.append(f"Line {line_num}: Missing space after em-dash: `—\"`")
+            # Flag any spaced em dashes (spaces on either side) as AI tells
+            if re.search(r'\s+—|—\s+|\s+--|--\s+', line):
+                warnings.append(
+                    f"Line {line_num}: Spaced em-dash found: spaced em-dashes indicate AI-generated text. Use unspaced em-dash instead."
+                )
             # Check for double/triple hyphens: -- or ---
             if '--' in line:
                 warnings.append(f"Line {line_num}: Use em-dash `—` instead of double-hyphen `--`")
-            # Check for incorrect spacing around em-dash anchor
-            # A correct anchor pattern is `." — ` or `," — ` or `?" — ` or `!" — `
-            for match in re.finditer(r'"\s*(—)\s*([a-zA-Z])', line):
-                full_match = match.group(0)
-                # Check if the match is exactly '" — X' (single space before and after em-dash)
-                if not re.match(r'^"\s—\s[a-zA-Z]', full_match):
-                    warnings.append(f"Line {line_num}: Incorrect em-dash anchor spacing: `{full_match}` (should be `\" — X`)")
     return warnings
 
 

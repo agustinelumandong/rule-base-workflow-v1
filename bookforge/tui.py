@@ -241,15 +241,42 @@ class BookForgeTUI:
             else:
                 print(f"     Status: {COLOR_GREEN}PASS{RESET}")
 
+            # 4. World State & Physical Logistics
+            print(f"\n  {BOLD}4. World State & Physical Logistics:{RESET}")
+            try:
+                from bookforge.core import world as world_module
+                world_state = world_module.load_world_state(book_folder)
+                characters = world_state.get("characters", {})
+                if not characters:
+                    print("     Status: No character status registered.")
+                else:
+                    locs = []
+                    for char, info in characters.items():
+                        status_marker = " [DEAD]" if info.get("status") == "dead" else ""
+                        locs.append(f"{char.capitalize()}{status_marker} at '{info.get('location', 'unknown')}'")
+                    print(f"     Locations: {', '.join(locs)}")
+                    
+                    invs = []
+                    for char, info in characters.items():
+                        if info.get("status") != "dead":
+                            items = info.get("inventory", [])
+                            invs.append(f"{char.capitalize()}: {items}")
+                    if invs:
+                        print(f"     Inventory: {'; '.join(invs)}")
+            except Exception as e:
+                print(f"     Status: {COLOR_RED}Error loading logistics: {e}{RESET}")
+
         # Fetch and render the status line
         from bookforge.core import analytics as analytics_module
+        from bookforge.core import persona as persona_module
         analytics_data = analytics_module.load_analytics(book_folder)
         model_str = analytics_data.get("last_model_used", "unknown")
         total_in = analytics_data.get("total_input_tokens", 0)
         total_out = analytics_data.get("total_output_tokens", 0)
         total_runs = analytics_data.get("total_runs", 0)
+        cumulative_cost = persona_module.calculate_cumulative_cost(book_folder)
         
-        print(f"\n  {BG_BLUE} Model: {model_str:<12} | Tokens: {total_in + total_out:,} ({total_in:,} In / {total_out:,} Out) | Runs: {total_runs:<3} {RESET}")
+        print(f"\n  {BG_BLUE} Model: {model_str:<12} | Cost: ${cumulative_cost:.4f} | Tokens: {total_in + total_out:,} ({total_in:,} In / {total_out:,} Out) | Runs: {total_runs:<3} {RESET}")
 
         print(f"  {COLOR_GRAY}{'─' * 66}{RESET}")
         print(f"  {BOLD}[s]{RESET} Run Validation   {BOLD}[l]{RESET} Run Loop   {BOLD}[c]{RESET} Compile Manuscript")
