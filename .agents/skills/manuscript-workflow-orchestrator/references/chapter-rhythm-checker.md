@@ -8,6 +8,10 @@ Use the rhythm checker after context validation and length checks when the manus
 python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>
 ```
 
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/check_narrative_quality.py books/<book-slug>
+```
+
 ## What It Flags
 
 - every normal chapter at or above 2000 words
@@ -37,3 +41,12 @@ Keep:
 - style lock
 
 Run context validation again after rhythm repair.
+
+## Targeted Rhythm Rebalance Pass
+
+When `NEEDS_PACING_REBALANCE` appears, run one full check pass before opening a wider repair loop:
+
+- identify the flagged overlong/high-variance chapter
+- compress repeated systems-only passages
+- anchor every non-combat transition with action + sensory detail
+- preserve character-facing consequence beats and required source facts

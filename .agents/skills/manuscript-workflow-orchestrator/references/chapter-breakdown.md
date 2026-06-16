@@ -38,6 +38,20 @@ Generate beats from the source chapter outline. Each beat should contain:
 
 Beat count is source-determined. Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when the story would otherwise jump past necessary context. Stop when the chapter's required movement and continuity out are complete.
 
+## Scene Intent Rotation
+
+Every beat should include an explicit intent label from this set:
+
+- `high-intensity action`
+- `alliance/strategy`
+- `emotional consequence`
+- `institutional pressure`
+- `recovery/repair`
+
+Rotate these intents across chapters where source supports it. Do not leave three consecutive chapters with the same dominant intent without a direct character consequence shift.
+- If a beat is systems-heavy, it must still close with a concrete consequence for at least one named character before moving to the next beat.
+- If systems-only transitions happen, add a sensory/action anchor line before the chapter transition.
+
 Do not use fixed numeric lengths. Use natural scope labels instead:
 
 - `summary beat`

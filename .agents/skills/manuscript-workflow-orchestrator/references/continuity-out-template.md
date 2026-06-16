@@ -22,6 +22,13 @@ The validator checks for these sections. All five must be present and non-empty.
 - [What changed: possessions transferred, injuries gained or healed, secrets revealed, alliances shifted.]
 - [Include any resource changes that affect future scenes: ammo spent, money used, supplies lost.]
 
+## Human Stakes Carried
+
+- [Character name: direct pressure/cost for this chapter + immediate requirement for next chapter.]
+- [Character name: direct pressure/cost for this chapter + immediate requirement for next chapter.]
+- [Character name: direct pressure/cost for this chapter + immediate requirement for next chapter.]
+- [Character name: direct pressure/cost for this chapter + immediate requirement for next chapter.]
+
 ## Unresolved Pressure
 
 - [What tension, obligation, or threat carries forward into the next chapter.]

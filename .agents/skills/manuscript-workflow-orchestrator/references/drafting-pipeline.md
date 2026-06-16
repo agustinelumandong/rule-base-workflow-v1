@@ -56,6 +56,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 - Smooth transitions without flattening voice.
 - Run the context validator before final acceptance of any compiled or revised chapter.
 - Run the length checker after compilation or revision to identify underdrafted chapters and total gap to the book-level target.
+- Before final compile, run chapter rhythm and narrative-quality checks and correct any `NEEDS_PACING_REBALANCE` issues.
 - Run a final AI pass for continuity and obvious errors.
 - Run a final humanizer pass only for AI slop patterns, filler, repetitive structure, promotional language, or unnatural rhythm.
 - Create or update `chapters/chapter-XX/continuity-out.md` after chapter drafting or expansion.
@@ -70,9 +71,25 @@ Use `scripts/run_manuscript_loop.py` after every draft, expansion, repair, or fi
 - If the loop reports `NEEDS_CONTEXT_REPAIR`, repair the named chapter before style work or expansion.
 - If the loop reports `NEEDS_STYLE_REPAIR`, rewrite only the flagged lines or passages.
 - If the loop reports `NEEDS_EXPANSION`, expand the recommended chapter from approved scene breakdowns and source files only.
+- Run narrative-quality and rhythm rebalance only after the manuscript is within the book-level target range.
+- If the loop reports `NEEDS_PACING_REBALANCE`, run one targeted rebalance cycle on the recommended chapter before further expansion.
+- If the loop reports `NEEDS_PACING_REBALANCE`, run:
+  - `scripts/check_narrative_quality.py books/<book-slug>`
+  - `scripts/check_chapter_rhythm.py books/<book-slug>`
 - If the loop recommends chapter work, refresh that chapter's context packet before editing prose.
 - If the loop reports `DONE`, stop and report the final state.
 - If the loop reports `BLOCKED`, stop and ask for user direction.
+
+## Reviewer Rubric (Two-Pass)
+
+Use this before final handoff:
+
+- **Pass 1 (Structure):** No unresolved continuity chain gaps (`check_continuity_chain`) and no mandatory marker-policy warnings from context validation.
+- **Pass 2 (Narrative):**
+  - each chapter has at least one non-procedural human-stakes carryover in `continuity-out.md`,
+  - each chapter has at least one antagonistic pressure scene with distinct intent/tactic impact.
+
+If either pass fails, run one targeted correction cycle before compile.
 
 Codex performs prose edits. The loop controller only scans, prioritizes, reports state, and recommends the next action.
 

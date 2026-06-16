@@ -11,7 +11,7 @@
 #   1. System — Python, uv
 #   2. BookForge — package install, CLI commands, core module imports
 #   3. Agent Skills — all .agents/skills/ SKILL.md files present
-#   4. Orchestrator — all 12 runner scripts present and importable
+#   4. Orchestrator — all runner scripts present and importable
 #   5. Books — at least one book project found
 #   6. Headroom — module import, local compressor, optional headroom-ai
 #   7. Test Suite — pytest (skipped with --quick)
@@ -202,6 +202,7 @@ if [[ "$NLM_ONLY" == false ]]; then
     "check_context_budget.py"
     "check_continuity_chain.py"
     "check_manuscript_length.py"
+    "check_narrative_quality.py"
     "compile_manuscript.py"
     "plan_chapter_pacing.py"
     "run_manuscript_loop.py"

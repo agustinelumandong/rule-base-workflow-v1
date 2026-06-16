@@ -181,6 +181,7 @@ REQUIRED_SCRIPTS=(
   "build_context_packet.py"   "check_chapter_gaps.py"
   "check_chapter_rhythm.py"   "check_context_budget.py"
   "check_continuity_chain.py" "check_manuscript_length.py"
+  "check_narrative_quality.py"
   "compile_manuscript.py"     "plan_chapter_pacing.py"
   "run_manuscript_loop.py"    "scan_banned_words.py"
   "scan_source_format.py"     "validate_manuscript_context.py"
