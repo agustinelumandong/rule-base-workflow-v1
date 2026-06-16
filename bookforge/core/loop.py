@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from bookforge.core import validator as context_validator
@@ -193,7 +193,7 @@ def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], 
     state_file = book_folder / "loop-state.json"
     data = {
         "repair_attempts": repair_attempts,
-        "last_run": datetime.utcnow().isoformat() + "Z",
+        "last_run": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "last_status": status
     }
     try:

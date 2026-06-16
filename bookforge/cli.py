@@ -323,6 +323,106 @@ def cmd_check_persona(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_nlm(args: argparse.Namespace) -> int:
+    from bookforge.core import notebooklm
+    
+    if args.nlm_command == "list":
+        if not notebooklm.is_nlm_available():
+            print("Error: nlm CLI tool not found in PATH.", file=sys.stderr)
+            return 1
+        
+        auth = notebooklm.get_auth_status()
+        if not auth["authenticated"]:
+            print(f"Warning: {auth['error']}", file=sys.stderr)
+        else:
+            print(f"Authenticated as: {auth['email']}")
+            
+        print("\nRetrieving notebooks...")
+        nbs = notebooklm.list_notebooks()
+        if not nbs:
+            print("No notebooks found or failed to query.")
+            return 0
+            
+        print(f"{'Notebook Title':<40} | {'Notebook ID':<36} | Sources")
+        print("-" * 88)
+        for nb in nbs:
+            print(f"{nb['title'][:40]:<40} | {nb['id']:<36} | {nb['sources']}")
+        return 0
+
+    # For other commands, we need book_folder
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: Book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    if args.nlm_command == "status":
+        auth = notebooklm.get_auth_status()
+        print(f"Authenticated: {'Yes (' + auth['email'] + ')' if auth['authenticated'] else 'No (' + str(auth['error']) + ')'}")
+        
+        nb = notebooklm.get_associated_notebook(book_folder)
+        if nb:
+            print(f"Linked Notebook: {nb['title']} (ID: {nb['id']})")
+        else:
+            print("Linked Notebook: None. Run 'bf nlm link <notebook_id>' to link.")
+        return 0
+
+    elif args.nlm_command == "link":
+        nbs = notebooklm.list_notebooks()
+        title = args.title
+        if not title:
+            for n in nbs:
+                if n["id"] == args.notebook_id:
+                    title = n["title"]
+                    break
+            if not title:
+                title = "Associated Notebook"
+                
+        notebooklm.set_associated_notebook(book_folder, args.notebook_id, title)
+        print(f"Successfully linked notebook '{title}' (ID: {args.notebook_id}) to '{book_folder}'.")
+        return 0
+
+    elif args.nlm_command == "query":
+        nb = notebooklm.get_associated_notebook(book_folder)
+        if not nb:
+            print(f"Error: No notebook linked to '{book_folder}'. Run 'bf nlm link <notebook_id>' first.", file=sys.stderr)
+            return 1
+        print(f"Querying linked notebook '{nb['title']}'...")
+        answer = notebooklm.query_notebook(nb["id"], args.query_text)
+        print(f"\nResponse:\n{answer}")
+        return 0
+
+    elif args.nlm_command == "sync-research":
+        nb = notebooklm.get_associated_notebook(book_folder)
+        if not nb:
+            print(f"Error: No notebook linked to '{book_folder}'. Run 'bf nlm link <notebook_id>' first.", file=sys.stderr)
+            return 1
+        print(f"Syncing research from '{nb['title']}' to '{book_folder}/research-pack.md'...")
+        success = notebooklm.sync_research_to_pack(book_folder, nb["id"])
+        if success:
+            print("Successfully synced research pack.")
+            return 0
+        else:
+            print("Failed to sync research pack.", file=sys.stderr)
+            return 1
+
+    elif args.nlm_command == "sync-sources":
+        nb = notebooklm.get_associated_notebook(book_folder)
+        if not nb:
+            print(f"Error: No notebook linked to '{book_folder}'. Run 'bf nlm link <notebook_id>' first.", file=sys.stderr)
+            return 1
+        print(f"Uploading local files from '{book_folder}' to linked notebook '{nb['title']}'...")
+        uploaded = notebooklm.upload_local_sources(book_folder, nb["id"])
+        if uploaded:
+            print(f"Successfully uploaded {len(uploaded)} sources:")
+            for f in uploaded:
+                print(f"  - {f}")
+        else:
+            print("No sources uploaded or upload failed.")
+        return 0
+
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="BookForge: A Production-Ready Manuscript Workflow Pipeline",
@@ -394,6 +494,36 @@ def main() -> int:
     parser_add_rel.add_argument("object", help="Object entity (e.g. darin)")
     parser_add_rel.add_argument("--source", default="manual", help="Source of relationship fact")
 
+    # nlm subparser
+    parser_nlm = subparsers.add_parser("nlm", help="Manage NotebookLM research integrations")
+    nlm_subparsers = parser_nlm.add_subparsers(dest="nlm_command", required=True)
+
+    # nlm list
+    nlm_subparsers.add_parser("list", help="List available NotebookLM notebooks")
+
+    # nlm status
+    parser_nlm_status = nlm_subparsers.add_parser("status", help="Show NotebookLM integration status for a book")
+    parser_nlm_status.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+
+    # nlm link
+    parser_nlm_link = nlm_subparsers.add_parser("link", help="Link a NotebookLM notebook to a book folder")
+    parser_nlm_link.add_argument("notebook_id", help="Notebook UUID")
+    parser_nlm_link.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_nlm_link.add_argument("--title", help="Optional display title for the notebook")
+
+    # nlm query
+    parser_nlm_query = nlm_subparsers.add_parser("query", help="Query the linked NotebookLM notebook")
+    parser_nlm_query.add_argument("query_text", help="Question to ask the notebook")
+    parser_nlm_query.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+
+    # nlm sync-research
+    parser_nlm_sync_res = nlm_subparsers.add_parser("sync-research", help="Sync facts from NotebookLM to research-pack.md")
+    parser_nlm_sync_res.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+
+    # nlm sync-sources
+    parser_nlm_sync_src = nlm_subparsers.add_parser("sync-sources", help="Upload local rules and drafts to NotebookLM")
+    parser_nlm_sync_src.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+
     args = parser.parse_args()
     if not args.command:
         args.command = "tui"
@@ -410,6 +540,7 @@ def main() -> int:
         "check-persona": cmd_check_persona,
         "repair": cmd_repair,
         "add-relation": cmd_add_relation,
+        "nlm": cmd_nlm,
     }
 
     try:

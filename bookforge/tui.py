@@ -122,6 +122,10 @@ class BookForgeTUI:
                     self.render_analytics()
                     key = get_key()
                     self.handle_analytics_key(key)
+                elif self.state == "NOTEBOOKLM":
+                    self.render_notebooklm()
+                    key = get_key()
+                    self.handle_notebooklm_key(key)
                 else:
                     # Fallback
                     self.state = "BOOK_LIST"
@@ -290,7 +294,7 @@ class BookForgeTUI:
 
         print(f"  {COLOR_GRAY}{'─' * 66}{RESET}")
         print(f"  {BOLD}[s]{RESET} Run Validation   {BOLD}[l]{RESET} Run Loop   {BOLD}[c]{RESET} Compile Manuscript")
-        print(f"  {BOLD}[a]{RESET} View Analytics    {BOLD}[b]{RESET} Back to list      {BOLD}[q]{RESET} Quit")
+        print(f"  {BOLD}[a]{RESET} View Analytics    {BOLD}[r]{RESET} NotebookLM  {BOLD}[b]{RESET} Back to list      {BOLD}[q]{RESET} Quit")
 
     def handle_dashboard_key(self, key: str) -> None:
         assert self.current_book is not None
@@ -298,6 +302,8 @@ class BookForgeTUI:
             raise KeyboardInterrupt()
         elif key == "a":
             self.state = "ANALYTICS"
+        elif key == "r":
+            self.state = "NOTEBOOKLM"
         elif key == "b":
             self.state = "BOOK_LIST"
         elif key == "s":
@@ -483,4 +489,145 @@ class BookForgeTUI:
             raise KeyboardInterrupt()
         elif key == "b":
             self.state = "DASHBOARD"
+
+    def render_notebooklm(self) -> None:
+        assert self.current_book is not None
+        book_folder = self.current_book
+        self.draw_header(f"NotebookLM Research: {book_folder.name}")
+        
+        from bookforge.core import notebooklm
+        
+        # 1. Connection Status
+        if not notebooklm.is_nlm_available():
+            print(f"  {COLOR_RED}Error: `nlm` CLI tool is not installed or not in PATH.{RESET}")
+            print("  Please run: uv tool install notebooklm-mcp-cli")
+            print(f"\n  Press {BOLD}[b]{RESET} to return to Dashboard.")
+            return
+
+        auth = notebooklm.get_auth_status()
+        if auth["authenticated"]:
+            print(f"  Status: {COLOR_GREEN}CONNECTED{RESET} as {COLOR_CYAN}{auth['email']}{RESET}")
+        else:
+            print(f"  Status: {COLOR_YELLOW}NOT CONNECTED{RESET}")
+            print(f"  Error: {auth['error']}")
+
+        # 2. Associated Notebook
+        nb = notebooklm.get_associated_notebook(book_folder)
+        print(f"\n  {BOLD}Associated Notebook:{RESET}")
+        if nb:
+            print(f"     Title: {COLOR_GREEN}{nb['title']}{RESET}")
+            print(f"     ID:    {COLOR_GRAY}{nb['id']}{RESET}")
+        else:
+            print(f"     {COLOR_YELLOW}None (No notebook linked to this project){RESET}")
+
+        # Check local files to sync
+        has_pack = (book_folder / "research-pack.md").exists()
+        pack_status = f"{COLOR_GREEN}Exists{RESET}" if has_pack else f"{COLOR_YELLOW}Missing{RESET}"
+        print(f"     Local Research Pack: {pack_status}")
+
+        print(f"\n  {COLOR_GRAY}{'─' * 66}{RESET}")
+        print(f"  {BOLD}[l]{RESET} List & Link Notebook   {BOLD}[s]{RESET} Sync Research to pack.md")
+        print(f"  {BOLD}[u]{RESET} Upload Rules & Drafts  {BOLD}[q]{RESET} Query Notebook")
+        print(f"  {BOLD}[b]{RESET} Back to Dashboard       {BOLD}[e]{RESET} Run 'nlm login'")
+
+    def handle_notebooklm_key(self, key: str) -> None:
+        assert self.current_book is not None
+        from bookforge.core import notebooklm
+        
+        if key == "b":
+            self.state = "DASHBOARD"
+        elif key == "e":
+            # Run nlm login
+            sys.stdout.write("\033[?25h")
+            print(CLEAR_SCREEN)
+            print("Running 'nlm login' in interactive mode...")
+            import subprocess
+            subprocess.run(["nlm", "login"])
+            print("\nPress any key to return...")
+            get_key()
+            sys.stdout.write("\033[?25l")
+        elif key == "l":
+            # List notebooks and prompt to select/link
+            sys.stdout.write("\033[?25h")
+            print(CLEAR_SCREEN)
+            self.draw_header("Select Notebook to Link")
+            print("Retrieving notebooks from NotebookLM...")
+            nbs = notebooklm.list_notebooks()
+            if not nbs:
+                print("No notebooks found or failed to fetch.")
+                print("\nPress any key to return...")
+                get_key()
+                sys.stdout.write("\033[?25l")
+                return
+
+            for idx, n in enumerate(nbs):
+                print(f"  [{idx}] {n['title']} (ID: {n['id']}, sources: {n['sources']})")
+            
+            try:
+                choice = input(f"\nEnter number to link (0-{len(nbs)-1}) or Enter to cancel: ").strip()
+                if choice.isdigit() and 0 <= int(choice) < len(nbs):
+                    selected = nbs[int(choice)]
+                    notebooklm.set_associated_notebook(self.current_book, selected["id"], selected["title"])
+                    print(f"\nLinked notebook '{selected['title']}' successfully!")
+            except Exception as e:
+                print(f"Error: {e}")
+            
+            print("\nPress any key to return...")
+            get_key()
+            sys.stdout.write("\033[?25l")
+        elif key == "s":
+            # Sync research
+            sys.stdout.write("\033[?25h")
+            print(CLEAR_SCREEN)
+            nb = notebooklm.get_associated_notebook(self.current_book)
+            if not nb:
+                print("Error: No notebook linked. Please link a notebook first.")
+            else:
+                print(f"Syncing research from '{nb['title']}'...")
+                success = notebooklm.sync_research_to_pack(self.current_book, nb["id"])
+                if success:
+                    print(f"\n{COLOR_GREEN}✔ Sync Successful!{RESET} Saved to {self.current_book}/research-pack.md")
+                else:
+                    print(f"\n{COLOR_RED}✘ Sync Failed!{RESET}")
+            
+            print("\nPress any key to return...")
+            get_key()
+            sys.stdout.write("\033[?25l")
+        elif key == "u":
+            # Upload local sources
+            sys.stdout.write("\033[?25h")
+            print(CLEAR_SCREEN)
+            nb = notebooklm.get_associated_notebook(self.current_book)
+            if not nb:
+                print("Error: No notebook linked. Please link a notebook first.")
+            else:
+                print(f"Uploading files from '{self.current_book}' to notebook '{nb['title']}'...")
+                uploaded = notebooklm.upload_local_sources(self.current_book, nb["id"])
+                if uploaded:
+                    print(f"\n{COLOR_GREEN}✔ Upload Successful!{RESET} Uploaded {len(uploaded)} files:")
+                    for f in uploaded:
+                        print(f"  - {f}")
+                else:
+                    print(f"\n{COLOR_YELLOW}No new files uploaded or upload failed.{RESET}")
+            
+            print("\nPress any key to return...")
+            get_key()
+            sys.stdout.write("\033[?25l")
+        elif key == "q":
+            # Query notebook
+            sys.stdout.write("\033[?25h")
+            print(CLEAR_SCREEN)
+            nb = notebooklm.get_associated_notebook(self.current_book)
+            if not nb:
+                print("Error: No notebook linked. Please link a notebook first.")
+            else:
+                query_text = input("Enter your research question: ").strip()
+                if query_text:
+                    print("\nQuerying NotebookLM...")
+                    answer = notebooklm.query_notebook(nb["id"], query_text)
+                    print(f"\nAnswer:\n{answer}")
+            
+            print("\nPress any key to return...")
+            get_key()
+            sys.stdout.write("\033[?25l")
 
