@@ -19,6 +19,22 @@ from bookforge.core import voice as voice_module
 
 REQUIRED_BOOK_FILES = ["rulebook.md", "mood-lock.md", "chapter-summaries.md"]
 BEAT_REQUIRED_MARKERS = ["### Source Context Lock", "### Beat Instructions"]
+RULEBOOK_SECTION_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
+
+REQUIRED_RULEBOOK_SECTIONS: dict[str, tuple[str, ...]] = {
+    "Source Hierarchy": ("Source Hierarchy",),
+    "Length Handling Rules": ("Length Handling Rules",),
+    "Do Not Invent": ("Do Not Invent",),
+    "Chapter Continuity Ledger": ("Chapter Continuity Ledger", "Continuity Ledger"),
+    "Unknowns": ("Unknowns",),
+    "Characters": ("Characters", "Character Profiles"),
+}
+RULEBOOK_UNKNOWN_ALLOWED_SECTIONS = {
+    "characters",
+    "character profiles",
+    "unknowns",
+    "world and setting",
+}
 
 UNRESOLVED_MARKERS = ["UNKNOWN", "TBD", "TODO", "FIXME"]
 FORBIDDEN_LENGTH_LANGUAGE = ["word count", "words", "quota", "target"]
@@ -439,6 +455,68 @@ def check_context_lock_unknowns(scene_text: str) -> list[str]:
     return findings
 
 
+def normalize_heading_name(heading: str) -> str:
+    return re.sub(r"\s+", " ", heading.strip().lower())
+
+
+def _extract_rulebook_section(text: str, section_aliases: tuple[str, ...]) -> str:
+    headings = list(RULEBOOK_SECTION_HEADING_RE.finditer(text))
+    aliases = {normalize_heading_name(alias) for alias in section_aliases}
+    for index, heading in enumerate(headings):
+        title = heading.group(2).strip()
+        if normalize_heading_name(title) not in aliases:
+            continue
+        level = len(heading.group(1))
+        end = len(text)
+        for next_heading in headings[index + 1 :]:
+            if len(next_heading.group(1)) <= level:
+                end = next_heading.start()
+                break
+        section_body_start = heading.end()
+        return text[section_body_start:end].strip()
+    return ""
+
+
+def _extract_unknown_markers(text: str) -> list[str]:
+    findings: list[str] = []
+    current_section = ""
+    for line in text.splitlines():
+        heading_match = RULEBOOK_SECTION_HEADING_RE.match(line)
+        if heading_match:
+            level = len(heading_match.group(1))
+            section_title = normalize_heading_name(heading_match.group(2))
+            if level <= 2:
+                current_section = section_title
+            continue
+        for marker in UNRESOLVED_MARKERS:
+            if re.search(rf"\b{re.escape(marker)}\b", line):
+                if current_section not in RULEBOOK_UNKNOWN_ALLOWED_SECTIONS:
+                    findings.append(f"{marker} in `{current_section or 'Unknown section'}`")
+                break
+    return findings
+
+
+def _chapter_slug_to_label(slug: str) -> str:
+    if slug == "epilogue":
+        return "epilogue"
+    if slug.startswith("chapter-"):
+        return f"chapter {int(slug.split('-')[1])}"
+    return slug
+
+
+def _ledger_has_chapter_entry(ledger_section: str, chapter_slug: str) -> bool:
+    label = _chapter_slug_to_label(chapter_slug)
+    if label == "epilogue":
+        pattern = r"(?im)^#{1,6}\s*Epilogue\b.*$"
+    else:
+        match = re.match(r"chapter-(\d+)", chapter_slug)
+        if not match:
+            return False
+        number = int(match.group(1))
+        pattern = rf"(?im)^#{1,6}\s*Chapter\s+0*{number}\b.*$"
+    return bool(re.search(pattern, ledger_section))
+
+
 def validate_continuity_out(chapter: ChapterFiles) -> tuple[list[str], list[str]]:
     passes: list[str] = []
     warnings: list[str] = []
@@ -476,6 +554,38 @@ def validate_required_book_files(book_folder: Path) -> tuple[list[str], list[str
             passes.append(f"Found `{relative_path}`.")
         else:
             failures.append(f"Missing or empty `{relative_path}`.")
+
+    rulebook_path = book_folder / "rulebook.md"
+    if rulebook_path.exists():
+        rulebook_text = rulebook_path.read_text(encoding="utf-8")
+        for section_name, aliases in REQUIRED_RULEBOOK_SECTIONS.items():
+            section_text = _extract_rulebook_section(rulebook_text, aliases)
+            if not section_text:
+                failures.append(f"Rulebook missing required section `{section_name}`.")
+            elif not section_text.strip():
+                failures.append(f"Rulebook required section `{section_name}` is empty.")
+            else:
+                passes.append(f"Rulebook contains required section `{section_name}`.")
+
+        unknown_issues = _extract_unknown_markers(rulebook_text)
+        if unknown_issues:
+            for issue in unknown_issues:
+                failures.append(f"Rulebook marker policy violation: {issue}.")
+
+        ledger_text = _extract_rulebook_section(
+            rulebook_text, REQUIRED_RULEBOOK_SECTIONS["Chapter Continuity Ledger"]
+        )
+        if ledger_text:
+            try:
+                expected_chapters = list(parse_phase_chapters(book_folder).keys())
+            except Exception:
+                expected_chapters = []
+            for chapter_slug in expected_chapters:
+                if not _ledger_has_chapter_entry(ledger_text, chapter_slug):
+                    failures.append(
+                        f"Rulebook `Chapter Continuity Ledger` is missing `{chapter_slug}` coverage."
+                    )
+
     return passes, failures
 
 
