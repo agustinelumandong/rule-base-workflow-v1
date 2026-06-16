@@ -31,8 +31,8 @@ Generate beats from the source chapter outline. Each beat should contain:
 - Emotional or thematic pressure.
 - Required Story Movement: what must change by the end of the beat.
 - Continuity Out: what must remain true for the next beat or scene.
-- Do Not Invent: names, places, motives, lore, or events the agent must not add.
-- Context Match Check: source match, no skipped plot movement, no unsupported additions, prior continuity preserved, next beat set up without invented context.
+- Do Not Invent: names, places, motives, lore, events, or corporate/business/syndicate/property disputes the agent must not add.
+- Context Match Check: source match, no skipped plot movement, no unsupported additions, prior continuity preserved, next beat set up without invented context, and no introduction of forbidden business/syndicate schemes (plots must focus on classic Western adventure).
 - POV owner if clear from source; otherwise mark `UNKNOWN`.
 - Optional pacing fields when useful: Pacing Class, Elastic Range, Why This Beat Is Short/Long, Expansion Permission, and Reference Rhythm Note.
 
@@ -90,6 +90,7 @@ Use this shape for every beat:
 - It does not add unsupported characters, locations, motives, or backstory.
 - It preserves prior continuity.
 - It sets up the next beat without forcing invented context.
+- It does not introduce plots or details centered around syndicates, water rights, land grabs, property disputes, organized corruption, business conspiracies, or business schemes. All conflicts must focus on classic Western adventure themes (outlaws, bounty hunters, manhunts, betrayals, trail survival).
 ```
 
 ## `chapters/chapter-XX/scene-breakdown.md`

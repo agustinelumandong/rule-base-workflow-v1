@@ -1,0 +1,103 @@
+# Western Subgenre Configuration
+default_subgenre: classic
+
+subgenres:
+  classic:
+    tone: "heroic, moral, direct"
+    typical_protagonist: "stoic lawman, honorable cowboy, determined pioneer"
+    common_conflicts:
+      - "protecting a town"
+      - "stopping outlaws"
+      - "taming the wilderness"
+    focus: "Establishing order and morality"
+    metrics:
+      historical_accuracy: 6
+      character_depth: 10
+      plot_pacing_action: 8
+      setting_vividness: 6
+      thematic_resonance: 6
+      dialogue_authenticity: 4
+      emotional_impact: 10
+
+  historical:
+    tone: "grounded, accurate, restrained"
+    typical_protagonist: "inspired by real historical figures, ordinary people in extraordinary times"
+    common_conflicts:
+      - "navigating actual historical conflicts"
+      - "personal struggles within a documented past"
+    focus: "Authentic portrayal of a specific time/place"
+    metrics:
+      historical_accuracy: 8
+      character_depth: 8
+      plot_pacing_action: 5
+      setting_vividness: 8
+      thematic_resonance: 8
+      dialogue_authenticity: 8
+      emotional_impact: 8
+
+  frontier_romance:
+    tone: "emotional, resilient, intimate"
+    typical_protagonist: "rugged cowboy/rancher and a resilient woman"
+    common_conflicts:
+      - "overcoming societal obstacles"
+      - "frontier dangers to find love"
+    focus: "Relationship development amidst hardship"
+    metrics:
+      historical_accuracy: 5
+      character_depth: 8
+      plot_pacing_action: 6
+      setting_vividness: 6
+      thematic_resonance: 5
+      dialogue_authenticity: 5
+      emotional_impact: 9
+
+  revisionist:
+    tone: "darker, morally complex, deconstructive"
+    typical_protagonist: "flawed anti-heroes, disillusioned characters, complex minorities"
+    common_conflicts:
+      - "brutal survival"
+      - "questioning heroism"
+      - "consequences of violence"
+      - "systemic injustice"
+    focus: "Deconstructing genre tropes"
+    metrics:
+      historical_accuracy: 8
+      character_depth: 8
+      plot_pacing_action: 4
+      setting_vividness: 8
+      thematic_resonance: 9
+      dialogue_authenticity: 8
+      emotional_impact: 6
+
+  outlaw:
+    tone: "rebellious, antiheroic, gritty"
+    typical_protagonist: "outlaws, outcasts, gang leaders"
+    common_conflicts:
+      - "law vs. personal code"
+      - "betrayal within the gang"
+      - "fleeing from justice"
+    focus: "Exploring rebellion and moral gray zones"
+    metrics:
+      historical_accuracy: 6
+      character_depth: 8
+      plot_pacing_action: 9
+      setting_vividness: 7
+      thematic_resonance: 8
+      dialogue_authenticity: 6
+      emotional_impact: 7
+
+  weird_west:
+    tone: "strange, speculative, eerie"
+    typical_protagonist: "cowboys encountering supernatural entities, mad frontier scientists"
+    common_conflicts:
+      - "fighting monsters"
+      - "dealing with magic or strange technology"
+    focus: "Supernatural or speculative adventures"
+    metrics:
+      historical_accuracy: 4
+      character_depth: 6
+      plot_pacing_action: 9
+      setting_vividness: 8
+      thematic_resonance: 6
+      dialogue_authenticity: 5
+      emotional_impact: 6

@@ -73,6 +73,10 @@
 
 ## Phase 3: Drafting & Micro-Editing
 
+- **Pre-Draft & Pre-Finalization Checks:** Before drafting and before finalizing each chapter, run these three mandatory workflow checks:
+  1. **Hallucinations:** Ensure the draft does not introduce unauthorized backstory, character lore, motives, or relationships not defined in the outline/bible.
+  2. **Plot Consistency:** Verify character names, roles, and locations remain consistent. Avoid modern concepts and vocabulary.
+  3. **Temporal Logic:** Ensure realistic travel times, track the time of day, and keep chronological sequences (such as injury recovery and arrivals) believable.
 - **Scene Drafting (Tool: Codex / ChatGPT 5.5):** Prompt the AI to write out the chapter one scene at a time based on the new, error-free breakdown.
   - **Control the POV:** Explicitly instruct the AI on the exact "Point of View" (POV) for that specific scene. This is crucial to avoid "head-hopping" (switching perspectives mid-scene), which is a common AI error.
 - **Microscopic Error Detection (Tool: Codex / ChatGPT 5.5, Gemini optional):** Once the chapter is drafted, run a highly detailed error-detection pass. The AI's only job here is to flag inconsistencies or grammatical issues and suggest solutions.
@@ -107,6 +111,7 @@ Simplified, easy-to-follow version manuscript workflow broken down into plain En
 ## Step 3: Writing and Fixing (The Assembly Line)
 
 - **Drop the Word Counts:** Use Codex / ChatGPT 5.5 to start drafting. Stop telling the AI how many words to write for each scene so it doesn't add useless filler.
+- **Run Mandatory Workflow Checks:** Before writing or compiling, verify there are no hallucinations (invented lore/backstory), no plot/concept inconsistencies, and no temporal logic errors (travel speed, time of day tracking, recovery timeline).
 - **Write Scene by Scene:** Have the AI write one scene at a time, making sure you tell it exactly which character's perspective to use.
 - **Check for Errors and Voices:** Use Codex / ChatGPT 5.5, with Gemini optional, to hunt for continuity mistakes and make sure every character's dialogue sounds distinct and authentic.
 - **Stitch It Together:** Use Codex / ChatGPT 5.5 to combine all the fixed scenes into one complete, seamless chapter without leaving anything out.
@@ -146,7 +151,7 @@ Simplified, easy-to-follow version manuscript workflow broken down into plain En
 
 - **Primary Locations:** (Names of towns, saloons, specific ranches, or hideouts).
 - **Geography & Terrain:** (e.g., Alkali flats, dense pine forests, dusty border towns. Describe the weather and environmental hazards).
-- **Law & Order:** (How does justice work in this setting? Describe the local syndicates, marshals, bounty hunters, or governing forces).
+- **Law & Order:** (How does justice work in this setting? Describe the local marshals, bounty hunters, or governing forces. Do not include local syndicates or organized corporate corruption).
 - **Societal Norms & Tensions:** (Ongoing feuds, economic struggles, railroad expansions).
 
 ## 4. Undercurrents & Special Mechanics
@@ -193,6 +198,7 @@ If `chapter-pacing-plan.md` exists, use it as optional pacing guidance. Add elas
 
 ## PROJECT LOCK – STRICT STYLISTIC CONSTRAINTS (DO NOT VIOLATE)
 
+- **Narrative Conflict Restrictions:** STRICTLY FORBIDDEN from using plots centered around syndicates, water rights fights, land grabs, property disputes, organized corruption, business conspiracies, or shady business/corporate schemes. Keep plots locked to classic Western adventures (e.g. outlaws, bounty hunters, revenge, rescue, manhunts, stagecoach/train robberies, family feuds, escaped convicts, cattle rustlers, border trouble, betrayal, trail survival).
 - **The Absolute Literalism Ban:** Prose must be 100% literal. Zero metaphors, similes, or personification. The environment does not have feelings or intentions (e.g., the wind does not "scream").
 - **Purge AI Echo Words:** You are STRICTLY FORBIDDEN from using these words: absolutely, completely, relentless, massive, sharp, heavy, pure, extremely, perfectly.
 - **Lexicon of Antiquity:** Use blue-collar, 1800s vocabulary (iron, leather, dirt, lead, bone, granite). Zero modern/clinical words (e.g., velocity, fraction, trajectory, impact, visible, resolving). Zero Texas slang.

@@ -1,0 +1,27 @@
+{
+  "characters": {
+    "harlan": {
+      "location": "saloon",
+      "inventory": [
+        "colt_45",
+        "silver_pocket_watch"
+      ],
+      "status": "alive"
+    },
+    "darin": {
+      "location": "saloon",
+      "inventory": [
+        "winchester_rifle"
+      ],
+      "status": "alive"
+    }
+  },
+  "locations": [
+    "saloon",
+    "stables",
+    "sheriff_office",
+    "dusty_road"
+  ],
+  "genre": "western",
+  "subgenre": "classic"
+}
