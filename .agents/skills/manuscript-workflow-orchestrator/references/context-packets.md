@@ -26,6 +26,7 @@ Each packet should include:
 - prior chapter `continuity-out.md` or prior scene continuity-out lines
 - next chapter continuity need
 - current chapter `scene-breakdown.md`
+- `continuity-out.md` Human Stakes Carried bullets for named characters carrying pressure into the next chapter
 - agent checkpoint template
 
 ## Use Rules

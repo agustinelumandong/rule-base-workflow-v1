@@ -64,6 +64,8 @@ For a target folder such as `books/tex-cade/`, create or update:
 - For chapter-level work, build or refresh `chapters/chapter-XX/context-packet.md` and use prompt modes to keep context compact.
 - For a full book check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`
+- For a narrative quality pass, run:
+  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_narrative_quality.py books/<book-slug>`
 - For a length check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>`
 - For an autonomous loop check, run:

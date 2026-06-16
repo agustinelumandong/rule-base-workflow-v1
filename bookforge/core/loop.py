@@ -13,6 +13,7 @@ from bookforge.core import validator as context_validator
 from bookforge.core import length as length_checker
 from bookforge.core import rhythm as check_chapter_rhythm
 from bookforge.core import chain as check_continuity_chain
+from bookforge.core import narrative_quality
 
 STYLE_TERMS = (
     context_validator.BANNED_AI_ECHO_WORDS
@@ -94,6 +95,8 @@ def mode_for_status(status: str) -> str:
         return "style"
     if status == "NEEDS_EXPANSION":
         return "expansion"
+    if status == "NEEDS_PACING_REBALANCE":
+        return "repair"
     if status == "DONE":
         return "final"
     return "blocked"
@@ -105,6 +108,7 @@ def action_chapter(
     expansion_chapter: str,
     style_issues: list[StyleIssue],
     continuity_failures: list[str],
+    rebalance_chapter: str = "NONE",
 ) -> str | None:
     if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
         return context_problem_chapters[0]
@@ -114,6 +118,8 @@ def action_chapter(
             return match.group(1)
     if status == "NEEDS_EXPANSION" and expansion_chapter != "NONE":
         return expansion_chapter
+    if status == "NEEDS_PACING_REBALANCE" and rebalance_chapter != "NONE":
+        return rebalance_chapter
     if status == "NEEDS_STYLE_REPAIR" and style_issues:
         for part in style_issues[0].path.parts:
             if part.startswith("chapter-") or part == "epilogue":
@@ -148,6 +154,24 @@ def choose_expansion_chapter(
     return min(valid_slugs, key=lambda slug: words_by_chapter.get(slug, 10**9))
 
 
+def choose_rebalance_chapter(counts: object) -> str:
+    if hasattr(counts, "counts"):
+        candidates = check_chapter_rhythm.trim_candidates(counts)
+        if not candidates:
+            return "NONE"
+        selected = candidates[0]
+    elif counts:
+        candidates = [item for item in counts if not item.is_epilogue and item.words >= 2000]
+        if not candidates:
+            return "NONE"
+        selected = max(candidates, key=lambda item: item.words)
+    else:
+        return "NONE"
+
+    match = re.search(r"Chapter\s+(\d+)", selected.label)
+    return f"chapter-{int(match.group(1)):02d}" if match else selected.label
+
+
 def classify(
     length_state: LengthState,
     book_failures: list[str],
@@ -156,7 +180,11 @@ def classify(
     repair_attempts: dict[str, int],
     max_repair_attempts: int,
     continuity_failures: list[str],
+    narrative_issues: list[narrative_quality.NarrativeIssue] | None = None,
+    rhythm_issues: list[str] | None = None,
 ) -> tuple[str, str]:
+    narrative_issues = narrative_issues or []
+    rhythm_issues = rhythm_issues or []
     problem_chapters = issue_chapters(reports)
     repeated_blockers = [
         slug for slug in problem_chapters if repair_attempts.get(slug, 0) >= max_repair_attempts
@@ -175,6 +203,10 @@ def classify(
         return "NEEDS_EXPANSION", "Manuscript is below target minimum."
     if length_state.total_words > length_state.target_max:
         return "BLOCKED", "Manuscript is above target maximum; request trim/review before continuing."
+    if rhythm_issues:
+        return "NEEDS_PACING_REBALANCE", f"Rhythm checker found {len(rhythm_issues)} issue(s)."
+    if narrative_issues:
+        return "NEEDS_PACING_REBALANCE", "Narrative quality checks flagged repetition or reduced character pressure."
     return "DONE", "Manuscript is within target range with clean deterministic checks."
 
 
@@ -235,6 +267,14 @@ def run_loop_check(
                 if errors:
                     continuity_failures.append(f"{chapter.slug} has invalid continuity-out.md: {', '.join(errors)}")
 
+    narrative_issues = narrative_quality.analyze(book_folder).issues
+    try:
+        rhythm_report = check_chapter_rhythm.analyze(book_folder)
+        rhythm_issues = [issue.message for issue in rhythm_report.issues]
+    except Exception:
+        rhythm_report = None
+        rhythm_issues = []
+
     status, reason = classify(
         length_state,
         book_failures,
@@ -243,6 +283,8 @@ def run_loop_check(
         repair_attempts,
         max_repair_attempts,
         continuity_failures,
+        narrative_issues,
+        rhythm_issues,
     )
 
     context_problem_chapters = issue_chapters(reports)
@@ -260,8 +302,16 @@ def run_loop_check(
     # Render loop report output
     context_status = context_validator.overall_status(book_failures, reports)
     expansion_chapter = choose_expansion_chapter(reports, length_state.counts)
+    rebalance_chapter = choose_rebalance_chapter(rhythm_report or length_state.counts)
     prompt_mode = mode_for_status(status)
-    next_chapter = action_chapter(status, context_problem_chapters, expansion_chapter, style_issues, continuity_failures)
+    next_chapter = action_chapter(
+        status,
+        context_problem_chapters,
+        expansion_chapter,
+        style_issues,
+        continuity_failures,
+        rebalance_chapter,
+    )
     
     packet_command = f"bf run-loop {book_folder} (generates packet automatically)"
     budget_command = f"bf run-loop {book_folder} (budgets context automatically)"
@@ -275,6 +325,8 @@ def run_loop_check(
         next_action = f"Write or repair the missing/invalid `continuity-out.md` for `{next_chapter}`."
     elif status == "NEEDS_STYLE_REPAIR":
         next_action = f"Rewrite flagged style line `{style_issues[0].path}:{style_issues[0].line_number}`."
+    elif status == "NEEDS_PACING_REBALANCE":
+        next_action = f"Run narrative rebalance repair on `{next_chapter}` by trimming repeated procedural pressure."
     elif status == "NEEDS_EXPANSION":
         next_action = f"Expand `{expansion_chapter}` from its approved scene breakdown."
     else:
@@ -294,14 +346,15 @@ def run_loop_check(
     ]
     
     # Rhythm advisory
-    try:
-        rhythm_report = check_chapter_rhythm.analyze(book_folder)
-        if rhythm_report.issues:
-            lines.extend(["", "## Rhythm Notes", ""])
-            for issue in rhythm_report.issues:
-                lines.append(f"- {issue.message}")
-    except Exception:
-        pass
+    if rhythm_report and rhythm_report.issues:
+        lines.extend(["", "## Rhythm Notes", ""])
+        for issue in rhythm_report.issues:
+            lines.append(f"- {issue.message}")
+
+    if narrative_issues:
+        lines.extend(["", "## Narrative Quality Notes", ""])
+        for issue in narrative_issues[:12]:
+            lines.append(f"- {issue.chapter}: {issue.dimension} - {issue.message}")
 
     return status, reason, "\n".join(lines)
 
@@ -354,4 +407,3 @@ def main() -> int:
     )
     print(report)
     return 2 if status == "BLOCKED" else 0
-

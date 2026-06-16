@@ -22,7 +22,18 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 
 ## Western Conflict & Narrative Variety
 
-- Do not use plots centered around land grabs, water rights fights, syndicate-style villains, organized corruption, property disputes, business conspiracies, or shady business/corporate schemes.
+- Do not use plots centered around land grabs, water rights fights, organized corruption, property disputes, business conspiracies, or shady business/corporate schemes.
+- The banned villain type is any **institution or organization whose power comes from controlling property, money, business, or politics** — not individual danger or personal threat. Examples of banned villain setups:
+  - A railroad or cattle company sending hired guns to seize land
+  - A cartel or water-rights group controlling a region's resources
+  - A crime hierarchy with a boss, lieutenants, and foot soldiers running a territory
+  - A corrupt political machine using bribery and murder to hold power
+- **The word "syndicate" itself is not banned.** It is banned only when it describes an institutional villain archetype as listed above. Use your judgment to apply the word correctly:
+  - A group of outlaws riding together under one leader = **allowed** (a gang, not a syndicate)
+  - A small criminal crew robbing stages or trains = **allowed**
+  - A hero's allies, posse, partner, or deputized group = **always allowed**
+  - An organized villain group whose power is personal threat and violence, not property or business control = **allowed**
+- The quick test: **Is the villain's power coming from an institution or scheme? Banned. Is it coming from who they are as a person or outlaw? Allowed.**
 - Prioritize classic Western adventure themes and situations, such as:
   - Gunfighters drifting into town
   - Marshals getting gunned down by murderers

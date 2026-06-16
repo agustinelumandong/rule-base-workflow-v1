@@ -513,7 +513,7 @@ def _ledger_has_chapter_entry(ledger_section: str, chapter_slug: str) -> bool:
         if not match:
             return False
         number = int(match.group(1))
-        pattern = rf"(?im)^#{1,6}\s*Chapter\s+0*{number}\b.*$"
+        pattern = rf"(?im)^#{{1,6}}\s*Chapter\s+0*{number}\b.*$"
     return bool(re.search(pattern, ledger_section))
 
 

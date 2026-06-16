@@ -9,11 +9,13 @@ The loop is agent-driven. Python controls scanning, status, prioritization, and 
 1. Scan the book folder and confirm required source files exist.
 2. Run context validation before any length decision.
 3. Run the style-risk scan against chapter drafts.
-4. Check manuscript length against the book-level target range.
-5. Check chapter rhythm so the book does not pass with artificial same-size chapters.
-6. Decide the next state: `DONE`, `NEEDS_CONTEXT_REPAIR`, `NEEDS_STYLE_REPAIR`, `NEEDS_EXPANSION`, `NEEDS_PACING_REBALANCE`, or `BLOCKED`.
-7. Codex performs the next recommended action only when the report says `CONTINUE`.
-8. Re-run the loop after each draft, expansion, or repair pass.
+4. Run manuscript length against the book-level target range.
+5. If the manuscript is under the book-level minimum, expand from approved beats before rebalance work.
+6. Once the manuscript is within range, run narrative quality checks for character pressure and scene intent rotation.
+7. Run chapter rhythm so the book does not pass with artificial same-size chapters.
+8. Decide the next state: `DONE`, `NEEDS_CONTEXT_REPAIR`, `NEEDS_STYLE_REPAIR`, `NEEDS_EXPANSION`, `NEEDS_PACING_REBALANCE`, or `BLOCKED`.
+9. Codex performs the next recommended action only when the report says `CONTINUE`.
+10. Re-run the loop after each draft, expansion, or repair pass.
 
 Before chapter-level prose edits, refresh the chapter context packet:
 
@@ -41,6 +43,7 @@ Do not add unsupported names, motives, backstory, locations, lore, relationships
 - current word count is above the minimum and within the natural target range
 - context validator is `PASS`
 - style-risk scan is clean
+- narrative quality and chapter rhythm checks are clean
 - no unsupported invention appears
 
 `NEEDS_CONTEXT_REPAIR` means:
@@ -63,8 +66,9 @@ Do not add unsupported names, motives, backstory, locations, lore, relationships
 
 `NEEDS_PACING_REBALANCE` means:
 
-- manuscript meets total target but chapter rhythm looks too even
-- trim or compress recommended chapters from approved material only
+- manuscript meets total target but narrative flattening or pressure repetition is still present
+- trim or compress the recommended chapter from approved material only
+- keep sensory anchors and character consequences attached to each transition
 - use prompt mode `repair`
 
 `BLOCKED` means:
@@ -81,6 +85,14 @@ Run:
 
 ```bash
 python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/tex-cade --target-min 30000 --target-max 31000
+```
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/check_narrative_quality.py books/tex-cade
+```
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/tex-cade
 ```
 
 Optional repair-attempt tracking:
