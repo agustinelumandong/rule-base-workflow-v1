@@ -69,13 +69,13 @@ def discover_books(root_dir: Path = Path("books")) -> list[Path]:
     books = []
     for item in sorted(root_dir.iterdir()):
         if item.is_dir():
-            # Check if any source files exist in the immediate directory
-            if any((item / name).exists() for name in scanner.SOURCE_NAMES):
+            # Check if this directory is a book folder
+            if scanner.source_path(item) is not None:
                 books.append(item)
             else:
                 # Check 1 level deeper for series subfolders
                 for subitem in sorted(item.iterdir()):
-                    if subitem.is_dir() and any((subitem / name).exists() for name in scanner.SOURCE_NAMES):
+                    if subitem.is_dir() and scanner.source_path(subitem) is not None:
                         books.append(subitem)
     return books
 
@@ -284,7 +284,9 @@ class BookForgeTUI:
         total_runs = analytics_data.get("total_runs", 0)
         cumulative_cost = persona_module.calculate_cumulative_cost(book_folder)
         
-        print(f"\n  {BG_BLUE} Model: {model_str:<12} | Cost: ${cumulative_cost:.4f} | Tokens: {total_in + total_out:,} ({total_in:,} In / {total_out:,} Out) | Runs: {total_runs:<3} {RESET}")
+        from bookforge.core.headroom import HAS_OFFICIAL_HEADROOM
+        headroom_status = "Active" if HAS_OFFICIAL_HEADROOM else "Local Fallback"
+        print(f"\n  {BG_BLUE} Model: {model_str:<12} | Cost: ${cumulative_cost:.4f} | Tokens: {total_in + total_out:,} ({total_in:,} In / {total_out:,} Out) | Runs: {total_runs:<3} | Headroom: {headroom_status} {RESET}")
 
         print(f"  {COLOR_GRAY}{'─' * 66}{RESET}")
         print(f"  {BOLD}[s]{RESET} Run Validation   {BOLD}[l]{RESET} Run Loop   {BOLD}[c]{RESET} Compile Manuscript")

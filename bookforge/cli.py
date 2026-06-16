@@ -91,7 +91,10 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
         return 2
 
-    print(f"=== BookForge Status for {book_folder.name} ===\n")
+    print(f"=== BookForge Status for {book_folder.name} ===")
+    from bookforge.core.headroom import HAS_OFFICIAL_HEADROOM
+    headroom_status = "ACTIVE (ML-based)" if HAS_OFFICIAL_HEADROOM else "LOCAL FALLBACK (Deterministic)"
+    print(f"Context Compression (Headroom): {headroom_status}\n")
 
     # 1. Required files and validation reports
     book_passes, book_failures = context_validator.validate_required_book_files(book_folder)
@@ -325,7 +328,7 @@ def main() -> int:
         description="BookForge: A Production-Ready Manuscript Workflow Pipeline",
         prog="bookforge"
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     # init
     parser_init = subparsers.add_parser("init", help="Initialize a new book structure")
@@ -392,6 +395,8 @@ def main() -> int:
     parser_add_rel.add_argument("--source", default="manual", help="Source of relationship fact")
 
     args = parser.parse_args()
+    if not args.command:
+        args.command = "tui"
 
     commands = {
         "init": cmd_init,

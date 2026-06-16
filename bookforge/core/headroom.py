@@ -16,28 +16,78 @@ except ImportError:
     HAS_OFFICIAL_HEADROOM = False
 
 
+def _compress_block_with_headroom(text: str) -> str:
+    """Helper to compress a single non-lock text block using headroom."""
+    try:
+        # 1. Try using the universal text compressor designed for raw strings
+        try:
+            from headroom.compression.universal import compress as universal_compress
+            result = universal_compress(text)
+            if hasattr(result, "compressed") and isinstance(result.compressed, str):
+                if len(result.compressed) < len(text):
+                    return result.compressed
+        except (ImportError, AttributeError):
+            pass
+
+        # 2. Try the message-based compressor by packaging the string into a message list
+        if hasattr(headroom, "compress"):
+            messages = [{"role": "system", "content": text}]
+            result = headroom.compress(
+                messages,
+                min_tokens_to_compress=0,
+                compress_system_messages=True
+            )
+            if hasattr(result, "messages") and isinstance(result.messages, list) and len(result.messages) > 0:
+                compressed_content = result.messages[0].get("content")
+                if isinstance(compressed_content, str) and len(compressed_content) < len(text):
+                    return compressed_content
+    except Exception:
+        pass
+    return text
+
+
 def compress_text(text: str) -> str:
     """Compress context text to save tokens.
     
-    If headroom-ai is installed, delegates to it.
+    If headroom-ai is installed, delegates non-locked text blocks to it.
     Otherwise, uses the local fallback compressor.
     """
+    if not text.strip():
+        return ""
+
     if HAS_OFFICIAL_HEADROOM:
         try:
-            # Official headroom typically exposes a compress function or class
-            if hasattr(headroom, "compress"):
-                result = headroom.compress(text)
-                if isinstance(result, str):
-                    return result
-                for attr in ("text", "content", "compressed", "output"):
-                    value = getattr(result, attr, None)
-                    if isinstance(value, str):
-                        return value
-                if isinstance(result, dict):
-                    for key in ("text", "content", "compressed", "output"):
-                        value = result.get(key)
-                        if isinstance(value, str):
-                            return value
+            lines = text.splitlines()
+            blocks: list[tuple[bool, list[str]]] = []
+            
+            for line in lines:
+                stripped = line.strip()
+                is_lock = (
+                    stripped.startswith("### Source Context Lock") or
+                    stripped.startswith("### Beat Instructions") or
+                    stripped.startswith("- **Source Anchor:**") or
+                    stripped.startswith("- **Required Story Movement:**") or
+                    stripped.startswith("- **Continuity In:**") or
+                    stripped.startswith("- **Continuity Out:**")
+                )
+                
+                if not blocks or blocks[-1][0] != is_lock:
+                    blocks.append((is_lock, [line]))
+                else:
+                    blocks[-1][1].append(line)
+            
+            compressed_blocks = []
+            for is_lock, block_lines in blocks:
+                block_text = "\n".join(block_lines)
+                if is_lock:
+                    compressed_blocks.append(block_text)
+                else:
+                    # Compress standard content block using headroom
+                    compressed_blocks.append(_compress_block_with_headroom(block_text))
+            
+            final_text = "\n".join(compressed_blocks)
+            if len(final_text) < len(text):
+                return final_text
         except Exception:
             pass # Fall back to local compression on failure
             

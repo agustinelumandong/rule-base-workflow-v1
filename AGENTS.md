@@ -51,7 +51,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Avoid Texas slang unless the user specifically requests it.
 - Keep dialogue short and direct.
 - Avoid dialogue tags like "said," "asked," and "shouted" when the user requests em dash action anchors.
-- When using em dash action anchors, format them with spacing like: `"Get on the horse." — Harlan tightened the cinch.`
+- Don't use em dash onaction anchors for spacing like: `"Get on the horse." — Harlan tightened the cinch.`
 - Avoid "-ing" sentence openers.
 - Avoid repeated Name/Pronoun sentence loops, such as several consecutive sentences beginning with the same name or pronoun.
 - Mix sentence lengths to create an uneven rhythm.

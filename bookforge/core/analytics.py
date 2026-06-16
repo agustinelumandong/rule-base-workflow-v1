@@ -55,8 +55,10 @@ def get_project_file_analytics(book_folder: Path) -> dict[str, any]:
     analytics: dict[str, any] = {}
     
     # Core outline & configuration files
+    from bookforge.core import scanner
+    outline_path = scanner.source_path(book_folder)
     core_files = {
-        "outline": book_folder / "phase-0.md",
+        "outline": outline_path if outline_path else (book_folder / "phase-0.md"),
         "rulebook": book_folder / "rulebook.md",
         "mood_lock": book_folder / "mood-lock.md",
         "chapter_summaries": book_folder / "chapter-summaries.md",

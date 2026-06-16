@@ -9,24 +9,13 @@ from pathlib import Path
 
 
 DEFAULT_WORLD_STATE = {
-    "characters": {
-        "harlan": {
-            "location": "saloon",
-            "inventory": ["colt_45", "silver_pocket_watch"],
-            "status": "alive"
-        },
-        "darin": {
-            "location": "saloon",
-            "inventory": ["winchester_rifle"],
-            "status": "alive"
-        }
-    },
-    "locations": ["saloon", "stables", "sheriff_office", "dusty_road"]
+    "characters": {},
+    "locations": []
 }
 
 
 def load_world_state(book_folder: Path) -> dict:
-    """Loads world-state.json from the book folder, or initializes a default one."""
+    """Loads world-state.json from the book folder, or initializes an empty state."""
     state_path = Path(book_folder) / "world-state.json"
     if state_path.exists():
         try:
@@ -39,7 +28,7 @@ def load_world_state(book_folder: Path) -> dict:
         state_path.write_text(json.dumps(DEFAULT_WORLD_STATE, indent=2), encoding="utf-8")
     except Exception:
         pass
-    return DEFAULT_WORLD_STATE
+    return json.loads(json.dumps(DEFAULT_WORLD_STATE))
 
 
 def save_world_state(book_folder: Path, state: dict):
@@ -277,6 +266,7 @@ def validate_scene_world_state(
 
     # 3. Item Presence in Prose Check
     # Verify that if a character is described using a weapon/item, they actually own it in inventory
+    sentences = re.split(r"(?<=[.!?])\s+", draft_text)
     for char_name, char_info in state["characters"].items():
         inv = char_info["inventory"]
         
@@ -284,7 +274,10 @@ def validate_scene_world_state(
         # e.g., if draft mentions "Darin shot" or "Darin raised his Colt", does Darin have a colt or revolver?
         char_pattern = re.compile(rf"\b{re.escape(char_name)}\b.*?\b(shot|fired|pulled|raised|drew)\b.*?\b(colt|winchester|rifle|pistol|revolver|pocket_watch|watch|key|map)\b", re.IGNORECASE)
         
-        for match in char_pattern.finditer(draft_text):
+        for sentence in sentences:
+            match = char_pattern.search(sentence)
+            if not match:
+                continue
             used_keyword = match.group(2).lower()
             
             # Map prose keywords to inventory slugs
@@ -297,7 +290,7 @@ def validate_scene_world_state(
             # Fallback for general weapons
             if used_keyword in ["colt", "revolver", "pistol"] and any("colt" in item or "revolver" in item for item in inv):
                 item_match = True
-            elif used_keyword in ["winchester", "rifle"] and any("winchester" in item or "rifle" in item for item in inv):
+            elif used_keyword in ["winchester", "rifle"] and any("winchester" in item or "rifle" in item or "repeater" in item for item in inv):
                 item_match = True
             elif used_keyword in ["pocket_watch", "watch"] and any("watch" in item for item in inv):
                 item_match = True
