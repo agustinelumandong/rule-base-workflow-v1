@@ -4,6 +4,16 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 
 ## Core Workflow
 
+- **No Outline Fallback Protocol (e.g. Book 3):** If a book has no outline source file (e.g. `phase-0.md`), do NOT automatically proceed with plot generation or loop execution. Instead, first ask the user in chat: **"Do you want me to create an outline for Book 3?"** (or whichever book number is next).
+  - If approved, generate a fresh, fully original outline inspired by the structure and tone of a classic Western movie.
+  - Do not copy characters, names, scenes, dialogue, or recognizable story details from any copyrighted films.
+  - The plot must be completely different from previous books and must **strictly exclude** the following elements:
+    - A syndicate
+    - Water rights
+    - Mineral rights
+    - A trial scene
+  - Use new character names, original conflicts, and a differentiated setting to maintain a classic Western adventure feel without imitation.
+  - Present the completed outline to the user for explicit approval before moving on to rulebook generation or the writing stage.
 - Before drafting, use the available outline, series bible, character details, setting details, tone requirements, and chapter breakdown as source material.
 - Plan before drafting: break chapters into beats or scenes before writing full prose.
 - Include both plot beats and emotional or thematic beats so the story does not become only mechanical action.
@@ -19,6 +29,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - When compiling scenes, preserve all intended story content and make transitions smooth.
 - When revising, preserve the established tone and style. Do not flatten the prose with generic cleanup.
 - For final polish, prefer targeted/manual edits over full regeneration unless the user explicitly asks for a rewrite.
+
 
 ## Western Conflict & Narrative Variety
 

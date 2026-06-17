@@ -48,6 +48,10 @@ For a target folder such as `books/tex-cade/`, create or update:
 
 ## Operating Rules
 
+- **No Outline Protocol (e.g., Book 3):** If a target book lacks an outline source file (e.g. `phase-0.md`), do NOT automatically proceed with plot generation or loop execution. Instead, first ask the user in chat: **"Do you want me to create an outline for Book 3?"** (or whichever book number is next).
+  - If approved, generate a fresh, fully original outline inspired by classic Western structure/tone.
+  - Exclude copyright details, recognizable story elements from films, and strictly ban these elements: **syndicates, water rights, mineral rights, trial scenes**.
+  - Use original character names, conflicts, and setting, then present it for user approval.
 - Use Codex / ChatGPT 5.5 as the primary tool.
 - Treat Gemini as optional secondary review only.
 - Before rulebook or chapter planning, run the source format scan:
@@ -58,6 +62,7 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Do not require fixed numeric lengths for beats or scenes.
 - Use optional reference analysis only for high-level pacing and rhythm guidance; never copy reference prose, plot, characters, voice, or exact structure.
 - Use `chapter-pacing-plan.md` to avoid artificial same-size chapters, while keeping the current book source as the authority.
+
 - Run context validation before using length results to guide expansion.
 - Use the length checker as an advisory progress report only; never pad or invent story to satisfy a target.
 - Use the autonomous loop controller to decide stop/continue state after draft, repair, expansion, and validation passes. Codex performs prose edits; the script controls state and next action.

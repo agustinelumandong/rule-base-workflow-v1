@@ -435,7 +435,18 @@ def cmd_nlm(args: argparse.Namespace) -> int:
             print("No sources uploaded or upload failed.")
         return 0
 
+    elif args.nlm_command == "generate-outline":
+        print(f"Generating research-grounded outline for '{book_folder}'...")
+        success, msg = notebooklm.generate_research_outline(book_folder)
+        if success:
+            print(msg)
+            return 0
+        else:
+            print(msg, file=sys.stderr)
+            return 1
+
     return 0
+
 
 
 def main() -> int:
@@ -551,7 +562,12 @@ def main() -> int:
     parser_nlm_sync_src = nlm_subparsers.add_parser("sync-sources", help="Upload local rules and drafts to NotebookLM")
     parser_nlm_sync_src.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
 
+    # nlm generate-outline
+    parser_nlm_gen_out = nlm_subparsers.add_parser("generate-outline", help="Create a unique notebook, upload sources, and query to generate outline")
+    parser_nlm_gen_out.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+
     args = parser.parse_args()
+
     if not args.command:
         args.command = "tui"
 
