@@ -72,6 +72,14 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Do not use "He felt," "He realized," or "He thought" when the user wants behavior-driven prose.
 - Open chapter beats with mechanical action, sound, or physical strain instead of weather or scenery.
 - Keep combat fast, grounded, and brutal. Avoid micro-mechanics, fleeing or begging survivors, and formulaic aftermaths.
+- **Weapon & Material Detailing:**
+  - Use general names in fast action (e.g., "Tex fired twice").
+  - Use specific model names for mood and introduction (e.g., ".45 Peacemaker", "Winchester '73", "top-break Schofield").
+  - Avoid gun-catalog overload (e.g., do not write "Colt Single Action Army .45 Long Colt 7½-inch cavalry model..."). Keep weapon details active and sensory (e.g., "the blue worn silver at the muzzle").
+  - All historical details and weapon names must be sourced from the resolved `books/tex-cade/research-pack.md` (or the global series research-pack) to maintain historical accuracy and prevent hallucination.
+  - When referencing twin weapons in action, avoid confusion by specifying left/right identifiers rather than a generic "the Colt" (e.g., "his right-hand Peacemaker", "the left Colt", "the revolver").
+
+
 
 ## Templates
 

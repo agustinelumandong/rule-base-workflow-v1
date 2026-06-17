@@ -90,6 +90,12 @@ No one spoke.
 - Avoid fleeing or begging survivors unless the user explicitly asks for that beat.
 - Avoid formulaic aftermaths.
 - Track weapons, wounds, positions, and who can see what.
+- **Weapon Detailing:**
+  - **Introduction & Setup:** Use full specific names (e.g., "matched pair of Colt .45 Peacemakers", "Winchester '73", "top-break Schofield").
+  - **Action & Movement:** Shorten names for speed (e.g., "Tex fired twice", "He reached for the rifle"). Avoid confusion with twin weapons by using left/right identifiers rather than a generic "the Colt" (e.g., "his right-hand Peacemaker", "the left Colt", "the revolver").
+  - **Close Detail:** Focus on sensory properties (e.g., "the blue worn silver at the muzzle", "worn walnut grips", empty, loaded, jammed, hot, smoking). Avoid dry catalog-style list specifications.
+  - **Source Lock:** All historical details and weapon names must be sourced from the resolved `books/tex-cade/research-pack.md` (or the global series research-pack) to maintain historical accuracy and prevent hallucination.
+
 
 ## Narrative Conflict Restrictions & Variety
 
