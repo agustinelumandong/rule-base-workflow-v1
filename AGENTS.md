@@ -63,6 +63,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Keep dialogue short and direct.
 - Avoid dialogue tags like "said," "asked," and "shouted" when the user requests em dash action anchors.
 - Don't use em dash onaction anchors for spacing like: `"Get on the horse." — Harlan tightened the cinch.`
+- For in-story notes, letters, telegrams, posted warnings, or written messages, do not use backticks or code blocks. Use prose such as `The note read:` or `The message read:` before the written text so it does not look like a prompt in Google Docs or compiled output.
 - Avoid "-ing" sentence openers.
 - Avoid repeated Name/Pronoun sentence loops, such as several consecutive sentences beginning with the same name or pronoun.
 - Mix sentence lengths to create an uneven rhythm.

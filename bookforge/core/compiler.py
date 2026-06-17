@@ -73,6 +73,17 @@ def compile_manuscript(book_folder: Path, output_path: Path, include_title: bool
         parts.append(text)
 
     manuscript = "\n\n---\n\n".join(parts).rstrip() + "\n"
+
+    # Post-process for final book layout (draft-only rendering)
+    # 1. Remove all Beat subheaders (e.g., "## Beat 1: ...")
+    manuscript = re.sub(r"(?m)^## Beat.*$\n*", "", manuscript)
+
+    # 2. Clean up dialogue em-dash spacing: replace '" — ' or '” — ' with '" ' or '” '
+    manuscript = re.sub(r'([\"”])\s*—\s*', r'\1 ', manuscript)
+
+    # 3. Collapse multiple consecutive blank lines to at most one blank line
+    manuscript = re.sub(r"\n{3,}", "\n\n", manuscript)
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(manuscript, encoding="utf-8")
 

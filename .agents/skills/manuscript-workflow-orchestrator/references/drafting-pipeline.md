@@ -44,6 +44,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
   3. **Temporal Logic:** Travel duration, time of day, and chronological sequence of events (e.g. injury recovery) are realistic.
   4. **Conflict Variety:** No syndicates, land grabs, water rights fights, or shady business schemes. Focuses on classic Western adventures.
 - Use `.agents/skills/western-manuscript-style/` for Western prose, dialogue, action, and revision rules.
+- When drafting in-story notes, letters, telegrams, posted warnings, or written messages, do not use backticks or code blocks. Introduce the text with `The note read:` or `The message read:` so it cannot look like a prompt in compiled manuscript output.
 - After each scene, run targeted checks for continuity, dialogue voice, POV drift, and style drift.
 - Use `.agents/skills/humanizer/` only after the Western style pass if the scene still sounds generic, padded, promotional, overstructured, or AI-written.
 - Humanizer cleanup must keep the same scene events, facts, POV, paragraph coverage, and Western tone.
