@@ -5,7 +5,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 ## Core Workflow
 
 - **No Outline Fallback Protocol (e.g. Book 3):** If a book has no outline source file (e.g. `phase-0.md`), do NOT automatically proceed with plot generation or loop execution. Instead, first ask the user in chat: **"Do you want me to create an outline for Book 3?"** (or whichever book number is next).
-  - If approved, generate a fresh, fully original outline inspired by the structure and tone of a classic Western movie.
+  - If approved, first perform web research via NotebookLM (`nlm research start` and `nlm research import`) to discover, retrieve, and ingest period-accurate historical events, outlaws, settings, or conflicts (e.g., stagecoach line robberies, harsh winter blizzards, frontier military outposts) to ground the story in authentic 1800s history.
   - Do not copy characters, names, scenes, dialogue, or recognizable story details from any copyrighted films.
   - The plot must be completely different from previous books and must **strictly exclude** the following elements:
     - A syndicate
@@ -67,11 +67,13 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 ## Western Prose Style Lock
 
 - Use literal prose. Avoid metaphors, similes, and personification unless the user asks otherwise.
-- Avoid these AI echo words: absolutely, completely, relentless, massive, sharp, heavy, pure, extremely, perfectly.
+- Avoid these AI echo words: absolutely, completely, relentless, massive, sharp, heavy, pure, extremely, perfectly, voss (the name Voss is strictly banned for characters, families, or settings).
 - Prefer blue-collar 1800s vocabulary: iron, leather, dirt, lead, bone, granite.
 - Avoid modern or clinical words such as velocity, fraction, trajectory, impact, visible, resolving.
 - Avoid Texas slang unless the user specifically requests it.
 - Keep dialogue short and direct.
+- Make travel and search sequences active and engaging: ensure characters interact with the environment, encounter hazards, make significant discoveries, or actively scout rather than describing passive movement.
+
 - Avoid dialogue tags like "said," "asked," and "shouted" when the user requests em dash action anchors.
 - Don't use em dash onaction anchors for spacing like: `"Get on the horse." — Harlan tightened the cinch.`
 - For in-story notes, letters, telegrams, posted warnings, or written messages, do not use backticks or code blocks. Use prose such as `The note read:` or `The message read:` before the written text so it does not look like a prompt in Google Docs or compiled output.

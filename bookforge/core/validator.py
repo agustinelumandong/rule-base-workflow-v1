@@ -72,6 +72,7 @@ FORBIDDEN_CONFLICT_PATTERNS = {
     "property dispute": r"\bproperty\s+disputes?\b",
     "business conspiracy": r"\bbusiness\s+conspirac(?:y|ies)\b",
     "syndicate-style": r"\bsyndicate-style\b",
+    "voss": r"\bvoss\b",
 }
 
 DIALOGUE_TAG_RE = re.compile(
@@ -408,7 +409,10 @@ def check_forbidden_conflicts(text: str) -> list[str]:
     text_lower = text.lower()
     for label, pattern in FORBIDDEN_CONFLICT_PATTERNS.items():
         if re.search(pattern, text_lower):
-            findings.append(f"Forbidden conflict theme/term '{label}' found in draft.")
+            if label == "voss":
+                findings.append("Banned character/setting name 'voss' found.")
+            else:
+                findings.append(f"Forbidden conflict theme/term '{label}' found in draft.")
     return findings
 
 

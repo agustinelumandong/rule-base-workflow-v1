@@ -396,7 +396,42 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
         except Exception:
             pass
 
-    # 4. Perform structured query to generate outline
+    # 4. Conduct web research to discover and import authentic historical context
+    try:
+        from bookforge.core import series as series_module
+        series_info = series_module.get_series_info(book_folder)
+        series_name = series_info["name"] if series_info else "western"
+        
+        # Build research query matching period and series
+        web_query = f"authentic late 1800s western historical events outlaws lawmen and frontier conflicts {series_name}"
+        
+        # Start research
+        res_start = subprocess.run(
+            ["nlm", "research", "start", web_query, "--notebook-id", notebook_id, "--quiet"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if res_start.returncode == 0 and res_start.stdout.strip():
+            task_id = res_start.stdout.strip()
+            # Wait for completion (up to 120 seconds, polling via status)
+            subprocess.run(
+                ["nlm", "research", "status", notebook_id, "--task-id", task_id, "--max-wait", "120"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            # Import the found sources
+            subprocess.run(
+                ["nlm", "research", "import", notebook_id, task_id],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+    except Exception:
+        pass
+
+    # 5. Perform structured query to generate outline from all sources
     research_query = (
         "Identify 3-5 unique, authentic, period-accurate historical events, conflicts, settings, "
         "or character details present in the source documents. These details must feel grounded "
@@ -420,8 +455,9 @@ The plot must be completely different from previous books and must strictly excl
 - Water rights
 - Mineral rights
 - A trial scene
+- The name "Voss" (do not use "Voss" as a character name, location name, or family name)
 
-Use new character names, original conflicts, and a differentiated setting.
+Use new character names, original conflicts, and a differentiated setting. Make any travel or search sequences active and exciting by incorporating active scouting, environmental hazards, or significant discoveries.
 The protagonist is Tex Cade. His gear/weapons: matched pair of Colt .45 Peacemakers, Bowie knife, Ranger star.
 
 Structure the generated outline exactly in this markdown format:
