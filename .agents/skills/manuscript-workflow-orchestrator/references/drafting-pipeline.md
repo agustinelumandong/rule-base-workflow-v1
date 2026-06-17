@@ -92,6 +92,18 @@ Use this before final handoff:
 
 If either pass fails, run one targeted correction cycle before compile.
 
+## Western Series Strength Rubric
+
+Use this after deterministic checks pass and before final handoff. This rubric is advisory review guidance only; it must not create new loop states, hard validation failures, or padding pressure.
+
+- **Pacing Breath:** After long action chains, confirm the manuscript includes source-supported quiet, recovery, grief, planning, or lower-pressure chapters where consequences settle.
+- **Hero Cost:** Confirm the protagonist pays for at least one mistake, hard choice, misjudgment, or failure through guilt, changed behavior, damaged trust, lost time, or moral pressure, not only wounds.
+- **Villain Presence:** Confirm the villain is shown directly through personal threat, outlaw leverage, coercion, intimidation, pursuit, hostage pressure, or tactical command. Do not convert this into land, property, business, or political-machine control.
+- **Supporting Agency:** Confirm supporting characters make active choices, take risks, study problems, resist pressure, rescue others, withhold or reveal information, or change tactics without simply waiting for the protagonist.
+- **Proof/Consequence Payoff:** Confirm the ending or major turn pays off through proof, public courage, exposed truth, rescue consequence, reputation cost, moral result, or town/family resolve, not only gunfire.
+
+If the source does not support one of these strengths, mark it `UNKNOWN` in planning or review notes rather than inventing story to satisfy the rubric.
+
 Codex performs prose edits. The loop controller only scans, prioritizes, reports state, and recommends the next action.
 
 ## No Word Count Padding

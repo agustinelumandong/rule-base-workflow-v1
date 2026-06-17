@@ -27,6 +27,7 @@ Each packet should include:
 - next chapter continuity need
 - current chapter `scene-breakdown.md`
 - `continuity-out.md` Human Stakes Carried bullets for named characters carrying pressure into the next chapter
+- prior hero-cost, supporting-agency, or proof/consequence notes when already established by chapter artifacts
 - agent checkpoint template
 
 ## Use Rules
@@ -51,6 +52,7 @@ Include:
 - where key characters end the chapter
 - what changed in plot or power balance
 - weapons, horses, wounds, evidence, or town facts that must persist
+- hero-cost and supporting-agency consequences that must affect later choices
 - unresolved pressure for the next chapter
 - what the next chapter must preserve
 

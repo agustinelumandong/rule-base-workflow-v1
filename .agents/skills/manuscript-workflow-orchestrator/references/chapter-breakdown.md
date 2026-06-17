@@ -35,6 +35,7 @@ Generate beats from the source chapter outline. Each beat should contain:
 - Context Match Check: source match, no skipped plot movement, no unsupported additions, prior continuity preserved, next beat set up without invented context, and no introduction of forbidden business/syndicate schemes (plots must focus on classic Western adventure).
 - POV owner if clear from source; otherwise mark `UNKNOWN`.
 - Optional pacing fields when useful: Pacing Class, Elastic Range, Why This Beat Is Short/Long, Expansion Permission, and Reference Rhythm Note.
+- Optional series-strength fields when source-supported: Hero Cost, Villain Presence, Supporting Agency, and Proof/Consequence Payoff.
 
 Beat count is source-determined. Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when the story would otherwise jump past necessary context. Stop when the chapter's required movement and continuity out are complete.
 
@@ -88,6 +89,13 @@ Use this shape for every beat:
 - **Why This Beat Is Short/Long:** [Story reason based on source movement, not word-count pressure.]
 - **Expansion Permission:** [What may be deepened without adding unsupported story.]
 - **Reference Rhythm Note:** [Optional high-level rhythm note; do not copy reference content.]
+
+### Western Series Strength
+
+- **Hero Cost:** [If source-supported, the protagonist's mistake, guilt, hard choice, or emotional cost beyond wounds; otherwise `UNKNOWN`.]
+- **Villain Presence:** [If source-supported, how the villain appears through personal threat, outlaw leverage, or direct pressure; never through land, property, business, or political-machine control.]
+- **Supporting Agency:** [If source-supported, what a supporting character chooses, risks, studies, resists, or changes without waiting for the protagonist.]
+- **Proof/Consequence Payoff:** [If source-supported, evidence, public courage, exposed truth, reputation cost, rescue consequence, or moral result beyond gunfire.]
 
 ### Beat Instructions
 
