@@ -10,7 +10,7 @@ import termios
 import re
 from pathlib import Path
 
-from bookforge.core import validator, loop, length, rhythm, compiler, scanner, chain, series
+from bookforge.core import validator, loop, length, rhythm, compiler, scanner, chain, series, research
 
 # ANSI escape codes for styling
 CLEAR_SCREEN = "\033[H\033[J"
@@ -521,7 +521,7 @@ class BookForgeTUI:
             print(f"     {COLOR_YELLOW}None (No notebook linked to this project){RESET}")
 
         # Check local files to sync
-        has_pack = (book_folder / "research-pack.md").exists()
+        has_pack = research.get_research_pack_path(book_folder).exists()
         pack_status = f"{COLOR_GREEN}Exists{RESET}" if has_pack else f"{COLOR_YELLOW}Missing{RESET}"
         print(f"     Local Research Pack: {pack_status}")
 
@@ -586,7 +586,8 @@ class BookForgeTUI:
                 print(f"Syncing research from '{nb['title']}'...")
                 success = notebooklm.sync_research_to_pack(self.current_book, nb["id"])
                 if success:
-                    print(f"\n{COLOR_GREEN}✔ Sync Successful!{RESET} Saved to {self.current_book}/research-pack.md")
+                    pack_path = research.get_research_pack_path(self.current_book)
+                    print(f"\n{COLOR_GREEN}✔ Sync Successful!{RESET} Saved to {pack_path}")
                 else:
                     print(f"\n{COLOR_RED}✘ Sync Failed!{RESET}")
             

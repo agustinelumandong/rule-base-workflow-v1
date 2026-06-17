@@ -172,15 +172,49 @@ def sync_research_to_pack(book_folder: Path, notebook_id: str) -> bool:
     if result.startswith("Error") or "Query failed" in result:
         return False
 
-    research_pack_path = book_folder / "research-pack.md"
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Try to parse as JSON to extract clean markdown answer
+    clean_result = result
+    try:
+        data = json.loads(result)
+        if isinstance(data, dict) and "answer" in data:
+            clean_result = data["answer"]
+    except json.JSONDecodeError:
+        pass
+
+    from bookforge.core.research import get_research_pack_path, merge_research_pack_contents
+    research_pack_path = get_research_pack_path(book_folder)
     
+    # Read existing content if it exists to do incremental merge
+    old_body = ""
+    if research_pack_path.exists():
+        old_text = research_pack_path.read_text(encoding="utf-8")
+        match = re.search(r"^#+\s+", old_text, re.MULTILINE)
+        if match:
+            first_header_idx = match.start()
+            if old_text[first_header_idx:].startswith("# Research Pack"):
+                next_header = re.search(r"^##+\s+", old_text[first_header_idx + len("# Research Pack"):], re.MULTILINE)
+                if next_header:
+                    old_body = old_text[first_header_idx + len("# Research Pack") + next_header.start():]
+                else:
+                    old_body = old_text[first_header_idx:]
+            else:
+                old_body = old_text[first_header_idx:]
+
+    new_body = clean_result
+    match = re.search(r"^##+\s+", clean_result, re.MULTILINE)
+    if match:
+        new_body = clean_result[match.start():]
+
+    # Merge body sections
+    merged_body = merge_research_pack_contents(old_body, new_body)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     content = f"""# Research Pack
 
 > [!NOTE]
 > Automatically synced from NotebookLM notebook (ID: `{notebook_id}`) on {timestamp}.
 
-{result}
+{merged_body.strip()}
 """
     research_pack_path.write_text(content, encoding="utf-8")
     return True

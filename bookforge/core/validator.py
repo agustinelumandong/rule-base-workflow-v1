@@ -16,6 +16,7 @@ from bookforge.core.prompts import load_prompt_template
 from bookforge.core import action
 from bookforge.core import world as world_module
 from bookforge.core import voice as voice_module
+from bookforge.core import unknowns as unknowns_module
 
 REQUIRED_BOOK_FILES = ["rulebook.md", "mood-lock.md", "chapter-summaries.md"]
 BEAT_REQUIRED_MARKERS = ["### Source Context Lock", "### Beat Instructions"]
@@ -413,7 +414,8 @@ def check_forbidden_conflicts(text: str) -> list[str]:
 
 def check_unprofiled_period_terms(text: str, book_folder: Path) -> list[str]:
     warnings: list[str] = []
-    research_file = book_folder / "research-pack.md"
+    from bookforge.core.research import get_research_pack_path
+    research_file = get_research_pack_path(book_folder)
     research_content = ""
     if research_file.exists():
         research_content = research_file.read_text(encoding="utf-8").lower()
@@ -585,6 +587,13 @@ def validate_required_book_files(book_folder: Path) -> tuple[list[str], list[str
                     failures.append(
                         f"Rulebook `Chapter Continuity Ledger` is missing `{chapter_slug}` coverage."
                     )
+
+    # Gate: block pipeline if any ## Unknowns items remain unresolved
+    unknown_failures = unknowns_module.check_unknowns(book_folder)
+    if unknown_failures:
+        failures.extend(unknown_failures)
+    elif rulebook_path.exists():
+        passes.append("Rulebook `## Unknowns` section has no unresolved items.")
 
     return passes, failures
 

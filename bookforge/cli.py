@@ -20,6 +20,7 @@ from bookforge.core import action as action_module
 from bookforge.core import persona as persona_module
 from bookforge.core import repair as repair_module
 from bookforge.core import relationship as relationship_module
+from bookforge.core import research as research_module
 from bookforge import config
 
 
@@ -284,6 +285,15 @@ def cmd_repair(args: argparse.Namespace) -> int:
     return repair_module.run_repair_wizard(book_folder, args.chapter_slug)
 
 
+def cmd_resolve_unknowns(args: argparse.Namespace) -> int:
+    from bookforge.core import unknowns as unknowns_module
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+    return unknowns_module.run_unknowns_wizard(book_folder)
+
+
 def cmd_add_relation(args: argparse.Namespace) -> int:
     book_folder = Path(args.book_folder)
     if not book_folder.exists():
@@ -375,7 +385,11 @@ def cmd_nlm(args: argparse.Namespace) -> int:
                     title = n["title"]
                     break
             if not title:
-                title = "Associated Notebook"
+                series_info = series_module.get_series_info(book_folder)
+                if series_info:
+                    title = series_info["name"].lower().replace(" ", "-")
+                else:
+                    title = book_folder.name
                 
         notebooklm.set_associated_notebook(book_folder, args.notebook_id, title)
         print(f"Successfully linked notebook '{title}' (ID: {args.notebook_id}) to '{book_folder}'.")
@@ -396,7 +410,8 @@ def cmd_nlm(args: argparse.Namespace) -> int:
         if not nb:
             print(f"Error: No notebook linked to '{book_folder}'. Run 'bf nlm link <notebook_id>' first.", file=sys.stderr)
             return 1
-        print(f"Syncing research from '{nb['title']}' to '{book_folder}/research-pack.md'...")
+        pack_path = research_module.get_research_pack_path(book_folder)
+        print(f"Syncing research from '{nb['title']}' to '{pack_path}'...")
         success = notebooklm.sync_research_to_pack(book_folder, nb["id"])
         if success:
             print("Successfully synced research pack.")
@@ -486,6 +501,18 @@ def main() -> int:
     parser_repair.add_argument("book_folder", help="Path to book folder")
     parser_repair.add_argument("chapter_slug", help="Slug of the chapter to repair (e.g., chapter-01)")
 
+    # resolve-unknowns
+    parser_resolve = subparsers.add_parser(
+        "resolve-unknowns",
+        help="Interactive Q&A wizard: answer all unresolved ## Unknowns items in rulebook.md to unblock the pipeline"
+    )
+    parser_resolve.add_argument(
+        "book_folder",
+        nargs="?",
+        default="books/tex-cade",
+        help="Path to book folder (default: books/tex-cade)"
+    )
+
     # add-relation
     parser_add_rel = subparsers.add_parser("add-relation", help="Add a typed relationship between entities")
     parser_add_rel.add_argument("book_folder", help="Path to book folder")
@@ -541,6 +568,7 @@ def main() -> int:
         "repair": cmd_repair,
         "add-relation": cmd_add_relation,
         "nlm": cmd_nlm,
+        "resolve-unknowns": cmd_resolve_unknowns,
     }
 
     try:
