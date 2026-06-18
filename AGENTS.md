@@ -181,3 +181,31 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - If the loop reports `NEEDS_EXPANSION`, expand only inside approved chapter `scene-breakdown.md` beats using source-supported action, consequence, conflict, dialogue pressure, setting texture, and transitions.
 - If the loop reports `BLOCKED`, stop and ask for user direction.
 - The loop must never pad prose, invent unsupported facts, or create fixed beat/scene word counts.
+
+## Outline Quality Standards
+
+Apply these rules whenever generating, reviewing, or approving any book outline (`phase-0.md` or equivalent).
+
+### Required Outline Sections
+
+Every approved outline must include all of the following. If any are missing, flag them before proceeding to rulebook generation:
+
+- **Setting Function** — explicitly states how the landscape acts as pressure, not decoration. Must name at least three specific terrain or resource elements that force decisions: crossings, weather, wheel damage, supply depletion, repair work, dead drops, night watches, choke points, or sign reading. Characters must engage with the environment through labor, not just pass through it.
+- **Story Pattern with Chapter Function Rule** — names the structural pattern (road-pressure, manhunt, siege-and-break, etc.) and states a repeating chapter function rule. Every chapter must do one of a defined set of things (e.g., move the party, expose a secret, worsen trust, tighten pursuit). If the book has a split POV structure, the outline must name the convergence point and describe how both threads contribute to it.
+- **Hard Story Guardrails block embedded in the outline** — the outline itself must contain a guardrails block, not just reference the project rules. The block must list every active constraint: no institutional villain, no resource-rights scheme, no trial scene, no em-dashes, no modern vocabulary, and any book-specific restrictions.
+- **New Character entries with physical marker, voice note, and private motive/secret** — each new character must have all three. A physical marker is a single quick visual identifier. A voice note is how they speak (short, formal, silent, bitter, etc.). A private motive is what they actually want or hide, distinct from their stated purpose.
+- **Ending State for Book N+1** — a bullet list of where each major character stands at the close: who is dead/alive/escaped/compromised, what secrets are revealed or destroyed, what debts or obligations carry forward, any world-level change (a route destroyed, a cache burned, a network severed), and at least one unnamed hook for the next book.
+
+### Outline Review Checklist
+
+Before approving any outline:
+
+- [ ] Setting Function names at least three specific terrain or resource pressures that will force decisions in this book.
+- [ ] Story Pattern includes a named structural shape and a chapter function rule with specific labels.
+- [ ] Hard Story Guardrails are present inside the outline document, not only in external project rules.
+- [ ] Every new character entry includes a physical marker, a voice note, and a private motive or secret.
+- [ ] No chapter summary uses vague language. Each chapter entry must name a specific action, revelation, or change.
+- [ ] If the book uses a split POV structure, the outline names the convergence chapter and states what both threads contribute.
+- [ ] Ending State for Book N+1 is present and covers all major characters.
+- [ ] No new major character shares a first name with a prior major character unless explicitly documented.
+- [ ] No banned plot elements appear in any chapter summary or premise section.

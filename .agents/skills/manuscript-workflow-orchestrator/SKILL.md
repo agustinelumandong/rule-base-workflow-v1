@@ -34,6 +34,7 @@ For a target folder such as `books/tex-cade/`, create or update:
 ## References
 
 - Load [references/folder-scan.md](references/folder-scan.md) before choosing source and output paths.
+- Load [references/outline-generation.md](references/outline-generation.md) when generating a new outline, reviewing an existing outline before rulebook creation, or checking whether a source outline meets the required quality standard.
 - Load [references/rulebook-generation.md](references/rulebook-generation.md) for `rulebook.md` and `mood-lock.md`.
 - Load [references/chapter-breakdown.md](references/chapter-breakdown.md) for chapter summaries, beats, emotional beats, and scene breakdowns.
 - Load [references/drafting-pipeline.md](references/drafting-pipeline.md) for Phase 1 through Phase 4 drafting, review, and polish.
@@ -49,9 +50,13 @@ For a target folder such as `books/tex-cade/`, create or update:
 ## Operating Rules
 
 - **No Outline Protocol (e.g., Book 3):** If a target book lacks an outline source file (e.g. `phase-0.md`), do NOT automatically proceed with plot generation or loop execution. Instead, first ask the user in chat: **"Do you want me to create an outline for Book 3?"** (or whichever book number is next).
-  - If approved, generate a fresh, fully original outline inspired by classic Western structure/tone.
-  - Exclude copyright details, recognizable story elements from films, and strictly ban these elements: **syndicates, water rights, mineral rights, trial scenes**.
-  - Use original character names, conflicts, and setting, then present it for user approval.
+  - If approved, read the prior book's final `continuity-out.md` and `rulebook.md` to establish end state, character names, wounds, and unresolved pressure before writing anything.
+  - Generate a fresh, fully original outline. Fill all 17 required sections from [references/outline-generation.md](references/outline-generation.md): Title, Continuity Source, Classic Western Inspiration, Time Period, Primary Setting, Setting Function, Tone and Style Direction, Story Pattern (with chapter function rule), Hard Story Guardrails (embedded in the outline), Premise, Book Target, Returning Characters, New Characters, Core Conflicts, Act Structure, Chapter Outline, and Ending State for Book N+1.
+  - Choose a story pattern not used in the prior book. Vary the structural shape book-to-book.
+  - Exclude copyright details, recognizable story elements from films, and strictly ban these elements: **syndicates as institutional villains, water rights, mineral rights, trial scenes**.
+  - Use original character names, conflicts, and setting. Check new major character first names against prior book major characters. Rename if there is a collision.
+  - Run the outline quality checks from [references/outline-generation.md](references/outline-generation.md) before presenting.
+  - Present the full completed outline to the user for explicit approval. Do not begin rulebook generation, mood lock, or scene breakdowns until the user approves.
 - Use Codex / ChatGPT 5.5 as the primary tool.
 - Treat Gemini as optional secondary review only.
 - Before rulebook or chapter planning, run the source format scan:
