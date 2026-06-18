@@ -20,6 +20,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
   2. **Plot Consistency:** Names, roles, and locations are consistent. Avoid modern terminology.
   3. **Temporal Logic:** Travel duration is realistic, time of day is tracked logically, and injury recovery timeline is believable.
 - Check names, locations, weapons, injuries, horses, timeline, and character knowledge.
+- Check prior sibling books for major-character first-name collisions before approving sequel character names. If a new major character repeats a prior important first name, rename them or document why the reuse is intentional.
 - Add transition notes between scenes.
 - Run a pre-draft beat verification pass before any scene prose is drafted.
 - For each beat, confirm Source Anchor, Continuity In, Required Story Movement, Continuity Out, Do Not Invent, and Context Match Check.
@@ -100,6 +101,8 @@ Use this after deterministic checks pass and before final handoff. This rubric i
 - **Hero Cost:** Confirm the protagonist pays for at least one mistake, hard choice, misjudgment, or failure through guilt, changed behavior, damaged trust, lost time, or moral pressure, not only wounds.
 - **Villain Presence:** Confirm the villain is shown directly through personal threat, outlaw leverage, coercion, intimidation, pursuit, hostage pressure, or tactical command. Do not convert this into land, property, business, or political-machine control.
 - **Supporting Agency:** Confirm supporting characters make active choices, take risks, study problems, resist pressure, rescue others, withhold or reveal information, or change tactics without simply waiting for the protagonist.
+- **Quiet Humanizing Beat:** For rescue, hostage, family-duty, or revenge stakes, confirm the manuscript includes at least one brief source-supported quiet beat that makes the person at risk concrete before the action resolves.
+- **Legacy Pressure Payoff:** For series-arc villains tied to the protagonist's old wound, confirm at least one source-supported memory, name, command, mark, ledger, or physical sign appears before the final confrontation.
 - **Proof/Consequence Payoff:** Confirm the ending or major turn pays off through proof, public courage, exposed truth, rescue consequence, reputation cost, moral result, or town/family resolve, not only gunfire.
 
 If the source does not support one of these strengths, mark it `UNKNOWN` in planning or review notes rather than inventing story to satisfy the rubric.

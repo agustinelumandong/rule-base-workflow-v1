@@ -15,8 +15,16 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   - Use new character names, original conflicts, and a differentiated setting to maintain a classic Western adventure feel without imitation.
   - Present the completed outline to the user for explicit approval before moving on to rulebook generation or the writing stage.
 - Before drafting, use the available outline, series bible, character details, setting details, tone requirements, and chapter breakdown as source material.
+- Before approving a sequel outline or rulebook, check prior books' major character names. Avoid giving a new emotionally important character the same first name as a prior major character unless the reuse is intentional and documented in the rulebook.
 - Plan before drafting: break chapters into beats or scenes before writing full prose.
 - Include both plot beats and emotional or thematic beats so the story does not become only mechanical action.
+- For rescue, hostage, family-duty, or revenge plots, include at least one source-supported quiet humanizing beat before the rescue or climax when possible. This can be a short memory, campfire exchange, duty confession, or plain physical keepsake; do not turn it into a speech or invented backstory.
+- For series-arc villains tied to the protagonist's old wound, place one source-supported legacy-pressure beat before the final confrontation. Use a named dead ally, remembered command, old sign, ledger mark, or concrete battlefield trace only if the source supports it.
+- Beat count must vary by chapter purpose. Do not give every chapter the same number of beats just because a template is convenient. Use the source chapter's required movements:
+  - quiet setup, aftermath, travel, or mystery pressure: usually 2-3 beats
+  - standard investigation, alliance, rescue setup, or infiltration: usually 3-4 beats
+  - action, chase, siege, crossing, climax, major reveal, or turning-point chapters: usually 4-6 beats, with 5-7 allowed only when the source contains enough distinct stages
+  - never add beats just to hit a count; never compress distinct action stages into one beat just to keep a uniform pattern
 - Review and refine beats before moving into full scene drafting.
 - Draft scene by scene instead of generating an entire chapter at once.
 - Do not use fixed numeric length targets for individual scenes during drafting; let the scene reach its natural length.

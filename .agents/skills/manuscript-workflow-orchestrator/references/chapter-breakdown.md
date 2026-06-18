@@ -35,9 +35,19 @@ Generate beats from the source chapter outline. Each beat should contain:
 - Context Match Check: source match, no skipped plot movement, no unsupported additions, prior continuity preserved, next beat set up without invented context, and no introduction of forbidden business/syndicate schemes (plots must focus on classic Western adventure).
 - POV owner if clear from source; otherwise mark `UNKNOWN`.
 - Optional pacing fields when useful: Pacing Class, Elastic Range, Why This Beat Is Short/Long, Expansion Permission, and Reference Rhythm Note.
-- Optional series-strength fields when source-supported: Hero Cost, Villain Presence, Supporting Agency, and Proof/Consequence Payoff.
+- Optional series-strength fields when source-supported: Hero Cost, Villain Presence, Supporting Agency, Quiet Humanizing Beat, Legacy Pressure Payoff, and Proof/Consequence Payoff.
 
 Beat count is source-determined. Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when the story would otherwise jump past necessary context. Stop when the chapter's required movement and continuity out are complete.
+
+Use a variable beat-count policy:
+
+- Quiet setup, aftermath, travel, or mystery-pressure chapters usually need 2-3 beats.
+- Standard investigation, alliance, rescue setup, scouting, or infiltration chapters usually need 3-4 beats.
+- Action, chase, siege, crossing, climax, major reveal, or turning-point chapters usually need 4-6 beats.
+- Major climaxes may use 5-7 beats only when the source has enough distinct stages.
+- Never add filler beats to hit a count.
+- Never compress distinct action stages, tactical turns, or emotional consequences into one beat just to keep chapters uniform.
+- After generating all chapter breakdowns, scan the beat-count spread. If every chapter has the same count, treat that as a planning defect and rebalance before drafting.
 
 ## Scene Intent Rotation
 
@@ -95,6 +105,8 @@ Use this shape for every beat:
 - **Hero Cost:** [If source-supported, the protagonist's mistake, guilt, hard choice, or emotional cost beyond wounds; otherwise `UNKNOWN`.]
 - **Villain Presence:** [If source-supported, how the villain appears through personal threat, outlaw leverage, or direct pressure; never through land, property, business, or political-machine control.]
 - **Supporting Agency:** [If source-supported, what a supporting character chooses, risks, studies, resists, or changes without waiting for the protagonist.]
+- **Quiet Humanizing Beat:** [If source-supported, the brief lower-pressure beat that makes a rescued, hostage, family, or revenge-stake character feel like a person before the climax; otherwise `UNKNOWN`.]
+- **Legacy Pressure Payoff:** [If source-supported, the concrete prior wound, dead ally, old command, mark, ledger, or remembered sign that makes a series-arc villain confrontation personal; otherwise `UNKNOWN`.]
 - **Proof/Consequence Payoff:** [If source-supported, evidence, public courage, exposed truth, reputation cost, rescue consequence, or moral result beyond gunfire.]
 
 ### Beat Instructions

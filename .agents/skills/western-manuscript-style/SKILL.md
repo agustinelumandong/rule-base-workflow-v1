@@ -23,15 +23,18 @@ Do not invent continuity facts when source material is missing. Mark assumptions
 1. Identify the task type: beat planning, scene drafting, continuity review, dialogue pass, style cleanup, or final polish.
 2. For planning, break chapters into beats or scenes before full prose.
 3. Include plot movement plus emotional or thematic pressure so the story is not only mechanical action.
-4. For drafting, write scene by scene instead of generating whole chapters at once.
-5. Avoid fixed numeric length targets unless the user explicitly asks for them.
-6. Lock each scene to the requested POV. Avoid head-hopping or switching perspectives mid-scene.
-7. After drafting and before finalizing, verify the three mandatory checks:
+4. Before drafting a sequel, check whether new major characters repeat first names from prior books. Rename or document the reuse when the repeated name could confuse readers.
+5. For rescue, hostage, family-duty, or revenge plots, include one brief quiet humanizing beat when source-supported so the person at risk is more than a plot object.
+6. For final fights against series-arc villains, include one concrete legacy-pressure beat when source-supported so the confrontation pays off the old wound before weapons decide it.
+7. For drafting, write scene by scene instead of generating whole chapters at once.
+8. Avoid fixed numeric length targets unless the user explicitly asks for them.
+9. Lock each scene to the requested POV. Avoid head-hopping or switching perspectives mid-scene.
+10. After drafting and before finalizing, verify the three mandatory checks:
    - **Hallucinations:** Check for unauthorized backstory, character lore, or motives not in the outline/bible.
    - **Plot Consistency:** Check consistent names, roles, and locations. Verify no modern concepts, clinical words, or slang are used.
    - **Temporal Logic:** Check realistic travel durations, time of day tracking, and a believable recovery timeline for injuries.
-8. Run a dialogue/voice pass when characters speak. Keep each character's diction distinct and consistent with their role.
-9. For final polish, make targeted edits. Do not regenerate broad passages unless the user asks for a rewrite.
+11. Run a dialogue/voice pass when characters speak. Keep each character's diction distinct and consistent with their role.
+12. For final polish, make targeted edits. Do not regenerate broad passages unless the user asks for a rewrite.
 
 ## References
 

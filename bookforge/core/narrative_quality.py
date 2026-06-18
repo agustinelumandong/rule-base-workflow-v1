@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from itertools import combinations
 from dataclasses import dataclass
@@ -265,6 +266,21 @@ SECTION_RE = re.compile(r"(?im)^##\s+")
 SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
 
 ROTATION_KEYS = tuple(INTENT_KEYWORDS.keys())
+CHARACTER_HEADING_RE = re.compile(r"(?m)^###\s+(.+?)\s*$")
+GENERIC_CHARACTER_HEADINGS = {
+    "characters",
+    "character profiles",
+    "characters handoff state",
+    "locations handoff state",
+    "unresolved story pressures & setup",
+    "major changes & chronology",
+    "other source-locked roles",
+    "from book 1",
+    "from book 2",
+    "from book 3",
+}
+EXPECTED_RECURRING_FIRST_NAMES = {"tex", "texas", "ghost"}
+TITLE_WORDS = {"colonel", "old", "black", "jack"}
 
 
 @dataclass(frozen=True)
@@ -332,6 +348,122 @@ def _extract_beats(scene_text: str) -> list[str]:
         if block:
             beats.append(block)
     return beats
+
+
+def _extract_character_section(text: str) -> str:
+    for heading in ("## Characters", "## Character Profiles"):
+        start = text.find(heading)
+        if start >= 0:
+            start = text.find("\n", start)
+            if start < 0:
+                return ""
+            start += 1
+            next_match = SECTION_RE.search(text[start:])
+            return text[start : start + next_match.start()].strip() if next_match else text[start:].strip()
+    return ""
+
+
+def _clean_character_name(raw_name: str) -> str:
+    name = raw_name.strip().strip("# ").strip()
+    name = re.sub(r"\s+\(.*?\)\s*$", "", name).strip()
+    name = re.sub(r"\s+-\s+.*$", "", name).strip()
+    return name
+
+
+def _first_name(name: str) -> str:
+    lower_name = name.lower()
+    if "'s" in lower_name and any(term in lower_name for term in (" son", " daughter", " child")):
+        return ""
+    parts = [part.strip('"“”.,;:') for part in name.split() if part.strip('"“”.,;:')]
+    while parts and parts[0].lower() in TITLE_WORDS:
+        parts.pop(0)
+    return parts[0].lower() if parts else ""
+
+
+def _rulebook_character_names(rulebook_path: Path) -> set[str]:
+    if not rulebook_path.exists():
+        return set()
+    section = _extract_character_section(rulebook_path.read_text(encoding="utf-8"))
+    names: set[str] = set()
+    for match in CHARACTER_HEADING_RE.finditer(section):
+        name = _clean_character_name(match.group(1))
+        lower = name.lower()
+        if not name or lower in GENERIC_CHARACTER_HEADINGS:
+            continue
+        if lower.startswith("chapter ") or lower.startswith("from book "):
+            continue
+        names.add(name)
+    return names
+
+
+def _world_state_character_names(world_state_path: Path) -> set[str]:
+    if not world_state_path.exists():
+        return set()
+    try:
+        data = json.loads(world_state_path.read_text(encoding="utf-8"))
+    except Exception:
+        return set()
+    characters = data.get("characters")
+    if not isinstance(characters, dict):
+        return set()
+    names: set[str] = set()
+    for key, value in characters.items():
+        if isinstance(value, dict):
+            display = value.get("name") or value.get("full_name") or value.get("fullName") or key
+        else:
+            display = key
+        display = str(display).replace("_", " ").strip()
+        if display:
+            names.add(display.title())
+    return names
+
+
+def _book_character_names(book_folder: Path) -> set[str]:
+    return _rulebook_character_names(book_folder / "rulebook.md") | _world_state_character_names(
+        book_folder / "world-state.json"
+    )
+
+
+def _book_order_key(book_folder: Path) -> tuple[int, str]:
+    match = re.search(r"(\d+)$", book_folder.name)
+    return (int(match.group(1)) if match else 10**9, book_folder.name)
+
+
+def _check_series_name_collisions(book_folder: Path, issues: list[NarrativeIssue]) -> None:
+    current_names = _book_character_names(book_folder)
+    if not current_names:
+        return
+
+    parent = book_folder.parent
+    if not parent.exists():
+        return
+
+    prior_by_first: dict[str, set[str]] = {}
+    current_order = _book_order_key(book_folder)
+    for sibling in sorted(parent.iterdir()):
+        if not sibling.is_dir() or sibling == book_folder:
+            continue
+        if _book_order_key(sibling) >= current_order:
+            continue
+        for name in _book_character_names(sibling):
+            first = _first_name(name)
+            if first and first not in EXPECTED_RECURRING_FIRST_NAMES:
+                prior_by_first.setdefault(first, set()).add(name)
+
+    for current_name in sorted(current_names):
+        first = _first_name(current_name)
+        if not first or first in EXPECTED_RECURRING_FIRST_NAMES:
+            continue
+        prior_names = {name for name in prior_by_first.get(first, set()) if name.lower() != current_name.lower()}
+        if prior_names:
+            issues.append(
+                NarrativeIssue(
+                    "book",
+                    "Series Name Collision",
+                    "WARN",
+                    f"First name '{first.title()}' appears in current character '{current_name}' and prior character(s): {', '.join(sorted(prior_names))}. Rename or document intentional reuse.",
+                )
+            )
 
 
 def _extract_intents(text: str) -> list[str]:
@@ -585,6 +717,8 @@ def analyze(book_folder: Path) -> NarrativeReport:
     chapters = validator.discover_chapters(book_folder)
     issues: list[NarrativeIssue] = []
     chapter_intent_history: list[str] = []
+
+    _check_series_name_collisions(book_folder, issues)
 
     for idx, chapter in enumerate(chapters):
         if not chapter.draft.exists():

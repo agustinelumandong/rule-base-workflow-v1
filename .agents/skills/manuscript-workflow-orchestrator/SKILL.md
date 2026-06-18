@@ -57,9 +57,12 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Before rulebook or chapter planning, run the source format scan:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>`
 - Use `source-format-scan.md` to identify present/missing bible sections, chapter-list detail, and target source before normalizing artifacts.
+- Before approving sequel planning artifacts, compare major character names against prior sibling book folders. Avoid reusing the same first name for a new major emotional-stakes character unless it is intentional and documented.
 - If no user, source, or rulebook word target exists, default to `~30,000 words` as book-level planning guidance only.
 - Use broad book or chapter targets only for planning.
 - Do not require fixed numeric lengths for beats or scenes.
+- For rescue, hostage, family-duty, or revenge arcs, require one source-supported quiet humanizing beat where possible before the rescue or climax. Keep it brief and physical; do not invent biography.
+- For series-arc villains tied to the protagonist's prior wound, require one source-supported legacy-pressure beat before the final confrontation. Ground it in a concrete name, sign, command, wound, ledger, or memory already present in source.
 - Use optional reference analysis only for high-level pacing and rhythm guidance; never copy reference prose, plot, characters, voice, or exact structure.
 - Use `chapter-pacing-plan.md` to avoid artificial same-size chapters, while keeping the current book source as the authority.
 
