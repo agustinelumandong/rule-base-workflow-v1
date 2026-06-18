@@ -20,6 +20,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
   2. **Plot Consistency:** Names, roles, and locations are consistent. Avoid modern terminology.
   3. **Temporal Logic:** Travel duration is realistic, time of day is tracked logically, and injury recovery timeline is believable.
 - Check names, locations, weapons, injuries, horses, timeline, and character knowledge.
+- Check prior sibling books for major-character first-name collisions before approving sequel character names. If a new major character repeats a prior important first name, rename them or document why the reuse is intentional.
 - Add transition notes between scenes.
 - Run a pre-draft beat verification pass before any scene prose is drafted.
 - For each beat, confirm Source Anchor, Continuity In, Required Story Movement, Continuity Out, Do Not Invent, and Context Match Check.
@@ -44,6 +45,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
   3. **Temporal Logic:** Travel duration, time of day, and chronological sequence of events (e.g. injury recovery) are realistic.
   4. **Conflict Variety:** No syndicates, land grabs, water rights fights, or shady business schemes. Focuses on classic Western adventures.
 - Use `.agents/skills/western-manuscript-style/` for Western prose, dialogue, action, and revision rules.
+- When drafting in-story notes, letters, telegrams, posted warnings, or written messages, do not use backticks or code blocks. Introduce the text with `The note read:` or `The message read:` so it cannot look like a prompt in compiled manuscript output.
 - After each scene, run targeted checks for continuity, dialogue voice, POV drift, and style drift.
 - Use `.agents/skills/humanizer/` only after the Western style pass if the scene still sounds generic, padded, promotional, overstructured, or AI-written.
 - Humanizer cleanup must keep the same scene events, facts, POV, paragraph coverage, and Western tone.
@@ -90,6 +92,20 @@ Use this before final handoff:
   - each chapter has at least one antagonistic pressure scene with distinct intent/tactic impact.
 
 If either pass fails, run one targeted correction cycle before compile.
+
+## Western Series Strength Rubric
+
+Use this after deterministic checks pass and before final handoff. This rubric is advisory review guidance only; it must not create new loop states, hard validation failures, or padding pressure.
+
+- **Pacing Breath:** After long action chains, confirm the manuscript includes source-supported quiet, recovery, grief, planning, or lower-pressure chapters where consequences settle.
+- **Hero Cost:** Confirm the protagonist pays for at least one mistake, hard choice, misjudgment, or failure through guilt, changed behavior, damaged trust, lost time, or moral pressure, not only wounds.
+- **Villain Presence:** Confirm the villain is shown directly through personal threat, outlaw leverage, coercion, intimidation, pursuit, hostage pressure, or tactical command. Do not convert this into land, property, business, or political-machine control.
+- **Supporting Agency:** Confirm supporting characters make active choices, take risks, study problems, resist pressure, rescue others, withhold or reveal information, or change tactics without simply waiting for the protagonist.
+- **Quiet Humanizing Beat:** For rescue, hostage, family-duty, or revenge stakes, confirm the manuscript includes at least one brief source-supported quiet beat that makes the person at risk concrete before the action resolves.
+- **Legacy Pressure Payoff:** For series-arc villains tied to the protagonist's old wound, confirm at least one source-supported memory, name, command, mark, ledger, or physical sign appears before the final confrontation.
+- **Proof/Consequence Payoff:** Confirm the ending or major turn pays off through proof, public courage, exposed truth, rescue consequence, reputation cost, moral result, or town/family resolve, not only gunfire.
+
+If the source does not support one of these strengths, mark it `UNKNOWN` in planning or review notes rather than inventing story to satisfy the rubric.
 
 Codex performs prose edits. The loop controller only scans, prioritizes, reports state, and recommends the next action.
 

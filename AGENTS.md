@@ -4,9 +4,27 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 
 ## Core Workflow
 
+- **No Outline Fallback Protocol (e.g. Book 3):** If a book has no outline source file (e.g. `phase-0.md`), do NOT automatically proceed with plot generation or loop execution. Instead, first ask the user in chat: **"Do you want me to create an outline for Book 3?"** (or whichever book number is next).
+  - If approved, first perform web research via NotebookLM (`nlm research start` and `nlm research import`) to discover, retrieve, and ingest period-accurate historical events, outlaws, settings, or conflicts (e.g., stagecoach line robberies, harsh winter blizzards, frontier military outposts) to ground the story in authentic 1800s history.
+  - Do not copy characters, names, scenes, dialogue, or recognizable story details from any copyrighted films.
+  - The plot must be completely different from previous books and must **strictly exclude** the following elements:
+    - A syndicate
+    - Water rights
+    - Mineral rights
+    - A trial scene
+  - Use new character names, original conflicts, and a differentiated setting to maintain a classic Western adventure feel without imitation.
+  - Present the completed outline to the user for explicit approval before moving on to rulebook generation or the writing stage.
 - Before drafting, use the available outline, series bible, character details, setting details, tone requirements, and chapter breakdown as source material.
+- Before approving a sequel outline or rulebook, check prior books' major character names. Avoid giving a new emotionally important character the same first name as a prior major character unless the reuse is intentional and documented in the rulebook.
 - Plan before drafting: break chapters into beats or scenes before writing full prose.
 - Include both plot beats and emotional or thematic beats so the story does not become only mechanical action.
+- For rescue, hostage, family-duty, or revenge plots, include at least one source-supported quiet humanizing beat before the rescue or climax when possible. This can be a short memory, campfire exchange, duty confession, or plain physical keepsake; do not turn it into a speech or invented backstory.
+- For series-arc villains tied to the protagonist's old wound, place one source-supported legacy-pressure beat before the final confrontation. Use a named dead ally, remembered command, old sign, ledger mark, or concrete battlefield trace only if the source supports it.
+- Beat count must vary by chapter purpose. Do not give every chapter the same number of beats just because a template is convenient. Use the source chapter's required movements:
+  - quiet setup, aftermath, travel, or mystery pressure: usually 2-3 beats
+  - standard investigation, alliance, rescue setup, or infiltration: usually 3-4 beats
+  - action, chase, siege, crossing, climax, major reveal, or turning-point chapters: usually 4-6 beats, with 5-7 allowed only when the source contains enough distinct stages
+  - never add beats just to hit a count; never compress distinct action stages into one beat just to keep a uniform pattern
 - Review and refine beats before moving into full scene drafting.
 - Draft scene by scene instead of generating an entire chapter at once.
 - Do not use fixed numeric length targets for individual scenes during drafting; let the scene reach its natural length.
@@ -19,6 +37,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - When compiling scenes, preserve all intended story content and make transitions smooth.
 - When revising, preserve the established tone and style. Do not flatten the prose with generic cleanup.
 - For final polish, prefer targeted/manual edits over full regeneration unless the user explicitly asks for a rewrite.
+
 
 ## Western Conflict & Narrative Variety
 
@@ -56,13 +75,16 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 ## Western Prose Style Lock
 
 - Use literal prose. Avoid metaphors, similes, and personification unless the user asks otherwise.
-- Avoid these AI echo words: absolutely, completely, relentless, massive, sharp, heavy, pure, extremely, perfectly.
+- Avoid these AI echo words: absolutely, completely, relentless, massive, sharp, heavy, pure, extremely, perfectly, voss (the name Voss is strictly banned for characters, families, or settings).
 - Prefer blue-collar 1800s vocabulary: iron, leather, dirt, lead, bone, granite.
 - Avoid modern or clinical words such as velocity, fraction, trajectory, impact, visible, resolving.
 - Avoid Texas slang unless the user specifically requests it.
 - Keep dialogue short and direct.
+- Make travel and search sequences active and engaging: ensure characters interact with the environment, encounter hazards, make significant discoveries, or actively scout rather than describing passive movement.
+
 - Avoid dialogue tags like "said," "asked," and "shouted" when the user requests em dash action anchors.
 - Don't use em dash onaction anchors for spacing like: `"Get on the horse." — Harlan tightened the cinch.`
+- For in-story notes, letters, telegrams, posted warnings, or written messages, do not use backticks or code blocks. Use prose such as `The note read:` or `The message read:` before the written text so it does not look like a prompt in Google Docs or compiled output.
 - Avoid "-ing" sentence openers.
 - Avoid repeated Name/Pronoun sentence loops, such as several consecutive sentences beginning with the same name or pronoun.
 - Mix sentence lengths to create an uneven rhythm.
@@ -71,6 +93,14 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - Do not use "He felt," "He realized," or "He thought" when the user wants behavior-driven prose.
 - Open chapter beats with mechanical action, sound, or physical strain instead of weather or scenery.
 - Keep combat fast, grounded, and brutal. Avoid micro-mechanics, fleeing or begging survivors, and formulaic aftermaths.
+- **Weapon & Material Detailing:**
+  - Use general names in fast action (e.g., "Tex fired twice").
+  - Use specific model names for mood and introduction (e.g., ".45 Peacemaker", "Winchester '73", "top-break Schofield").
+  - Avoid gun-catalog overload (e.g., do not write "Colt Single Action Army .45 Long Colt 7½-inch cavalry model..."). Keep weapon details active and sensory (e.g., "the blue worn silver at the muzzle").
+  - All historical details and weapon names must be sourced from the resolved `books/tex-cade/research-pack.md` (or the global series research-pack) to maintain historical accuracy and prevent hallucination.
+  - When referencing twin weapons in action, avoid confusion by specifying left/right identifiers rather than a generic "the Colt" (e.g., "his right-hand Peacemaker", "the left Colt", "the revolver").
+
+
 
 ## Templates
 
@@ -151,3 +181,31 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
 - If the loop reports `NEEDS_EXPANSION`, expand only inside approved chapter `scene-breakdown.md` beats using source-supported action, consequence, conflict, dialogue pressure, setting texture, and transitions.
 - If the loop reports `BLOCKED`, stop and ask for user direction.
 - The loop must never pad prose, invent unsupported facts, or create fixed beat/scene word counts.
+
+## Outline Quality Standards
+
+Apply these rules whenever generating, reviewing, or approving any book outline (`phase-0.md` or equivalent).
+
+### Required Outline Sections
+
+Every approved outline must include all of the following. If any are missing, flag them before proceeding to rulebook generation:
+
+- **Setting Function** — explicitly states how the landscape acts as pressure, not decoration. Must name at least three specific terrain or resource elements that force decisions: crossings, weather, wheel damage, supply depletion, repair work, dead drops, night watches, choke points, or sign reading. Characters must engage with the environment through labor, not just pass through it.
+- **Story Pattern with Chapter Function Rule** — names the structural pattern (road-pressure, manhunt, siege-and-break, etc.) and states a repeating chapter function rule. Every chapter must do one of a defined set of things (e.g., move the party, expose a secret, worsen trust, tighten pursuit). If the book has a split POV structure, the outline must name the convergence point and describe how both threads contribute to it.
+- **Hard Story Guardrails block embedded in the outline** — the outline itself must contain a guardrails block, not just reference the project rules. The block must list every active constraint: no institutional villain, no resource-rights scheme, no trial scene, no em-dashes, no modern vocabulary, and any book-specific restrictions.
+- **New Character entries with physical marker, voice note, and private motive/secret** — each new character must have all three. A physical marker is a single quick visual identifier. A voice note is how they speak (short, formal, silent, bitter, etc.). A private motive is what they actually want or hide, distinct from their stated purpose.
+- **Ending State for Book N+1** — a bullet list of where each major character stands at the close: who is dead/alive/escaped/compromised, what secrets are revealed or destroyed, what debts or obligations carry forward, any world-level change (a route destroyed, a cache burned, a network severed), and at least one unnamed hook for the next book.
+
+### Outline Review Checklist
+
+Before approving any outline:
+
+- [ ] Setting Function names at least three specific terrain or resource pressures that will force decisions in this book.
+- [ ] Story Pattern includes a named structural shape and a chapter function rule with specific labels.
+- [ ] Hard Story Guardrails are present inside the outline document, not only in external project rules.
+- [ ] Every new character entry includes a physical marker, a voice note, and a private motive or secret.
+- [ ] No chapter summary uses vague language. Each chapter entry must name a specific action, revelation, or change.
+- [ ] If the book uses a split POV structure, the outline names the convergence chapter and states what both threads contribute.
+- [ ] Ending State for Book N+1 is present and covers all major characters.
+- [ ] No new major character shares a first name with a prior major character unless explicitly documented.
+- [ ] No banned plot elements appear in any chapter summary or premise section.

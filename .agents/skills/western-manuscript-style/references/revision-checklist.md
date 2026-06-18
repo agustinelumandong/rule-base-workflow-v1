@@ -8,6 +8,7 @@ Use this checklist after drafting or when the user asks for cleanup, continuity 
 - **Plot Consistency:** Names, roles, and locations are consistent. Avoid modern terminology and concepts.
 - **Temporal Logic:** Travel duration is realistic, time of day tracking is logical, and the timeline for injury recovery and arrivals is believable.
 - Names match the series bible, outline, and prior scenes.
+- Sequel-only: new major emotional-stakes characters do not reuse first names from prior major characters unless the reuse is intentional and documented.
 - Timeline, time of day, weather, wounds, and travel distance are consistent.
 - Weapons, horses, clothing, gear, and injuries remain tracked.
 - Character knowledge matches what each character has actually seen or learned.
@@ -41,6 +42,8 @@ Use this checklist after drafting or when the user asks for cleanup, continuity 
 ## Final Polish
 
 - The revision preserves the user's plot intent.
+- Rescue, hostage, family-duty, or revenge stakes have at least one brief source-supported quiet humanizing beat when possible.
+- Series-arc villain confrontations carry one concrete source-supported legacy-pressure reminder before the final fight when possible.
 - The established tone is intact.
 - Transitions are smooth without flattening the prose.
 - Action is physical, clear, and grounded.

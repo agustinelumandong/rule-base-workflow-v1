@@ -323,7 +323,8 @@ def pacing_excerpt(book_folder: Path, slug: str) -> str:
 
 
 def relevant_research_excerpt(book_folder: Path, scene_breakdown_text: str) -> str:
-    research_file = book_folder / "research-pack.md"
+    from bookforge.core.research import get_research_pack_path
+    research_file = get_research_pack_path(book_folder)
     if not research_file.exists():
         return ""
     

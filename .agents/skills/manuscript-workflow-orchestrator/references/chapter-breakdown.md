@@ -11,6 +11,7 @@ If `source-format-scan.md` says a chapter detail is missing, do not invent it. M
 For each chapter and epilogue, include:
 
 - Chapter number and title.
+- **Chapter Function:** A single-phrase label stating what this chapter structurally accomplishes within the story pattern (e.g., `moves the party`, `exposes a secret`, `worsens trust`, `tightens pursuit`, `closes the distance`, `reveals a lead`, `turns an ally`, `exhausts a resource`). Use the story pattern's chapter function rule from the source outline. If no chapter function rule exists in the source, derive the label from the chapter's dominant required movement.
 - One-paragraph summary.
 - Main plot movement.
 - Emotional or thematic turn.
@@ -35,8 +36,21 @@ Generate beats from the source chapter outline. Each beat should contain:
 - Context Match Check: source match, no skipped plot movement, no unsupported additions, prior continuity preserved, next beat set up without invented context, and no introduction of forbidden business/syndicate schemes (plots must focus on classic Western adventure).
 - POV owner if clear from source; otherwise mark `UNKNOWN`.
 - Optional pacing fields when useful: Pacing Class, Elastic Range, Why This Beat Is Short/Long, Expansion Permission, and Reference Rhythm Note.
+- Optional series-strength fields when source-supported: Hero Cost, Villain Presence, Supporting Agency, Quiet Humanizing Beat, Legacy Pressure Payoff, and Proof/Consequence Payoff.
 
 Beat count is source-determined. Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when the story would otherwise jump past necessary context. Stop when the chapter's required movement and continuity out are complete.
+
+For books with split POV threads (e.g., two protagonists on separate routes converging), maintain a **POV Thread Tracker** at the top of `chapter-summaries.md`. List each thread's current position and the target convergence chapter. When generating beats for split-POV chapters, label each beat with its thread (`Thread A`, `Thread B`, or `Converged`) and verify the threads are moving at a compatible pace toward the convergence point.
+
+Use a variable beat-count policy:
+
+- Quiet setup, aftermath, travel, or mystery-pressure chapters usually need 2-3 beats.
+- Standard investigation, alliance, rescue setup, scouting, or infiltration chapters usually need 3-4 beats.
+- Action, chase, siege, crossing, climax, major reveal, or turning-point chapters usually need 4-6 beats.
+- Major climaxes may use 5-7 beats only when the source has enough distinct stages.
+- Never add filler beats to hit a count.
+- Never compress distinct action stages, tactical turns, or emotional consequences into one beat just to keep chapters uniform.
+- After generating all chapter breakdowns, scan the beat-count spread. If every chapter has the same count, treat that as a planning defect and rebalance before drafting.
 
 ## Scene Intent Rotation
 
@@ -89,12 +103,22 @@ Use this shape for every beat:
 - **Expansion Permission:** [What may be deepened without adding unsupported story.]
 - **Reference Rhythm Note:** [Optional high-level rhythm note; do not copy reference content.]
 
+### Western Series Strength
+
+- **Hero Cost:** [If source-supported, the protagonist's mistake, guilt, hard choice, or emotional cost beyond wounds; otherwise `UNKNOWN`.]
+- **Villain Presence:** [If source-supported, how the villain appears through personal threat, outlaw leverage, or direct pressure; never through land, property, business, or political-machine control.]
+- **Supporting Agency:** [If source-supported, what a supporting character chooses, risks, studies, resists, or changes without waiting for the protagonist.]
+- **Quiet Humanizing Beat:** [If source-supported, the brief lower-pressure beat that makes a rescued, hostage, family, or revenge-stake character feel like a person before the climax; otherwise `UNKNOWN`.]
+- **Legacy Pressure Payoff:** [If source-supported, the concrete prior wound, dead ally, old command, mark, ledger, or remembered sign that makes a series-arc villain confrontation personal; otherwise `UNKNOWN`.]
+- **Proof/Consequence Payoff:** [If source-supported, evidence, public courage, exposed truth, reputation cost, rescue consequence, or moral result beyond gunfire.]
+
 ### Beat Instructions
 
 - **Opener:** [Detail exactly how the beat must start.]
-- **Action:** [Physical actions, setting details, and plot movements required in this beat.]
+- **Action:** [Physical actions, setting details, and plot movements required in this beat. Include at least one terrain or environmental element that forces a decision, slows movement, causes damage, or reveals character through labor: a crossing, a repair, a weather change, a supply problem, a dead drop, a sign read. Do not allow the setting to be passive scenery.]
 - **Conflict:** [Interpersonal tension, physical conflict, or obstacle to resolve/escalate.]
 - **Emotional/Thematic Beat:** [The emotional pressure or theme this beat must carry.]
+- **Chapter Function:** [Single-phrase label from the source story pattern that names what this chapter accomplishes. Must match the chapter-summaries Chapter Function label.]
 - **Rule Check:** [1-2 critical style or continuity rules for this beat.]
 
 ### Context Match Check

@@ -18,7 +18,12 @@ Read the first source file that exists in the target folder:
 3. `outline.md`
 4. `chapter-outline.md`
 
-If none exist, stop and report the missing source file. Do not infer a manuscript from unrelated files.
+If none exist, **stop and report the missing source file**. Do not proceed with automatic plot or loop generation.
+Instead, trigger the **No Outline Fallback Protocol** (e.g. for Book 3):
+- Ask the user in chat: **"Do you want me to create an outline for Book 3?"** (or whichever book number is next).
+- If approved, generate an original classic Western outline excluding copyrighted details, syndicates, water rights, mineral rights, and trial scenes.
+- Present for user approval before drafting or generating further files.
+
 
 ## Output Paths
 
