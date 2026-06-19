@@ -7,11 +7,12 @@ Deterministic context and style check tools.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from bookforge.core.issue import (
     IssueCategory,
@@ -81,6 +82,43 @@ FORBIDDEN_CONFLICT_PATTERNS = {
     "business conspiracy": r"\bbusiness\s+conspirac(?:y|ies)\b",
     "syndicate-style": r"\bsyndicate-style\b",
     "voss": r"\bvoss\b",
+}
+
+PROJECT_RULE_BANNED_NAME_LABELS = {"voss"}
+
+DEFAULT_SETTINGS: dict[str, Any] = {
+    "name_policy": {
+        "banned_names": [],
+        "allowed_names": [],
+        "scope": "system_forward",
+    },
+    "style_review": {
+        "enabled": True,
+        "review_only": True,
+        "max_summary_words_without_dialogue": 120,
+        "analysis_terms": [
+            "realized",
+            "processed",
+            "understood",
+            "psychological",
+            "emotional",
+            "motif",
+            "symbolism",
+        ],
+        "formal_dialogue_terms": [
+            "traverse",
+            "obscures",
+            "therefore",
+            "endeavor",
+            "proceed",
+        ],
+        "time_jump_terms": [
+            "hours later",
+            "days later",
+            "weeks later",
+            "after some time",
+        ],
+    },
 }
 
 DIALOGUE_TAG_RE = re.compile(
@@ -172,6 +210,7 @@ RULE_META: dict[str, RuleMeta] = {
     "VALIDATOR_NO_MATCHING_SOURCE": RuleMeta("VALIDATOR_NO_MATCHING_SOURCE", Severity.HARD, IssueCategory.CONTEXT),
     "VALIDATOR_POV_VIOLATION": RuleMeta("VALIDATOR_POV_VIOLATION", Severity.HARD, IssueCategory.STYLE),
     "VALIDATOR_SENTENCE_OPENER_ISSUE": RuleMeta("VALIDATOR_SENTENCE_OPENER_ISSUE", Severity.SOFT, IssueCategory.STYLE),
+    "VALIDATOR_STYLE_REVIEW_SIGNAL": RuleMeta("VALIDATOR_STYLE_REVIEW_SIGNAL", Severity.SOFT, IssueCategory.STYLE),
 }
 
 
@@ -265,6 +304,49 @@ class ChapterReport:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def find_project_root(start: Path | None = None) -> Path:
+    """Find the nearest project root that can own settings.json."""
+    current = (start or Path.cwd()).resolve()
+    if current.is_file():
+        current = current.parent
+    for candidate in (current, *current.parents):
+        if (
+            (candidate / "settings.json").exists()
+            or (candidate / "pyproject.toml").exists()
+            or (candidate / "AGENTS.md").exists()
+        ):
+            return candidate
+    return Path.cwd().resolve()
+
+
+def _deep_merge_settings(defaults: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+    for key, value in defaults.items():
+        if isinstance(value, dict):
+            override_value = override.get(key, {})
+            merged[key] = _deep_merge_settings(value, override_value if isinstance(override_value, dict) else {})
+        else:
+            merged[key] = override.get(key, value)
+    for key, value in override.items():
+        if key not in merged:
+            merged[key] = value
+    return merged
+
+
+def load_project_settings(start: Path | None = None) -> dict[str, Any]:
+    """Load root settings.json, falling back to safe defaults."""
+    settings_path = find_project_root(start) / "settings.json"
+    if not settings_path.exists():
+        return _deep_merge_settings(DEFAULT_SETTINGS, {})
+    try:
+        loaded = json.loads(settings_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Invalid settings.json: {settings_path}: {exc}") from exc
+    if not isinstance(loaded, dict):
+        raise RuntimeError(f"Invalid settings.json: {settings_path}: root value must be an object")
+    return _deep_merge_settings(DEFAULT_SETTINGS, loaded)
 
 
 def contains_any(text: str, words: list[str], case_sensitive: bool = False) -> list[str]:
@@ -476,15 +558,103 @@ def forbidden_length_language(text: str) -> list[str]:
     return findings
 
 
-def check_forbidden_conflicts(text: str) -> list[str]:
+def _configured_banned_name_patterns(settings: dict[str, Any]) -> dict[str, str]:
+    name_policy = settings.get("name_policy", {})
+    banned_names = name_policy.get("banned_names", [])
+    allowed_names = name_policy.get("allowed_names", [])
+    if not isinstance(banned_names, list):
+        banned_names = []
+    if not isinstance(allowed_names, list):
+        allowed_names = []
+
+    allowed = {str(name).strip().lower() for name in allowed_names if str(name).strip()}
+    patterns: dict[str, str] = {}
+    for raw_name in banned_names:
+        name = str(raw_name).strip().lower()
+        if not name:
+            continue
+        if name in allowed and name not in PROJECT_RULE_BANNED_NAME_LABELS:
+            continue
+        patterns[name] = rf"\b{re.escape(name)}\b"
+    return patterns
+
+
+def check_forbidden_conflicts(text: str, settings_start: Path | None = None) -> list[str]:
     findings: list[str] = []
     text_lower = text.lower()
-    for label, pattern in FORBIDDEN_CONFLICT_PATTERNS.items():
+    settings = load_project_settings(settings_start)
+    patterns = {
+        **FORBIDDEN_CONFLICT_PATTERNS,
+        **_configured_banned_name_patterns(settings),
+    }
+    for label, pattern in patterns.items():
         if re.search(pattern, text_lower):
             if label == "voss":
                 findings.append("Banned character/setting name 'voss' found.")
+            elif label in _configured_banned_name_patterns(settings):
+                findings.append(f"Configured banned name '{label}' found.")
             else:
                 findings.append(f"Forbidden conflict theme/term '{label}' found in draft.")
+    return findings
+
+
+def _as_string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip().lower() for item in value if str(item).strip()]
+
+
+def check_style_review_signals(text: str, settings_start: Path | None = None) -> list[str]:
+    settings = load_project_settings(settings_start)
+    style_settings = settings.get("style_review", {})
+    if not isinstance(style_settings, dict) or not style_settings.get("enabled", True):
+        return []
+
+    findings: list[str] = []
+    max_summary_words = style_settings.get("max_summary_words_without_dialogue", 120)
+    if not isinstance(max_summary_words, int) or max_summary_words < 1:
+        max_summary_words = 120
+
+    for paragraph in re.split(r"\n\s*\n", text.strip()):
+        words = re.findall(r"\b[A-Za-z']+\b", paragraph)
+        if len(words) >= max_summary_words and '"' not in paragraph:
+            findings.append(
+                f"Long narrative-summary stretch without dialogue ({len(words)} words); review whether an active exchange or physical beat is needed."
+            )
+            break
+
+    text_lower = text.lower()
+    analysis_terms = [term for term in _as_string_list(style_settings.get("analysis_terms")) if re.search(rf"\b{re.escape(term)}\b", text_lower)]
+    if analysis_terms:
+        findings.append(
+            "Behavior-analysis language appears in draft; review for action/dialogue replacement: "
+            + ", ".join(sorted(set(analysis_terms))[:8])
+            + "."
+        )
+
+    formal_terms = _as_string_list(style_settings.get("formal_dialogue_terms"))
+    dialogue_segments = re.findall(r'"([^"]+)"', text)
+    formal_hits: set[str] = set()
+    for segment in dialogue_segments:
+        segment_lower = segment.lower()
+        for term in formal_terms:
+            if re.search(rf"\b{re.escape(term)}\b", segment_lower):
+                formal_hits.add(term)
+    if formal_hits:
+        findings.append(
+            "Formal dialogue terms appear inside quoted speech; review for rugged Western phrasing: "
+            + ", ".join(sorted(formal_hits)[:8])
+            + "."
+        )
+
+    time_jump_terms = [term for term in _as_string_list(style_settings.get("time_jump_terms")) if term in text_lower]
+    if time_jump_terms:
+        findings.append(
+            "Abrupt time-jump wording appears; review whether the transition needs trail labor, scouting, camp movement, or consequence: "
+            + ", ".join(sorted(set(time_jump_terms))[:8])
+            + "."
+        )
+
     return findings
 
 
@@ -806,7 +976,7 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
             span=marker,
         ))
 
-    forbidden_conflicts = check_forbidden_conflicts(text)
+    forbidden_conflicts = check_forbidden_conflicts(text, chapter.draft)
     for finding in forbidden_conflicts:
         issues.append(_make_issue(
             "VALIDATOR_FORBIDDEN_CONFLICT",
@@ -937,6 +1107,15 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
         issues.append(_make_issue(
             "VALIDATOR_UNPROFILED_PERIOD_TERM",
             warning,
+            chapter=chapter.slug,
+            file=chapter.draft,
+        ))
+
+    review_signals = check_style_review_signals(text, chapter.draft)
+    for signal in review_signals:
+        issues.append(_make_issue(
+            "VALIDATOR_STYLE_REVIEW_SIGNAL",
+            signal,
             chapter=chapter.slug,
             file=chapter.draft,
         ))

@@ -8,7 +8,7 @@ import re
 from itertools import combinations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from bookforge.core import validator
 from bookforge.core.issue import IssueCategory, ManuscriptIssue, Severity, compute_fingerprint
@@ -58,84 +58,6 @@ def _make_narrative_issue(
         fingerprint=compute_fingerprint(rule_id, file, None, None),
     )
 
-ANTAGONIST_MARKERS = {
-    "vex": ["silas vex", "vex"],
-    "klyne": ["jethro klyne", "klyne"],
-    "rooke": ["thaddeus rooke", "thaddeus", "rooke"],
-    "fane": ["darrow fane", "fane"],
-    "draven": ["milo draven", "draven"],
-}
-
-ANTAGONIST_TACTICAL_MOTIFS = {
-    "vex": {
-        "blackmail",
-        "frame",
-        "evidence",
-        "payoff",
-        "legacy",
-        "debt",
-        "network",
-        "field",
-        "deal",
-        "remnant",
-        "remnants",
-        "mark",
-        "ledger",
-        "rumor",
-        "warrant",
-    },
-    "klyne": {
-        "leak",
-        "watch",
-        "trail",
-        "report",
-        "warrant",
-        "tracker",
-        "range",
-        "dispatch",
-        "surveillance",
-        "involvement",
-        "surface",
-        "route",
-    },
-    "rooke": {
-        "survey",
-        "rail",
-        "paperwork",
-        "displace",
-        "claim",
-        "legal",
-        "statement",
-        "deposition",
-        "witness",
-        "hearing",
-        "pressure",
-    },
-    "fane": {
-        "enforcer",
-        "clash",
-        "ambush",
-        "intimidate",
-        "confront",
-        "duel",
-        "bar",
-        "pushing",
-        "pressure",
-    },
-    "draven": {
-        "rustler",
-        "horse",
-        "supply",
-        "raid",
-        "smoke",
-        "ring",
-        "forage",
-        "rustling",
-        "involvement",
-        "surface",
-    },
-}
-
 ANTAGONIST_COST_TERMS = {
     "cost",
     "wound",
@@ -164,6 +86,36 @@ ANTAGONIST_COST_TERMS = {
     "network",
     "threat",
 }
+
+
+def _string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip().lower() for item in value if str(item).strip()]
+
+
+def _configured_antagonists() -> dict[str, dict[str, set[str]]]:
+    settings = validator.load_project_settings()
+    narrative_quality = settings.get("narrative_quality", {})
+    if not isinstance(narrative_quality, dict):
+        return {}
+    antagonists = narrative_quality.get("antagonists", {})
+    if not isinstance(antagonists, dict):
+        return {}
+
+    profiles: dict[str, dict[str, set[str]]] = {}
+    for raw_key, raw_profile in antagonists.items():
+        if not isinstance(raw_profile, dict):
+            continue
+        key = str(raw_key).strip().lower()
+        markers = set(_string_list(raw_profile.get("markers")))
+        tactical_motifs = set(_string_list(raw_profile.get("tactical_motifs")))
+        if key and markers and tactical_motifs:
+            profiles[key] = {
+                "markers": markers,
+                "tactical_motifs": tactical_motifs,
+            }
+    return profiles
 
 INTENT_KEYWORDS = {
     "high-intensity action": [
@@ -626,8 +578,8 @@ def _check_character_distinctiveness(
 def _collect_antagonist_contexts(text: str) -> dict[str, str]:
     lower = text.lower()
     contexts: dict[str, str] = {}
-    for key, aliases in ANTAGONIST_MARKERS.items():
-        for alias in aliases:
+    for key, profile in _configured_antagonists().items():
+        for alias in profile["markers"]:
             for match in re.finditer(rf"\b{re.escape(alias)}\b", lower):
                 start = max(0, match.start() - 220)
                 end = min(len(lower), match.end() + 220)
@@ -636,6 +588,9 @@ def _collect_antagonist_contexts(text: str) -> dict[str, str]:
 
 
 def _check_antagonist_contrast(chapter_slug: str, source_text: str, issues: list[ManuscriptIssue]) -> None:
+    antagonist_profiles = _configured_antagonists()
+    if not antagonist_profiles:
+        return
     contexts = _collect_antagonist_contexts(source_text)
     mentioned = list(contexts.keys())
     if len(mentioned) <= 1:
@@ -644,7 +599,7 @@ def _check_antagonist_contrast(chapter_slug: str, source_text: str, issues: list
     goal_profiles: dict[str, set[str]] = {}
     missing_cost: list[str] = []
     for key, context in contexts.items():
-        goal_hits = {goal for goal in ANTAGONIST_TACTICAL_MOTIFS[key] if goal in context}
+        goal_hits = {goal for goal in antagonist_profiles[key]["tactical_motifs"] if goal in context}
         goal_profiles[key] = goal_hits
         if not goal_hits:
             issues.append(_make_narrative_issue(

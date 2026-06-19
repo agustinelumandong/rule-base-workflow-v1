@@ -34,6 +34,12 @@ Replace `books/tex-cade` and `chapter-02` with the target book folder and chapte
 
 Low source overlap is treated as a warning unless required files or beat structures are missing. This keeps the checker useful for short first drafts while still flagging chapters that need review before expansion.
 
+## Scope Boundaries
+
+Current-book name locks, rugged-dialogue preferences, conversation-summary concerns, behavior-over-analysis concerns, travel-bridge quality, and frame-up plausibility are review concerns unless the source or rulebook makes them deterministic facts. Do not turn subjective prose or pacing feedback into hard validator blockers without explicit user approval and focused tests.
+
+If a book-local name lock exists in `rulebook.md`, apply it to the active target book's new planning and draft files by default. Scan old books, compiled prior manuscripts, research archives, or prior context packets for replacement only when the user explicitly requests a series-wide or system-forward cleanup and accepts that old-book compatibility is not required.
+
 ## What AI Must Review
 
 Use Codex / ChatGPT 5.5 for semantic review when the automated validator reports source-overlap warnings or after major expansion. Gemini is optional secondary review only.

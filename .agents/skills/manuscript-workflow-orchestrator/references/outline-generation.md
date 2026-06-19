@@ -48,6 +48,7 @@ If the book has a split POV structure, state the convergence plan: when the thre
 - No modern or clinical vocabulary.
 - Literal western action only.
 - No banned names from the Project Lock.
+- Current-book name locks apply to the target book being planned or drafted by default. Perform a global series rename or prior-book rewrite only when the user explicitly requests a full series/system-forward cleanup and accepts that old-book compatibility is not required.
 - Any additional book-specific restrictions.
 
 ### 10. Premise
@@ -108,6 +109,12 @@ Before approving an outline, verify:
 - [ ] Ending State for Book N+1 is present and covers all major characters.
 - [ ] No new major character shares a first name with a prior major character unless explicitly documented.
 - [ ] No banned plot elements appear: no institutional villain, no resource-rights scheme, no trial scene.
+- [ ] Current-book banned names do not appear in the target outline's new characters, locations, families, or chapter actions. Prior-book continuity references are left alone unless the user requests a series-wide or system-forward cleanup.
+- [ ] Injury and survival states are consistent across chapters. A character cannot be killed in one chapter and treated, questioned, rescued, or used as a witness later unless the outline names a different person.
+- [ ] If a minor character reveals a hidden antagonist, the outline explains how that character knows: direct participation, betrayal, payment, overheard evidence, possession of proof, or another source-supported reason.
+- [ ] If the plot uses a frame-up, planted evidence, counterfeit goods, altered brands, or forged documents, the tactic has a practical delivery path and does not destroy the evidence the antagonist needs discovered.
+- [ ] If livestock branding is part of a frame-up, the outline distinguishes plausible brand alteration from simple double-branding. Use a running iron, old scar/new burn contrast, or another source-supported physical clue when the story relies on proving forgery.
+- [ ] The villain's power remains personal, outlaw, coercive, or tactical. Do not convert a frame-up into a land, property, business, or political-machine plot.
 
 ---
 

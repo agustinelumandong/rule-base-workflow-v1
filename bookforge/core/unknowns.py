@@ -162,7 +162,7 @@ def _suggest_names(item: str, ctx: BookContext) -> list[str]:
         return [
             "Amos Decker, Clete Farrow, Boyd Shaner (3 ranchers — one old-timer, one young hothead, one cautious family man).",
             "Walt Rudd, Lonnie Briggs, Hector Vela, Pete Ashworth (4 ranchers — spread across different grazing claims).",
-            "Silas Orin, Cord's neighbor Jess Dunbar, and two unnamed hands who follow Jess's lead (4 total).",
+            "Nolan Orin, Cord's neighbor Jess Dunbar, and two unnamed hands who follow Jess's lead (4 total).",
         ]
     if "guard" in q_lower or "logging" in q_lower:
         return [
