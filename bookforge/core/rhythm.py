@@ -8,25 +8,50 @@ from __future__ import annotations
 
 import re
 import statistics
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 from bookforge.core import length as length_checker
+from bookforge.core.issue import IssueCategory, ManuscriptIssue, Severity, compute_fingerprint
 
 PACING_ROW_RE = re.compile(r"^\|\s*(Chapter\s+\d+|Epilogue)\s*\|\s*([^|]+?)\s*\|", re.MULTILINE)
 
+RHYTHM_RULE_META = {
+    "RHYTHM_UNIFORM_FLOOR": (Severity.SOFT, "Chapter word counts lack rhythm variation; all chapters are too even."),
+    "RHYTHM_LOW_VARIANCE": (Severity.SOFT, "Chapter spread is narrow; add lean/long contrast through trim/rebalance."),
+    "RHYTHM_TOO_FEW_LEAN": (Severity.SOFT, "Too few lean chapters; expected at least {expected} lean chapters."),
+    "RHYTHM_TOO_MANY_LONG": (Severity.SOFT, "Too many chapters are over 2400 words; too many carry long treatment."),
+    "RHYTHM_PACING_MISMATCH": (Severity.SOFT, "{label} is `{pacing_class}` in pacing plan but has {words} words."),
+    "RHYTHM_EXPANDED_OVERSIZED": (Severity.INFO, "{label} is `expanded` but has {words} words; consider trimming unless source demands it."),
+    "RHYTHM_EPILOGUE_OVERSIZED": (Severity.INFO, "{label} is `epilogue/teaser` but has {words} words."),
+}
 
-@dataclass(frozen=True)
-class RhythmIssue:
-    level: str
-    message: str
+
+def _make_rhythm_issue(
+    rule_id: str,
+    chapter: Optional[str],
+    file: Optional[Path],
+    **format_kwargs,
+) -> ManuscriptIssue:
+    severity, base_message = RHYTHM_RULE_META.get(rule_id, (Severity.INFO, "Rhythm issue"))
+    message = base_message.format(**format_kwargs)
+    return ManuscriptIssue(
+        severity=severity,
+        category=IssueCategory.RHYTHM,
+        chapter=chapter,
+        file=file,
+        rule_id=rule_id,
+        message=message,
+        fingerprint=compute_fingerprint(rule_id, file, None, None),
+    )
 
 
 @dataclass(frozen=True)
 class RhythmReport:
     book_folder: Path
     counts: list[length_checker.DraftCount]
-    issues: list[RhythmIssue]
+    issues: tuple[ManuscriptIssue, ...]
     average: int
     median: int
     minimum: int
@@ -38,7 +63,8 @@ class RhythmReport:
 
     @property
     def status(self) -> str:
-        return "WARN" if self.issues else "PASS"
+        hard_issues = [i for i in self.issues if i.severity == Severity.HARD]
+        return "FAIL" if hard_issues else ("WARN" if self.issues else "PASS")
 
 
 def slug_for_label(label: str) -> str:
@@ -82,66 +108,67 @@ def analyze(
     over_2400 = sum(1 for value in values if value > 2400)
     pacing_classes = parse_pacing_classes(book_folder)
 
-    issues: list[RhythmIssue] = []
+    issues: list[ManuscriptIssue] = []
     if all(value >= uniform_floor for value in values):
-        issues.append(
-            RhythmIssue(
-                "WARN",
-                f"Every normal chapter is at or above {uniform_floor} words; rhythm looks too even.",
-            )
-        )
+        issues.append(_make_rhythm_issue(
+            "RHYTHM_UNIFORM_FLOOR",
+            chapter=None,
+            file=book_folder,
+        ))
     if stdev < low_variance_stdev:
-        issues.append(
-            RhythmIssue(
-                "WARN",
-                f"Normal chapter spread is narrow (stdev {stdev}); add lean/long contrast through trim/rebalance.",
-            )
-        )
+        issues.append(_make_rhythm_issue(
+            "RHYTHM_LOW_VARIANCE",
+            chapter=None,
+            file=book_folder,
+        ))
     if under_1800 < minimum_lean_chapters:
-        issues.append(
-            RhythmIssue(
-                "WARN",
-                f"Only {under_1800} normal chapter(s) are below 1800 words; expected at least {minimum_lean_chapters} lean chapters.",
-            )
-        )
+        issues.append(_make_rhythm_issue(
+            "RHYTHM_TOO_FEW_LEAN",
+            chapter=None,
+            file=book_folder,
+            expected=minimum_lean_chapters,
+        ))
     high_chapter_limit = max(len(normal) // 2, len(normal) - 4)
     if over_2400 > high_chapter_limit:
-        issues.append(
-            RhythmIssue(
-                "WARN",
-                f"{over_2400} normal chapters are above 2400 words; too many chapters carry long treatment.",
-            )
-        )
+        issues.append(_make_rhythm_issue(
+            "RHYTHM_TOO_MANY_LONG",
+            chapter=None,
+            file=book_folder,
+        ))
 
     for item in normal:
         slug = slug_for_label(item.label)
         pacing_class = pacing_classes.get(slug)
         if pacing_class in {"lean", "standard"} and item.words > 2200:
-            issues.append(
-                RhythmIssue(
-                    "WARN",
-                    f"{item.label} is `{pacing_class}` in pacing plan but has {item.words} words.",
-                )
-            )
+            issues.append(_make_rhythm_issue(
+                "RHYTHM_PACING_MISMATCH",
+                chapter=slug,
+                file=None,
+                label=item.label,
+                pacing_class=pacing_class,
+                words=item.words,
+            ))
         if pacing_class == "expanded" and item.words > 2600:
-            issues.append(
-                RhythmIssue(
-                    "WARN",
-                    f"{item.label} is `expanded` but has {item.words} words; consider trimming unless source demands it.",
-                )
-            )
+            issues.append(_make_rhythm_issue(
+                "RHYTHM_EXPANDED_OVERSIZED",
+                chapter=slug,
+                file=None,
+                label=item.label,
+                words=item.words,
+            ))
         if pacing_class == "epilogue/teaser" and item.words > 900:
-            issues.append(
-                RhythmIssue(
-                    "WARN",
-                    f"{item.label} is `epilogue/teaser` but has {item.words} words.",
-                )
-            )
+            issues.append(_make_rhythm_issue(
+                "RHYTHM_EPILOGUE_OVERSIZED",
+                chapter=slug,
+                file=None,
+                label=item.label,
+                words=item.words,
+            ))
 
     return RhythmReport(
         book_folder=book_folder,
         counts=counts,
-        issues=issues,
+        issues=tuple(issues),
         average=average,
         median=median,
         minimum=minimum,
