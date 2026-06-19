@@ -1,8 +1,9 @@
 {
   "name_policy": {
-    "banned_names": ["silas"],
-    "allowed_names": [],
-    "scope": "system_forward"
+    "banned_names": [
+      "silas"
+    ],
+    "allowed_names": []
   },
   "style_review": {
     "enabled": true,
@@ -29,6 +30,18 @@
       "days later",
       "weeks later",
       "after some time"
+    ],
+    "warn_short_sentence_runs": false,
+    "banned_terms": [
+      "no clean answer",
+      "tactical position",
+      "leverage",
+      "pressure point",
+      "emotional cost",
+      "control the ground",
+      "move fast",
+      "stay focused",
+      "legalese"
     ]
   },
   "narrative_quality": {

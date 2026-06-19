@@ -118,6 +118,18 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "weeks later",
             "after some time",
         ],
+        "warn_short_sentence_runs": False,
+        "banned_terms": [
+            "no clean answer",
+            "tactical position",
+            "leverage",
+            "pressure point",
+            "emotional cost",
+            "control the ground",
+            "move fast",
+            "stay focused",
+            "legalese",
+        ],
     },
 }
 
@@ -583,10 +595,12 @@ def check_forbidden_conflicts(text: str, settings_start: Path | None = None) -> 
     findings: list[str] = []
     text_lower = text.lower()
     settings = load_project_settings(settings_start)
+
     patterns = {
         **FORBIDDEN_CONFLICT_PATTERNS,
         **_configured_banned_name_patterns(settings),
     }
+
     for label, pattern in patterns.items():
         if re.search(pattern, text_lower):
             if label == "voss":
@@ -654,6 +668,37 @@ def check_style_review_signals(text: str, settings_start: Path | None = None) ->
             + ", ".join(sorted(set(time_jump_terms))[:8])
             + "."
         )
+
+    banned_terms = [term for term in _as_string_list(style_settings.get("banned_terms")) if re.search(rf"\b{re.escape(term)}\b", text_lower)]
+    if banned_terms:
+        findings.append(
+            "Forbidden modern or legalese/clinical terms appear in draft; replace with period-accurate phrasing: "
+            + ", ".join(sorted(set(banned_terms))[:8])
+            + "."
+        )
+
+    if style_settings.get("warn_short_sentence_runs", False):
+        sentences = SENTENCE_SPLIT_RE.split(text)
+        short_run = 0
+        short_sentences_detected = []
+        for sentence in sentences:
+            clean_sentence = sentence.strip()
+            if not clean_sentence:
+                continue
+            words = re.findall(r"\b[A-Za-z']+\b", clean_sentence)
+            if len(words) > 0 and len(words) < 5:
+                short_run += 1
+                if short_run >= 3:
+                    short_sentences_detected.append(clean_sentence)
+            else:
+                short_run = 0
+
+        if short_sentences_detected:
+            findings.append(
+                "Consecutive short sentence fragments detected (rhythm feels too modern/clipped); review and combine for classic cadence: "
+                + "; ".join(short_sentences_detected[:3])
+                + "..."
+            )
 
     return findings
 
