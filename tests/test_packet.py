@@ -12,7 +12,9 @@ from bookforge.core import packet
 
 class TestSmartContextSelection(unittest.TestCase):
     def setUp(self):
-        self.temp_dir = Path(tempfile.mkdtemp())
+        workspace_temp = Path("scratch_test_temp")
+        workspace_temp.mkdir(exist_ok=True)
+        self.temp_dir = Path(tempfile.mkdtemp(dir=workspace_temp))
         
         # Write default world-state.json
         self.world_state = {
@@ -50,6 +52,9 @@ Always follow outline.
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
+        workspace_temp = Path("scratch_test_temp")
+        if workspace_temp.exists() and not any(workspace_temp.iterdir()):
+            workspace_temp.rmdir()
 
     def test_optimize_character_profiles(self):
         char_section = """
@@ -82,6 +87,97 @@ Darin Mayweather is a sheriff's deputy.
         self.assertIn("Harlan", excerpt_both)
         self.assertIn("Darin Mayweather", excerpt_both)
         self.assertNotIn("excluded to optimize context budget", excerpt_both)
+
+    def create_mock_chapter(self, slug="chapter-01"):
+        folder = self.temp_dir / "changes" / slug
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "proposal.md").write_text("Scene 1: Harlan goes to the saloon.", encoding="utf-8")
+        (folder / "draft.md").write_text("Harlan walked to the saloon.", encoding="utf-8")
+        (folder / "beats.md").write_text("- beat 1", encoding="utf-8")
+        (folder / "continuity-out.md").write_text("unresolved_stakes:\n  - harlan_is_still_alive\n", encoding="utf-8")
+        
+        (self.temp_dir / "phase-0.md").write_text("# Phase 0\n## chapter-01\nAnchor content\n", encoding="utf-8")
+        (self.temp_dir / "chapter-summaries.md").write_text("# Chapter Summaries\n## chapter-01\nSummary content\n", encoding="utf-8")
+        (self.temp_dir / "mood-lock.md").write_text("Mood lock text", encoding="utf-8")
+        (self.temp_dir / "chapter-pacing-plan.md").write_text("Pacing info", encoding="utf-8")
+        return folder
+
+    def test_render_packet_all(self):
+        self.create_mock_chapter()
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "all")
+        self.assertIn("# Context Packet: chapter-01", pkt)
+        self.assertIn("## Compressed Style Lock", pkt)
+        self.assertIn("## Source Chapter Anchor", pkt)
+        self.assertIn("## Chapter Summary", pkt)
+        self.assertIn("## Relevant Rulebook Facts", pkt)
+        self.assertIn("## Mood And Tone Summary", pkt)
+        self.assertIn("## Scene Breakdown", pkt)
+
+    def test_render_packet_draft_prose(self):
+        self.create_mock_chapter()
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "draft-prose")
+        self.assertIn("# Context Packet: chapter-01", pkt)
+        self.assertIn("Task: `draft-prose`", pkt)
+        self.assertIn("## Compressed Style Lock", pkt)
+        self.assertIn("## Relevant Rulebook Facts", pkt)
+        self.assertIn("## Scene Breakdown", pkt)
+        self.assertNotIn("## Canon Snapshot", pkt)
+
+    def test_render_packet_continuity_check(self):
+        self.create_mock_chapter()
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "continuity-check")
+        self.assertIn("# Context Packet: chapter-01", pkt)
+        self.assertIn("Task: `continuity-check`", pkt)
+        self.assertIn("## Chapter Content", pkt)
+        self.assertIn("## Prior Continuity Out", pkt)
+        self.assertIn("## Canon Snapshot", pkt)
+        self.assertNotIn("## Compressed Style Lock", pkt)
+
+    def test_render_packet_extract_memory(self):
+        self.create_mock_chapter()
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "extract-memory")
+        self.assertIn("# Context Packet: chapter-01", pkt)
+        self.assertIn("Task: `extract-memory`", pkt)
+        self.assertIn("## Memory Extraction Schema", pkt)
+        self.assertIn("## Chapter Draft", pkt)
+        self.assertNotIn("## Compressed Style Lock", pkt)
+
+    def test_render_packet_revise_style(self):
+        self.create_mock_chapter()
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "revise-style")
+        self.assertIn("# Context Packet: chapter-01", pkt)
+        self.assertIn("Task: `revise-style`", pkt)
+        self.assertIn("## Style Guide", pkt)
+        self.assertIn("## Chapter Draft", pkt)
+        self.assertNotIn("## Canon Snapshot", pkt)
+
+    def test_render_packet_validate_change(self):
+        self.create_mock_chapter()
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "validate-change")
+        self.assertIn("# Context Packet: chapter-01", pkt)
+        self.assertIn("Task: `validate-change`", pkt)
+        self.assertIn("## Validation Results", pkt)
+        self.assertIn("## Staging Elements", pkt)
+        self.assertNotIn("## Compressed Style Lock", pkt)
+
+    def test_render_packet_budget_trimming(self):
+        self.create_mock_chapter()
+        
+        # Write a massive draft to exceed the draft-prose limit of 2500 tokens
+        massive_draft = "word " * 15000
+        folder = self.temp_dir / "changes" / "chapter-01"
+        (folder / "draft.md").write_text(massive_draft, encoding="utf-8")
+        
+        # Limit rulebook excerpt or scene breakdown to trigger scale down / trimming
+        # (Scene breakdown limit in draft-prose is 2200)
+        massive_scene_breakdown = "scene " * 12000
+        (folder / "proposal.md").write_text(massive_scene_breakdown, encoding="utf-8")
+        
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "draft-prose")
+        
+        # Check that the BUDGET_WARNING was appended
+        self.assertIn("BUDGET_WARNING", pkt)
+        self.assertIn("[Excerpt trimmed for token budget.]", pkt)
 
 
 if __name__ == "__main__":
