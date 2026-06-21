@@ -193,7 +193,7 @@ def cmd_init(args: argparse.Namespace) -> int:
                     files_to_add.append(agent_files[a])
             subprocess.run(["git", "add"] + files_to_add, check=True)
             print("Initialized Git repository and staged assets.")
-        except Exception as e:
+        except (subprocess.SubprocessError, OSError) as e:
             print(f"Warning: Git initialization failed: {e}", file=sys.stderr)
 
     print(f"\nSuccessfully initialized book pipeline in: '{book_folder}'")
@@ -249,7 +249,7 @@ def cmd_status(args: argparse.Namespace) -> int:
                 print(f"  [{issue.level}] {issue.message}")
         else:
             print("  [PASS] Chapter rhythm variance is healthy.")
-    except Exception as e:
+    except (OSError, UnicodeDecodeError, ZeroDivisionError, ValueError, KeyError, AttributeError) as e:
         print(f"\nChapter Rhythm: [WARN] Could not analyze rhythm ({e})")
 
     print("\nRun 'bf run-loop <book_folder>' to see the next workflow action.")
@@ -1172,6 +1172,8 @@ def main() -> int:
     try:
         return commands[args.command](args)
     except Exception as e:
+        # Intentional catch-all top-level application crash barrier to gracefully log
+        # execution failures and exit cleanly with status code 1.
         print(f"Execution Error: {e}", file=sys.stderr)
         return 1
 

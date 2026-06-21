@@ -275,7 +275,7 @@ class BookForgeTUI:
                         for r in relationships:
                             rels.append(f"{r['subject'].capitalize()} {r['relation']} {r['object'].capitalize()}")
                         print(f"     Relationships: {'; '.join(rels)}")
-            except Exception as e:
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError, KeyError) as e:
                 print(f"     Status: {COLOR_RED}Error loading logistics: {e}{RESET}")
 
         # Fetch and render the status line
@@ -362,7 +362,7 @@ class BookForgeTUI:
                 self.print_colorized_report(report)
             except KeyboardInterrupt:
                 print(f"\n  {COLOR_YELLOW}Loop execution cancelled by user.{RESET}")
-            except Exception as e:
+            except (OSError, ValueError, KeyError, AttributeError, IndexError) as e:
                 print(f"\n  {COLOR_RED}Error running loop: {e}{RESET}")
 
             print(f"\n  {COLOR_GRAY}{'─' * 66}{RESET}")
@@ -388,7 +388,7 @@ class BookForgeTUI:
                 print(f"  {COLOR_GRAY}•{RESET} Draft Files: {COLOR_CYAN}{draft_count}{RESET}")
                 print(f"  {COLOR_GRAY}•{RESET} Total Words: {COLOR_CYAN}{word_count:,}{RESET}")
                 print(f"  {COLOR_GRAY}•{RESET} Output File: {COLOR_CYAN}{output_path}{RESET}")
-            except Exception as e:
+            except (OSError, ValueError, KeyError, UnicodeDecodeError) as e:
                 print(f"  {COLOR_RED}{BOLD}✘ Compile Failed!{RESET}")
                 print(f"  {COLOR_RED}  Error: {e}{RESET}")
 
@@ -569,7 +569,7 @@ class BookForgeTUI:
                     selected = nbs[int(choice)]
                     notebooklm.set_associated_notebook(self.current_book, selected["id"], selected["title"])
                     print(f"\nLinked notebook '{selected['title']}' successfully!")
-            except Exception as e:
+            except (ValueError, IndexError, EOFError, KeyboardInterrupt) as e:
                 print(f"Error: {e}")
 
             print("\nPress any key to return...")
