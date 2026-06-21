@@ -141,8 +141,10 @@ def main():
     
     skills_dir = proj_root / ".agents" / "skills"
     required_skills = [
+        "commit-prompt",
         "humanizer",
         "manuscript-workflow-orchestrator",
+        "pig-prompt",
         "western-classic-writing-style",
         "western-historical-writing-style",
         "western-manuscript-style",

@@ -161,8 +161,10 @@ if [[ "$NLM_ONLY" == false ]]; then
 
   SKILLS_DIR="$PROJ_ROOT/.agents/skills"
   REQUIRED_SKILLS=(
+    "commit-prompt"
     "humanizer"
     "manuscript-workflow-orchestrator"
+    "pig-prompt"
     "western-classic-writing-style"
     "western-historical-writing-style"
     "western-manuscript-style"
