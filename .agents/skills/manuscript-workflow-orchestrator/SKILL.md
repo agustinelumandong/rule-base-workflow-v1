@@ -57,8 +57,8 @@ For a target folder such as `books/tex-cade/`, create or update:
   - Use original character names, conflicts, and setting. Check new major character first names against prior book major characters. Rename if there is a collision.
   - Run the outline quality checks from [references/outline-generation.md](references/outline-generation.md) before presenting.
   - Present the full completed outline to the user for explicit approval. Do not begin rulebook generation, mood lock, or scene breakdowns until the user approves.
-- Use Codex / ChatGPT 5.5 as the primary tool.
-- Treat Gemini as optional secondary review only.
+- Use any capable AI coding agent (Codex, Claude Code, Gemini CLI, Cursor, Copilot, Zed, OpenCode, or equivalent) as the primary tool. BookForge is agent-agnostic; the `bf` CLI is the contract.
+- Treat a secondary model as optional review only.
 - Before rulebook or chapter planning, run the source format scan:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>`
 - Use `source-format-scan.md` to identify present/missing bible sections, chapter-list detail, and target source before normalizing artifacts.
@@ -73,7 +73,7 @@ For a target folder such as `books/tex-cade/`, create or update:
 
 - Run context validation before using length results to guide expansion.
 - Use the length checker as an advisory progress report only; never pad or invent story to satisfy a target.
-- Use the autonomous loop controller to decide stop/continue state after draft, repair, expansion, and validation passes. Codex performs prose edits; the script controls state and next action.
+- Use the autonomous loop controller to decide stop/continue state after draft, repair, expansion, and validation passes. The agent performs prose edits; the `bf` script controls state and next action.
 - For chapter-level work, build or refresh `chapters/chapter-XX/context-packet.md` and use prompt modes to keep context compact.
 - For a full book check, run:
   `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`

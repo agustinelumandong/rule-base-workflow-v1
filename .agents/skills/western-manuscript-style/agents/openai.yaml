@@ -1,4 +1,0 @@
-interface:
-  display_name: "Western Manuscript Style"
-  short_description: "Grounded Western prose style and revision rules"
-  default_prompt: "Use $western-manuscript-style to draft or revise this scene while preserving continuity, POV, and tone."

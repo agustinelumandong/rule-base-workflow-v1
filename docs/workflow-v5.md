@@ -2,9 +2,9 @@
 
 ## Recommended Tool Stack
 
-- **Codex / ChatGPT 5.5:** Primary tool for structural mapping, prompt creation, manuscript drafting, error detection, editing passes, compilation, and final polish.
-- **Gemini (Optional):** Secondary review tool when an extra pass is needed for structural mapping, continuity checking, prompt review, or error detection.
-- **Note:** You can substitute these with any preferred AI tools.
+- **Primary agent:** Any capable AI coding agent (Codex CLI, Claude Code, Gemini CLI, Cursor, Copilot CLI, Zed, OpenCode, or equivalent) for structural mapping, prompt creation, manuscript drafting, error detection, editing passes, compilation, and final polish. BookForge is agent-agnostic; the `bf` CLI is the contract, not any specific agent.
+- **Secondary model (optional):** A second model for an extra review pass on structural mapping, continuity checking, prompt review, or error detection.
+- **Substitution:** Any preferred AI tool works. See `AGENTS.md` and `BOOKFORGE_V2_PLAN.md` §3 (Model Routing) for the agent-agnostic contract.
 
 ## Token-Balanced Operating Rules
 
@@ -55,7 +55,7 @@
 ## Phase 1: Foundation & Beat-Mapping
 
 - **Start with the Chapter Breakdown:** Begin with your established chapter outline (for example, your breakdown for Book 3, Blood on the Alkali).
-- **Generate Chapter Beats (Tool: Codex / ChatGPT 5.5):** Prompt the AI to create a beat-by-beat breakdown for each chapter.
+- **Generate Chapter Beats:** Prompt the AI to create a beat-by-beat breakdown for each chapter.
   - Copy and Paste Master Beat Template for AI to create a beat for each chapter with that setting. (Below)
   - **NOTE: Plot and Emotion:** In addition to plot beats, explicitly prompt the AI to include "emotional beats" or "thematic check-ins" to ensure narrative resonance isn't lost to pure mechanics.
   - **Scope Guidance:** Use broad book or chapter targets only for planning. Do not require fixed numeric lengths for beats or scenes.
@@ -66,10 +66,10 @@
 
 ## Phase 2: Structural Review & Continuity
 
-- Now, use Codex / ChatGPT 5.5 to begin writing the manuscript using the constructed prompts.
+- Now, use your AI agent to begin writing the manuscript using the constructed prompts.
 - **The Golden Rule of Scene Generation:** Moving forward, do not apply word count instructions to individual scenes. This prevents the AI from inserting unnecessary fluff and filler words.
-- **Continuity Pass (Tool: Codex / ChatGPT 5.5, Gemini optional):** Feed the drafted material back into the AI to scan specifically for continuity errors.
-- **Scene-by-Scene Structuring (Tool: Codex / ChatGPT 5.5):** Have the AI break the chapter down scene-by-scene, adding transitional bridges and applying fixes for any continuity errors detected in the previous step.
+- **Continuity Pass:** Feed the drafted material back into the AI to scan specifically for continuity errors.
+- **Scene-by-Scene Structuring:** Have the AI break the chapter down scene-by-scene, adding transitional bridges and applying fixes for any continuity errors detected in the previous step.
 
 ## Phase 3: Drafting & Micro-Editing
 
@@ -77,12 +77,12 @@
   1. **Hallucinations:** Ensure the draft does not introduce unauthorized backstory, character lore, motives, or relationships not defined in the outline/bible.
   2. **Plot Consistency:** Verify character names, roles, and locations remain consistent. Avoid modern concepts and vocabulary.
   3. **Temporal Logic:** Ensure realistic travel times, track the time of day, and keep chronological sequences (such as injury recovery and arrivals) believable.
-- **Scene Drafting (Tool: Codex / ChatGPT 5.5):** Prompt the AI to write out the chapter one scene at a time based on the new, error-free breakdown.
+- **Scene Drafting:** Prompt the AI to write out the chapter one scene at a time based on the new, error-free breakdown.
   - **Control the POV:** Explicitly instruct the AI on the exact "Point of View" (POV) for that specific scene. This is crucial to avoid "head-hopping" (switching perspectives mid-scene), which is a common AI error.
-- **Microscopic Error Detection (Tool: Codex / ChatGPT 5.5, Gemini optional):** Once the chapter is drafted, run a highly detailed error-detection pass. The AI's only job here is to flag inconsistencies or grammatical issues and suggest solutions.
-- **Dialogue & Voice Pass (Tool: Codex / ChatGPT 5.5, Gemini optional):** Before compiling, run a pass specifically focused on dialogue. Ask the AI to ensure each character has a distinct "voice" or "dialect," which is vital for the authenticity of a Western manuscript.
-- **Compilation & Integration (Tool: Codex / ChatGPT 5.5):** Use those suggested solutions as your next prompt. Have the AI apply the fixes and compile the individual scenes into one seamless, cohesive chapter. Note: don’t include word count instruction let the scene write itself.
-- **The Final AI Pass (Tool: Codex / ChatGPT 5.5, Gemini optional):** Run one last automated read-through on the compiled chapter to catch any final glaring errors.
+- **Microscopic Error Detection:** Once the chapter is drafted, run a highly detailed error-detection pass. The AI's only job here is to flag inconsistencies or grammatical issues and suggest solutions.
+- **Dialogue & Voice Pass:** Before compiling, run a pass specifically focused on dialogue. Ask the AI to ensure each character has a distinct "voice" or "dialect," which is vital for the authenticity of a Western manuscript.
+- **Compilation & Integration:** Use those suggested solutions as your next prompt. Have the AI apply the fixes and compile the individual scenes into one seamless, cohesive chapter. Note: don’t include word count instruction let the scene write itself.
+- **The Final AI Pass:** Run one last automated read-through on the compiled chapter to catch any final glaring errors.
 
 ## Phase 4: The Human Polish
 
@@ -104,17 +104,17 @@ Simplified, easy-to-follow version manuscript workflow broken down into plain En
 
 ## Step 2: Planning the Chapter (The Blueprint)
 
-- **Start with an Outline:** Take your general chapter idea and use an AI (Codex / ChatGPT 5.5, with Gemini optional) to break it down into smaller, step-by-step "beats".
+- **Start with an Outline:** Take your general chapter idea and use an AI agent to break it down into smaller, step-by-step "beats".
 - **Add Emotion:** Tell the AI to include emotional moments, not just plot actions. Give scope guidance instead of fixed numeric lengths so the AI does not pad or invent context.
 - **Check the Work:** Read through these beats yourself and fix any mistakes so the story stays on track.
 
 ## Step 3: Writing and Fixing (The Assembly Line)
 
-- **Drop the Word Counts:** Use Codex / ChatGPT 5.5 to start drafting. Stop telling the AI how many words to write for each scene so it doesn't add useless filler.
+- **Drop the Word Counts:** use your AI agent to start drafting. Stop telling the AI how many words to write for each scene so it doesn't add useless filler.
 - **Run Mandatory Workflow Checks:** Before writing or compiling, verify there are no hallucinations (invented lore/backstory), no plot/concept inconsistencies, and no temporal logic errors (travel speed, time of day tracking, recovery timeline).
 - **Write Scene by Scene:** Have the AI write one scene at a time, making sure you tell it exactly which character's perspective to use.
-- **Check for Errors and Voices:** Use Codex / ChatGPT 5.5, with Gemini optional, to hunt for continuity mistakes and make sure every character's dialogue sounds distinct and authentic.
-- **Stitch It Together:** Use Codex / ChatGPT 5.5 to combine all the fixed scenes into one complete, seamless chapter without leaving anything out.
+- **Check for Errors and Voices:** Use any capable AI agent, to hunt for continuity mistakes and make sure every character's dialogue sounds distinct and authentic.
+- **Stitch It Together:** use your AI agent to combine all the fixed scenes into one complete, seamless chapter without leaving anything out.
 
 ## Step 4: The Final Polish (The Human Touch)
 

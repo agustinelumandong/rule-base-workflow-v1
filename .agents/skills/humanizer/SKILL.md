@@ -9,7 +9,10 @@ description: |
   attributions, em dash overuse, rule of three, AI vocabulary words, passive
   voice, negative parallelisms, and filler phrases.
 license: MIT
-compatibility: claude-code opencode
+# Agent-agnostic: this skill is plain Markdown. Any agent that can read files and run
+# shell commands can use it. The original `compatibility`/`allowed-tools` frontmatter
+# named Claude-Code-specific tool names; those are now advisory only.
+compatibility: any
 allowed-tools:
   - Read
   - Write

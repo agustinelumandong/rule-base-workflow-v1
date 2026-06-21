@@ -2,7 +2,7 @@
 
 Use this protocol when the user asks to run the book, finish the manuscript, keep going until valid, or use an autonomous manuscript loop.
 
-The loop is agent-driven. Python controls scanning, status, prioritization, and reporting. Codex performs prose edits, repairs, and source-locked expansion.
+The loop is agent-driven. Python controls scanning, status, prioritization, and reporting. The agent (any agent) performs prose edits, repairs, and source-locked expansion.
 
 ## Loop Protocol
 
@@ -14,7 +14,7 @@ The loop is agent-driven. Python controls scanning, status, prioritization, and 
 6. Once the manuscript is within range, run narrative quality checks for character pressure and scene intent rotation.
 7. Run chapter rhythm so the book does not pass with artificial same-size chapters.
 8. Decide the next state: `DONE`, `NEEDS_CONTEXT_REPAIR`, `NEEDS_STYLE_REPAIR`, `NEEDS_EXPANSION`, `NEEDS_PACING_REBALANCE`, or `BLOCKED`.
-9. Codex performs the next recommended action only when the report says `CONTINUE`.
+9. The agent performs the next recommended action only when the report says `CONTINUE`.
 10. Re-run the loop after each draft, expansion, or repair pass.
 
 Before chapter-level prose edits, refresh the chapter context packet:

@@ -418,7 +418,10 @@ the canon files.
   `.cursor/rules` / `copilot-instructions.md` / `GEMINI.md` / **OpenCode config**
 - **Define `spec/model-routing.yml`** (extractor/reviewer/writer personas); wire
   `bf check-persona` to enforce it; have `bf init --agents opencode` emit `small_model` mapping
-- Convert 13 shim scripts to `bf` aliases or remove; rewrite `AGENTS.md` to `bf`
+- ~~Convert 13 shim scripts to `bf` aliases or remove; rewrite `AGENTS.md` to `bf`~~
+  **Deferred to M5.** Shims still work (they delegate to `bookforge.core` via `from X import *`);
+  deleting them now would break every documented command in `AGENTS.md` and `README.md`.
+  Full removal at M5 once docs are migrated to `bf` CLI as primary.
 - Remove `.agents/skills/*/agents/openai.yaml`; consolidate skill content into agent-neutral md
 - Demote TUI (carried from M0 if not done): `bf tui` opt-in with POSIX guard
 - **Shippable:** any agent drives the system; model-routing intent declared in-repo.
@@ -506,7 +509,7 @@ Week 4:   M5 (polish/docs/deprecation)
 | `tex-cade` defaults (22 files) | Replaced with `book-example` or real sample | M0 |
 | Codex/Antigravity/Gemini names in docs/engine | Stripped | M1 |
 | `.agents/skills/*/agents/openai.yaml` | Removed | M1 |
-| 13 shim scripts | Thin `bf` aliases or removed | M1 |
+| 13 shim scripts | Thin `bf` aliases or removed | ~~M1~~ → **M5** (deferred; see §M1 note) |
 | `notebooklm.py` (573 lines) | One adapter behind Protocol | M3 |
 | `humanizer` Claude-Code frontmatter | Agent-neutral markdown | M1 |
 | TUI as no-arg default | Opt-in `bf tui` | M0 |

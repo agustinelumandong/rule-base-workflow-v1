@@ -9,8 +9,8 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 - Create `chapter-summaries.md`.
 - Create or refresh `chapter-pacing-plan.md` when the user wants reference-guided rhythm or when chapters are becoming artificially similar in length.
 - Create chapter beats with plot movement plus emotional/thematic pressure.
-- Use Codex / ChatGPT 5.5 as primary.
-- Use Gemini only as optional secondary review.
+- Use any capable AI coding agent as primary (see `AGENTS.md`).
+- Treat a secondary model as optional review only.
 
 ## Phase 2: Structural Review And Continuity
 
@@ -121,7 +121,7 @@ These items may guide manual revision or an AI semantic review prompt. They must
 
 If the source does not support one of these strengths, mark it `UNKNOWN` in planning or review notes rather than inventing story to satisfy the rubric.
 
-Codex performs prose edits. The loop controller only scans, prioritizes, reports state, and recommends the next action.
+The agent performs prose edits. The loop controller only scans, prioritizes, reports state, and recommends the next action.
 
 ## No Word Count Padding
 
@@ -137,7 +137,7 @@ Use `scripts/check_manuscript_length.py` from the orchestrator skill to report c
 
 ## Context Validation Check
 
-Use `scripts/validate_manuscript_context.py` from the orchestrator skill to verify required files, chapter draft presence, scene-breakdown beat structure, automated `phase-0.md` source overlap, beat-to-draft coverage, forbidden fixed-count language, unresolved markers, and style-risk warnings. Use `--ai-prompt --chapter chapter-XX` to generate a Codex / ChatGPT 5.5 semantic review prompt when a chapter needs deeper source-match review.
+Use `scripts/validate_manuscript_context.py` from the orchestrator skill to verify required files, chapter draft presence, scene-breakdown beat structure, automated `phase-0.md` source overlap, beat-to-draft coverage, forbidden fixed-count language, unresolved markers, and style-risk warnings. Use `--ai-prompt --chapter chapter-XX` to generate a semantic review prompt (for any capable AI agent) when a chapter needs deeper source-match review.
 
 ## Token-Balanced Context
 

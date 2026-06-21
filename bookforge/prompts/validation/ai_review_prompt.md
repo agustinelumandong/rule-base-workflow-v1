@@ -1,6 +1,6 @@
 # AI Chapter Context Review Prompt
 
-Use Codex / ChatGPT 5.5 as the primary reviewer. Gemini is optional secondary review only.
+Use any capable AI agent as the primary reviewer. A secondary model is optional for an extra review pass.
 
 Review `{chapter_draft}` against these sources:
 

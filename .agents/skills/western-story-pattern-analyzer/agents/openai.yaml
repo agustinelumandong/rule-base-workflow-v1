@@ -1,4 +1,0 @@
-interface:
-  display_name: "Western Story Pattern Analyzer"
-  short_description: "Analyze Western reference structure without imitation"
-  default_prompt: "Use $western-story-pattern-analyzer to analyze this reference Western folder for high-level pacing and structure guidance without copying prose or plot."

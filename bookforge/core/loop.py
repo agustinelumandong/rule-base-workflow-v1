@@ -439,7 +439,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Autonomous Manuscript Loop: reports next Codex action."
+        description="Autonomous Manuscript Loop: reports next agent action."
     )
     parser.add_argument(
         "book_folder",

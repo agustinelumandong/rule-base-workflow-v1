@@ -176,7 +176,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   ```bash
   python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/<book-slug> --target-min 30000 --target-max 31000
   ```
-- Treat `DONE` as the stop condition and `CONTINUE` as permission for the next Codex prose action.
+- Treat `DONE` as the stop condition and `CONTINUE` as permission for the next prose action by the agent (any agent).
 - Fix context problems before style problems, and fix style problems before length expansion.
 - If the loop reports `NEEDS_EXPANSION`, expand only inside approved chapter `scene-breakdown.md` beats using source-supported action, consequence, conflict, dialogue pressure, setting texture, and transitions.
 - If the loop reports `BLOCKED`, stop and ask for user direction.

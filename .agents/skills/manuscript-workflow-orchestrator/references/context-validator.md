@@ -42,7 +42,7 @@ If a book-local name lock exists in `rulebook.md`, apply it to the active target
 
 ## What AI Must Review
 
-Use Codex / ChatGPT 5.5 for semantic review when the automated validator reports source-overlap warnings or after major expansion. Gemini is optional secondary review only.
+Use any capable AI agent for semantic review when the automated validator reports source-overlap warnings or after major expansion. A secondary model is optional review only.
 
 The AI review must compare the chapter draft against `phase-0.md`, `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, and that chapter's `scene-breakdown.md`.
 
