@@ -227,7 +227,7 @@ class ManuscriptLoopTests(unittest.TestCase):
             self.assertEqual(repairs_loaded, {"chapter-01": 2})
 
             # Check state file exists
-            self.assertTrue((tmp_path / "loop-state.json").exists())
+            self.assertTrue((tmp_path / "state" / "loop.json").exists())
 
 
 if __name__ == "__main__":
