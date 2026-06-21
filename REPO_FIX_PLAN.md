@@ -1,5 +1,12 @@
 # Rule-Base-Workflow v1 — Repo Repair Plan
 
+> **Status (2026-06-22): Historical reference.** This plan has been fully absorbed into
+> `BOOKFORGE_V2_PLAN.md` (see Appendix B there for the phase mapping) and all its phases are
+> complete. The orchestrator shim scripts it references under
+> `.agents/skills/manuscript-workflow-orchestrator/scripts/` **have been removed**; the `bf` CLI
+> is now the sole entry surface. This document is retained as the detailed record of what was
+> fixed and why.
+
 A prioritized, concrete plan to fix the structural, correctness, and hygiene problems
 identified in the codebase audit. Each item lists the **problem**, the **fix**, the
 **files touched**, **how to verify**, plus **effort** and **risk**.
