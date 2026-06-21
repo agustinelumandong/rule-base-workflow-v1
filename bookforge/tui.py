@@ -93,7 +93,7 @@ class BookForgeTUI:
         width = 70
         title = " BookForge Studio "
         padding = (width - len(title)) // 2
-        
+
         print(CLEAR_SCREEN)
         print(f"{COLOR_BLUE}{BOLD}{'=' * width}{RESET}")
         print(f"{COLOR_BLUE}{BOLD}{' ' * padding}{title}{' ' * padding}{RESET}")
@@ -145,7 +145,7 @@ class BookForgeTUI:
             return
 
         print(f"  Navigate with {COLOR_CYAN}Arrow Keys{RESET} and press {COLOR_CYAN}Enter{RESET} to select:\n")
-        
+
         for idx, book in enumerate(self.books):
             series_info = series.get_series_info(book)
             series_prefix = f"[{series_info['name']}] " if series_info else ""
@@ -159,7 +159,7 @@ class BookForgeTUI:
                     title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
                     if title_match:
                         title = f"{title_match.group(1).strip()} ({book.name})"
-                except Exception:
+                except (OSError, UnicodeDecodeError):
                     pass
 
             display_title = f"{series_prefix}{title}"
@@ -227,7 +227,7 @@ class BookForgeTUI:
                     bar = f"[{'#' * filled}{'-' * (bar_len - filled)}]"
                 else:
                     bar = ""
-                
+
                 print(f"     Words: {COLOR_CYAN}{prog:,}{RESET} / target min {t_min:,} {bar}")
                 if prog < t_min:
                     print(f"     Status: {COLOR_YELLOW}NEEDS EXPANSION{RESET} (remaining: {t_min - prog:,} words)")
@@ -259,7 +259,7 @@ class BookForgeTUI:
                         status_marker = " [DEAD]" if info.get("status") == "dead" else ""
                         locs.append(f"{char.capitalize()}{status_marker} at '{info.get('location', 'unknown')}'")
                     print(f"     Locations: {', '.join(locs)}")
-                    
+
                     invs = []
                     for char, info in characters.items():
                         if info.get("status") != "dead":
@@ -287,7 +287,7 @@ class BookForgeTUI:
         total_out = analytics_data.get("total_output_tokens", 0)
         total_runs = analytics_data.get("total_runs", 0)
         cumulative_cost = persona_module.calculate_cumulative_cost(book_folder)
-        
+
         from bookforge.core.headroom import HAS_OFFICIAL_HEADROOM
         headroom_status = "Active" if HAS_OFFICIAL_HEADROOM else "Local Fallback"
         print(f"\n  {BG_BLUE} Model: {model_str:<12} | Cost: ${cumulative_cost:.4f} | Tokens: {total_in + total_out:,} ({total_in:,} In / {total_out:,} Out) | Runs: {total_runs:<3} | Headroom: {headroom_status} {RESET}")
@@ -310,10 +310,10 @@ class BookForgeTUI:
             # Run validation checks
             sys.stdout.write("\033[?25h")  # Show cursor for command execution
             print(f"\nRunning validation checks on {self.current_book.name}...")
-            
+
             # Gaps
             gaps_fail, gaps_warn = scanner.check_gaps(self.current_book)
-            
+
             # Length
             src = scanner.source_path(self.current_book)
             len_state = None
@@ -322,10 +322,10 @@ class BookForgeTUI:
                 target = scanner.first_target(outline_text)
                 target_words = target[0] if target else 30000
                 len_state = loop.build_length_state(self.current_book, target_words, target_words + 1000)
-            
+
             # Chain
             chain_ok, chain_logs = chain.analyze_chain(self.current_book)
-            
+
             self.status_cache = {
                 "gaps": (gaps_fail, gaps_warn),
                 "length": len_state,
@@ -340,7 +340,7 @@ class BookForgeTUI:
             print(f"{COLOR_BLUE}{BOLD} Starting Autonomous Loop: {self.current_book.name} {RESET}")
             print(f"{COLOR_BLUE}{BOLD}{'=' * width}{RESET}\n")
             print("  Press Ctrl+C to cancel loop execution at any time.\n")
-            
+
             # Retrieve target words
             src = scanner.source_path(self.current_book)
             target_words = 30000
@@ -350,9 +350,9 @@ class BookForgeTUI:
                     target = scanner.first_target(outline_text)
                     if target:
                         target_words = target[0]
-                except Exception:
+                except (OSError, UnicodeDecodeError):
                     pass
-            
+
             try:
                 status, reason, report = loop.run_loop_check(
                     book_folder=self.current_book,
@@ -364,7 +364,7 @@ class BookForgeTUI:
                 print(f"\n  {COLOR_YELLOW}Loop execution cancelled by user.{RESET}")
             except Exception as e:
                 print(f"\n  {COLOR_RED}Error running loop: {e}{RESET}")
-            
+
             print(f"\n  {COLOR_GRAY}{'─' * 66}{RESET}")
             print("  Press any key to return to Dashboard...")
             get_key()
@@ -376,7 +376,7 @@ class BookForgeTUI:
             print(f"{COLOR_BLUE}{BOLD}{'=' * width}{RESET}")
             print(f"{COLOR_BLUE}{BOLD} Compiling Manuscript: {self.current_book.name} {RESET}")
             print(f"{COLOR_BLUE}{BOLD}{'=' * width}{RESET}\n")
-            
+
             output_path = self.current_book / "manuscript.md"
             try:
                 draft_count, word_count = compiler.compile_manuscript(
@@ -391,7 +391,7 @@ class BookForgeTUI:
             except Exception as e:
                 print(f"  {COLOR_RED}{BOLD}✘ Compile Failed!{RESET}")
                 print(f"  {COLOR_RED}  Error: {e}{RESET}")
-                
+
             print(f"\n  {COLOR_GRAY}{'─' * 66}{RESET}")
             print("  Press any key to return to Dashboard...")
             get_key()
@@ -494,9 +494,9 @@ class BookForgeTUI:
         assert self.current_book is not None
         book_folder = self.current_book
         self.draw_header(f"NotebookLM Research: {book_folder.name}")
-        
+
         from bookforge.core import notebooklm
-        
+
         # 1. Connection Status
         if not notebooklm.is_nlm_available():
             print(f"  {COLOR_RED}Error: `nlm` CLI tool is not installed or not in PATH.{RESET}")
@@ -533,7 +533,7 @@ class BookForgeTUI:
     def handle_notebooklm_key(self, key: str) -> None:
         assert self.current_book is not None
         from bookforge.core import notebooklm
-        
+
         if key == "b":
             self.state = "DASHBOARD"
         elif key == "e":
@@ -562,7 +562,7 @@ class BookForgeTUI:
 
             for idx, n in enumerate(nbs):
                 print(f"  [{idx}] {n['title']} (ID: {n['id']}, sources: {n['sources']})")
-            
+
             try:
                 choice = input(f"\nEnter number to link (0-{len(nbs)-1}) or Enter to cancel: ").strip()
                 if choice.isdigit() and 0 <= int(choice) < len(nbs):
@@ -571,7 +571,7 @@ class BookForgeTUI:
                     print(f"\nLinked notebook '{selected['title']}' successfully!")
             except Exception as e:
                 print(f"Error: {e}")
-            
+
             print("\nPress any key to return...")
             get_key()
             sys.stdout.write("\033[?25l")
@@ -590,7 +590,7 @@ class BookForgeTUI:
                     print(f"\n{COLOR_GREEN}✔ Sync Successful!{RESET} Saved to {pack_path}")
                 else:
                     print(f"\n{COLOR_RED}✘ Sync Failed!{RESET}")
-            
+
             print("\nPress any key to return...")
             get_key()
             sys.stdout.write("\033[?25l")
@@ -610,7 +610,7 @@ class BookForgeTUI:
                         print(f"  - {f}")
                 else:
                     print(f"\n{COLOR_YELLOW}No new files uploaded or upload failed.{RESET}")
-            
+
             print("\nPress any key to return...")
             get_key()
             sys.stdout.write("\033[?25l")
@@ -627,7 +627,7 @@ class BookForgeTUI:
                     print("\nQuerying NotebookLM...")
                     answer = notebooklm.query_notebook(nb["id"], query_text)
                     print(f"\nAnswer:\n{answer}")
-            
+
             print("\nPress any key to return...")
             get_key()
             sys.stdout.write("\033[?25l")
