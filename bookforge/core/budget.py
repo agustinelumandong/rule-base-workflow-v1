@@ -11,13 +11,19 @@ MODES = ("planning", "drafting", "repair", "style", "validation", "expansion", "
 def chapter_folder(book_folder: Path, slug: str | None) -> Path | None:
     if not slug:
         return None
+    changes_path = book_folder / "changes" / slug
+    if changes_path.exists():
+        return changes_path
     return book_folder / "chapters" / slug
 
 
 def chapter_draft(folder: Path, slug: str) -> Path:
-    if slug == "epilogue":
-        return folder / "epilogue.md"
-    return folder / f"{slug}.md"
+    draft_options = ["draft.md", f"{slug}.md", "epilogue.md" if slug == "epilogue" else f"{slug}.md"]
+    for opt in draft_options:
+        p = folder / opt
+        if p.exists():
+            return p
+    return folder / draft_options[0]
 
 
 def source_file(book_folder: Path) -> Path:
@@ -30,11 +36,16 @@ def mode_files(book_folder: Path, slug: str | None, mode: str) -> tuple[list[Pat
     folder = chapter_folder(book_folder, slug)
     chapter_files = []
     if folder and slug:
+        proposal_path = folder / "proposal.md"
+        scene_bd_path = folder / "scene-breakdown.md"
+        scene_breakdown = proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path
+
         chapter_files = [
             folder / "context-packet.md",
-            folder / "scene-breakdown.md",
+            scene_breakdown,
             chapter_draft(folder, slug),
         ]
+
 
     if mode == "planning":
         return (

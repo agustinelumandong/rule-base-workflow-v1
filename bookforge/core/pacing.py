@@ -123,10 +123,27 @@ def extract_heading_section(text: str, slug: str) -> str:
 
 
 def chapters(book_folder: Path) -> list[Path]:
+    slugs = set()
+    changes_root = book_folder / "changes"
+    if changes_root.exists():
+        for path in changes_root.iterdir():
+            if path.is_dir() and not path.name.startswith("."):
+                slugs.add(path.name)
     chapters_root = book_folder / "chapters"
-    if not chapters_root.exists():
-        return []
-    return [path for path in sorted(chapters_root.iterdir(), key=chapter_sort_key) if path.is_dir()]
+    if chapters_root.exists():
+        for path in chapters_root.iterdir():
+            if path.is_dir() and not path.name.startswith("."):
+                slugs.add(path.name)
+    
+    chapter_folders = []
+    for slug in sorted(slugs, key=lambda s: chapter_sort_key(Path(s))):
+        changes_path = changes_root / slug
+        chapters_path = chapters_root / slug
+        if changes_path.exists():
+            chapter_folders.append(changes_path)
+        else:
+            chapter_folders.append(chapters_path)
+    return chapter_folders
 
 
 def count_beats(scene_breakdown: str) -> int:
@@ -219,7 +236,9 @@ def build_plan(book_folder: Path, reference_analysis: Path) -> str:
     pacing: list[ChapterPacing] = []
     for folder in chapter_folders:
         slug = folder.name
-        scene = read_optional(folder / "scene-breakdown.md")
+        proposal_path = folder / "proposal.md"
+        scene_bd_path = folder / "scene-breakdown.md"
+        scene = read_optional(proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path)
         summary_section = extract_heading_section(summaries, slug)
         source_section = extract_heading_section(source_text, slug)
         source_scope = "\n\n".join([source_section, summary_section]).strip()

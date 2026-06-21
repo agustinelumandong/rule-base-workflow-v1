@@ -150,13 +150,27 @@ class ChapterFiles:
                 label = f"Chapter {int(match.group(1)):02d}" if match else slug_value.replace("-", " ").title()
 
         if draft is None:
-            draft_name = "epilogue.md" if slug_value == "epilogue" else f"{slug_value}.md"
-            draft = folder / draft_name
-            legacy_draft = folder / "draft.md"
-            if not draft.exists() and legacy_draft.exists():
-                draft = legacy_draft
-        scene_breakdown = scene_breakdown or folder / "scene-breakdown.md"
-        drafting_plan = drafting_plan or folder / "drafting-plan.md"
+            # Look for draft.md or default names ({slug}.md, epilogue.md)
+            draft_options = ["draft.md", f"{slug_value}.md", "epilogue.md" if slug_value == "epilogue" else f"{slug_value}.md"]
+            draft = folder / draft_options[0]
+            for opt in draft_options:
+                p = folder / opt
+                if p.exists():
+                    draft = p
+                    break
+        
+        # Staging proposal.md takes priority over scene-breakdown.md
+        if scene_breakdown is None:
+            proposal_path = folder / "proposal.md"
+            scene_bd_path = folder / "scene-breakdown.md"
+            scene_breakdown = proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path
+
+        # Staging beats.md takes priority over drafting-plan.md
+        if drafting_plan is None:
+            beats_path = folder / "beats.md"
+            drafting_plan_path = folder / "drafting-plan.md"
+            drafting_plan = beats_path if beats_path.exists() or not drafting_plan_path.exists() else drafting_plan_path
+
 
         object.__setattr__(self, "slug", slug_value)
         object.__setattr__(self, "label", label)
@@ -222,14 +236,29 @@ def chapter_sort_key(path: Path) -> tuple[int, str]:
 
 
 def discover_chapters(book_folder: Path) -> list[ChapterFiles]:
+    slugs = set()
+    changes_dir = book_folder / "changes"
+    if changes_dir.exists():
+        for path in changes_dir.iterdir():
+            if path.is_dir() and not path.name.startswith("."):
+                slugs.add(path.name)
+    
     chapters_dir = book_folder / "chapters"
-    if not chapters_dir.exists():
-        return []
+    if chapters_dir.exists():
+        for path in chapters_dir.iterdir():
+            if path.is_dir() and not path.name.startswith("."):
+                slugs.add(path.name)
+                
     chapters = []
-    for path in sorted(chapters_dir.iterdir(), key=chapter_sort_key):
-        if path.is_dir():
-            chapters.append(ChapterFiles(path))
+    for slug in sorted(slugs, key=lambda s: chapter_sort_key(Path(s))):
+        changes_path = changes_dir / slug
+        chapters_path = chapters_dir / slug
+        if changes_path.exists():
+            chapters.append(ChapterFiles(changes_path))
+        else:
+            chapters.append(ChapterFiles(chapters_path))
     return chapters
+
 
 
 PHASE_CHAPTER_RE = re.compile(

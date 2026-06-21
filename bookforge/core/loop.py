@@ -80,20 +80,17 @@ def build_length_state(book_folder: Path, target_min_arg: int | None, target_max
 
 
 def scan_style_issues(book_folder: Path) -> list[StyleIssue]:
-    chapters_root = book_folder / "chapters"
-    if not chapters_root.exists():
-        return []
-
-    draft_paths = sorted(chapters_root.glob("chapter-*/chapter-*.md"), key=context_validator.chapter_sort_key)
-    epilogue_path = chapters_root / "epilogue" / "epilogue.md"
-    if epilogue_path.exists():
-        draft_paths.append(epilogue_path)
-
+    chapters = context_validator.discover_chapters(book_folder)
     issues: list[StyleIssue] = []
-    for path in draft_paths:
-        for index, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-            if STYLE_SCAN_RE.search(line) or context_validator.DIALOGUE_TAG_RE.search(line):
-                issues.append(StyleIssue(path=path, line_number=index, line=line.strip()))
+    for chapter in chapters:
+        if chapter.draft.exists():
+            try:
+                content = chapter.draft.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for index, line in enumerate(content.splitlines(), start=1):
+                if STYLE_SCAN_RE.search(line) or context_validator.DIALOGUE_TAG_RE.search(line):
+                    issues.append(StyleIssue(path=chapter.draft, line_number=index, line=line.strip()))
     return issues
 
 

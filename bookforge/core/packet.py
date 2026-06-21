@@ -103,13 +103,20 @@ def neighbor_slug(book_folder: Path, slug: str, offset: int) -> str | None:
 
 
 def chapter_folder(book_folder: Path, slug: str) -> Path:
+    changes_path = book_folder / "changes" / slug
+    if changes_path.exists():
+        return changes_path
     return book_folder / "chapters" / slug
 
 
 def chapter_draft_path(folder: Path, slug: str) -> Path:
-    if slug == "epilogue":
-        return folder / "epilogue.md"
-    return folder / f"{slug}.md"
+    draft_options = ["draft.md", f"{slug}.md", "epilogue.md" if slug == "epilogue" else f"{slug}.md"]
+    for opt in draft_options:
+        p = folder / opt
+        if p.exists():
+            return p
+    return folder / draft_options[0]
+
 
 
 def optimize_character_profiles(rulebook_text: str, active_characters: list[str], all_characters: list[str]) -> str:
@@ -293,7 +300,9 @@ def prior_continuity(book_folder: Path, slug: str) -> str:
     continuity = read_optional(folder / "continuity-out.md")
     if continuity:
         return word_excerpt(continuity, 450)
-    scene = read_optional(folder / "scene-breakdown.md")
+    proposal_path = folder / "proposal.md"
+    scene_bd_path = folder / "scene-breakdown.md"
+    scene = read_optional(proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path)
     lines = extract_matching_lines(scene, ["Continuity Out", "Required Story Movement"], limit=40)
     return lines or f"No continuity-out.md found for {prior}; review its scene breakdown if needed."
 
@@ -303,7 +312,9 @@ def next_continuity_need(book_folder: Path, slug: str) -> str:
     if not next_slug:
         return "No next chapter in this book folder."
     folder = chapter_folder(book_folder, next_slug)
-    scene = read_optional(folder / "scene-breakdown.md")
+    proposal_path = folder / "proposal.md"
+    scene_bd_path = folder / "scene-breakdown.md"
+    scene = read_optional(proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path)
     lines = extract_matching_lines(scene, ["Continuity In", "Required Story Movement", "Source Anchor"], limit=40)
     if lines:
         return lines
@@ -377,7 +388,10 @@ def render_packet(book_folder: Path, slug: str) -> str:
 
     summaries = read_optional(book_folder / "chapter-summaries.md")
     source_text = read_optional(src)
-    scene_breakdown = read_optional(folder / "scene-breakdown.md")
+    proposal_path = folder / "proposal.md"
+    scene_bd_path = folder / "scene-breakdown.md"
+    scene_breakdown_file = proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path
+    scene_breakdown = read_optional(scene_breakdown_file)
     draft_path = chapter_draft_path(folder, slug)
 
     chapter_summary = extract_heading_section(summaries, slug) or "MISSING: chapter summary section."
@@ -395,7 +409,7 @@ def render_packet(book_folder: Path, slug: str) -> str:
     prior_comp = compress_text(prior_cont)
     next_cont = next_continuity_need(book_folder, slug)
     next_comp = compress_text(next_cont)
-    scene_bd_comp = compress_text(scene_breakdown or "MISSING: scene-breakdown.md")
+    scene_bd_comp = compress_text(scene_breakdown or f"MISSING: {scene_breakdown_file.name}")
     
     research_excerpt = relevant_research_excerpt(book_folder, scene_breakdown or "")
     research_comp = compress_text(research_excerpt)
