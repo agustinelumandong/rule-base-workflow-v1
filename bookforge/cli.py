@@ -131,7 +131,7 @@ def cmd_init(args: argparse.Namespace) -> int:
                 print("Created: copilot-instructions.md")
             elif agent == "gemini":
                 Path("GEMINI.md").write_text(
-                    "# Gemini Agent Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: Gemini agents should utilize the `manuscript-workflow-orchestrator` tools and `bf` command line utility to validate and compile manuscripts.\n",
+                    "# Gemini Agent Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: Gemini agents should utilize the unified `bf` command line utility to validate, loop, memory-manage, and compile manuscripts instead of invoking deprecated python helper scripts directly.\n",
                     encoding="utf-8"
                 )
                 print("Created: GEMINI.md")
