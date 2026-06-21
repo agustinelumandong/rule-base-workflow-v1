@@ -404,7 +404,7 @@ the canon files.
 ## 9. Milestones (re-phased; M2.5 is NEW for the memory tier)
 
 > **Status legend:** `- [x]` done · `- [ ]` not started · `- [~]` deferred · `⚠️` blocked.
-> Last updated post-fix audit (2026-06-22): 138/138 tests pass; M3 facade-decompose and M5 shim-removal re-marked `[~]` to reflect actual repo state.
+> Last updated post-fix audit (2026-06-22): 140/140 tests pass; M3 facade-decompose is genuinely complete (`validator.py` is a 6-line pure re-export of `validators/`); only M5 shim-removal remains deferred `[~]` (15 shims still ship, harmless).
 
 ### M0 — Foundation & Hygiene (~3 days, zero-risk) — ✅ COMPLETE
 - [x] Remove root scratch files (`compile_helper.py`, `scratch_*.py`)
@@ -413,7 +413,7 @@ the canon files.
 - [x] `bf` no-arg → `status` (Windows-safe; demote TUI to `bf tui`)
 - [x] Capture golden-file tests for current loop/validator output (regression net) — `tests/golden/`
 - [x] **Bonus:** installed `pytest` + `pyyaml` (3 tests were failing on missing `yaml` import)
-- **Shippable:** cleaner repo, works on Windows, tests tracked. **Verified:** 138/138 tests pass (post-fix audit); golden output identical post-M1.
+- **Shippable:** cleaner repo, works on Windows, tests tracked. **Verified:** 140/140 tests pass (post-fix audit); golden output identical post-M1.
 
 ### M1 — Decouple from Agents + Model Routing Skeleton (~5 days, parallel with M2) — ✅ COMPLETE
 - [x] Strip Codex/Antigravity/Gemini names from `AGENTS.md`, `docs/workflow-v5.md`, all
