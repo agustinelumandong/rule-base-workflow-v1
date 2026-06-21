@@ -1,0 +1,22 @@
+chapter: 1
+events:
+- type: character_mutation
+  character_id: harlan
+  location: saloon
+  inventory_added:
+  - colt_45
+  - silver_pocket_watch
+- type: object_mutation
+  object_id: colt_45
+  holder: harlan
+- type: object_mutation
+  object_id: silver_pocket_watch
+  holder: harlan
+- type: character_mutation
+  character_id: darin
+  location: saloon
+  inventory_added:
+  - winchester_rifle
+- type: object_mutation
+  object_id: winchester_rifle
+  holder: darin

@@ -1,0 +1,17 @@
+locations:
+  saloon:
+    canonical: Saloon
+    function: narrative point
+    description: The saloon setting.
+  stables:
+    canonical: Stables
+    function: narrative point
+    description: The stables setting.
+  sheriff_office:
+    canonical: Sheriff_office
+    function: narrative point
+    description: The sheriff_office setting.
+  dusty_road:
+    canonical: Dusty_road
+    function: narrative point
+    description: The dusty_road setting.
