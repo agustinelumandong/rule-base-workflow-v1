@@ -474,13 +474,10 @@ the canon files.
 - [x] Fix the 45 bare `except Exception` sites (specific exceptions + logging) — correctness-critical
 - [x] Fix `FORBIDDEN_LENGTH_LANGUAGE` `"words"` false-positive (restrict to planning artifacts)
 - [x] Finish `ManuscriptIssue` type migration in `loop.classify` (remove `list[object]` duck-typing)
-- [~] Decompose `validator.py` (1,505 lines) into focused submodules behind a facade
-      **Partial.** The new `bookforge/core/validators/{format,style,continuity}.py` package exists
-      and is re-exported via `validators/__init__.py`, but `validator.py` was NOT converted to a
-      thin facade — it still holds duplicate implementations and is what `cli.py`/shims actually
-      import. Symbols only in the old facade (`validate_chapter`, `build_ai_prompt`,
-      `render_report`, `overall_status`, `ChapterReport`, …) must be migrated before the old file
-      can become a pure re-export. Until then, edits must be mirrored in both places.
+- [x] Decompose `validator.py` into focused submodules behind a facade.
+      `bookforge/core/validators/{format,style,continuity,orchestration}.py` now owns the
+      implementation, `validators/__init__.py` defines the public API, and `validator.py` is a
+      pure backward-compatible re-export.
 - [~] Shim removal (carried from M1.6): delete the 13 `.agents/skills/.../scripts/*.py` shims
       once `AGENTS.md`/`README.md` are migrated to `bf` CLI as primary. **Deferred.** 15 shim
       scripts still ship under `.agents/skills/manuscript-workflow-orchestrator/scripts/`; they
