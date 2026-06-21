@@ -1,29 +1,15 @@
-import importlib.util
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-SCRIPT_PATH = (
-    Path(__file__).resolve().parents[1]
-    / ".agents"
-    / "skills"
-    / "manuscript-workflow-orchestrator"
-    / "scripts"
-    / "run_manuscript_loop.py"
-)
+from bookforge.core import loop
 
 
 def load_loop():
-    spec = importlib.util.spec_from_file_location("run_manuscript_loop", SCRIPT_PATH)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    # Legacy shims have been removed; return the canonical loop module.
+    return loop
 
 
 class ManuscriptLoopTests(unittest.TestCase):

@@ -1,6 +1,4 @@
-import importlib.util
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,24 +6,9 @@ from pathlib import Path
 from bookforge.core import validator
 
 
-SCRIPT_PATH = (
-    Path(__file__).resolve().parents[1]
-    / ".agents"
-    / "skills"
-    / "manuscript-workflow-orchestrator"
-    / "scripts"
-    / "validate_manuscript_context.py"
-)
-
-
 def load_validator():
-    spec = importlib.util.spec_from_file_location("validate_manuscript_context", SCRIPT_PATH)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    # Legacy shims have been removed; return the canonical validator module.
+    return validator
 
 
 class ManuscriptContextValidatorTests(unittest.TestCase):

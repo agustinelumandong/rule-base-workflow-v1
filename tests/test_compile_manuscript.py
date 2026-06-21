@@ -1,27 +1,13 @@
-import importlib.util
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT_PATH = (
-    Path(__file__).resolve().parents[1]
-    / ".agents"
-    / "skills"
-    / "manuscript-workflow-orchestrator"
-    / "scripts"
-    / "compile_manuscript.py"
-)
+from bookforge.core import compiler
 
 
 def load_compiler():
-    spec = importlib.util.spec_from_file_location("compile_manuscript", SCRIPT_PATH)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    # Legacy shims have been removed; return the canonical compiler module.
+    return compiler
 
 
 class CompileManuscriptTests(unittest.TestCase):
