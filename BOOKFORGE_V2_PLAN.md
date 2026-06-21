@@ -489,12 +489,12 @@ the canon files.
 - **Shippable:** chapter work follows proposal→validate→apply discipline; canon stays clean.
 
 
-### M5 — Polish, Docs, Deprecation (~2-3 days) — ⏳ NOT STARTED
-- [ ] Comprehensive `AGENTS.md` rewrite (agent-neutral, `bf`-based, references 5-layer model)
-- [ ] Per-agent instruction generation finalized (incl. OpenCode `small_model` config)
-- [ ] Deprecation warnings on old paths (`rulebook.md` direct edits, old script paths), then removal
-- [ ] Full test suite: canon validators, fold engine, memory backends, adapters, golden files
-- [ ] Cross-platform `scripts/install.py` (replaces bash-only `install.sh`)
+### M5 — Polish, Docs, Deprecation (~2-3 days) — ✅ COMPLETE
+- [x] Comprehensive `AGENTS.md` rewrite (agent-neutral, `bf`-based, references 5-layer model)
+- [x] Per-agent instruction generation finalized (incl. OpenCode `small_model` config)
+- [x] Deprecation warnings on old paths (`rulebook.md` direct edits, old script paths), then removal
+- [x] Full test suite: canon validators, fold engine, memory backends, adapters, golden files
+- [x] Cross-platform `scripts/install.py` (replaces bash-only `install.sh`)
 - **Shippable:** documented, tested, portable, ready for any harness.
 
 ### Suggested timeline (M1 / M2 / M2.5 / M3 overlap per the parallel priority)
