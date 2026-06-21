@@ -1,0 +1,18 @@
+# Manuscript Context Validation Report
+
+- **Book Folder:** `books\book-example`
+- **Overall Status:** FAIL
+- **Length Status:** Run `bf status` or `bf status <book_folder>` to view rhythm and word limits.
+
+## Book Files
+
+- FAIL: Rulebook marker policy violation: UNKNOWN in `do not invent`.
+- FAIL: Rulebook `## Unknowns` has unresolved item: "Specific character names in unresolved passages." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+- FAIL: Rulebook `## Unknowns` has unresolved item: "Exact timeline details for unresolved transitions." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+- FAIL: Rulebook `## Unknowns` has unresolved item: "Any unspecified motives not explicitly present in source." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+
+## Chapter Status
+
+| Chapter | Status | Failures | Warnings |
+| --- | --- | ---: | ---: |
+

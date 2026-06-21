@@ -1,0 +1,19 @@
+# BookForge Loop Report
+
+- **Status:** NEEDS_BOOK_REPAIR
+- **Decision:** CONTINUE
+- **Reason:** Book-level hard issues must be fixed before expansion.
+- **Prompt Mode:** `repair`
+- **Next Action:** Repair book-level rulebook, source, or configuration issues before chapter work.
+
+## Length State
+- **Current Words:** 0 / Min target: 30000
+- **Contract Range:** 30,000 - 31,000
+- **Soft Range:** 29,700 - 31,300
+
+## Book-Level Issues
+
+- Rulebook marker policy violation: UNKNOWN in `do not invent`.
+- Rulebook `## Unknowns` has unresolved item: "Specific character names in unresolved passages." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+- Rulebook `## Unknowns` has unresolved item: "Exact timeline details for unresolved transitions." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+- Rulebook `## Unknowns` has unresolved item: "Any unspecified motives not explicitly present in source." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.

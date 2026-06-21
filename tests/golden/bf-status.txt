@@ -1,0 +1,21 @@
+=== BookForge Status for book-example ===
+Context Compression (Headroom): LOCAL FALLBACK (Deterministic)
+
+Files Validation:
+  [FAIL] Rulebook marker policy violation: UNKNOWN in `do not invent`.
+  [FAIL] Rulebook `## Unknowns` has unresolved item: "Specific character names in unresolved passages." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+  [FAIL] Rulebook `## Unknowns` has unresolved item: "Exact timeline details for unresolved transitions." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+  [FAIL] Rulebook `## Unknowns` has unresolved item: "Any unspecified motives not explicitly present in source." — run `bf resolve-unknowns <book_folder>` to answer it before proceeding.
+
+Structure gaps check:
+  [FAIL] Expected folder 'chapter-01' is missing.
+  [FAIL] Expected folder 'chapter-02' is missing.
+  [FAIL] Expected folder 'chapter-03' is missing.
+  [FAIL] Expected folder 'epilogue' is missing.
+
+Continuity Chain:
+  [PASS] Continuity chain is unbroken.
+
+Chapter Rhythm: [WARN] Could not analyze rhythm (Missing chapters folder; no manuscript drafts found.)
+
+Run 'bf run-loop <book_folder>' to see the next workflow action.
