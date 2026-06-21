@@ -15,6 +15,22 @@ in the repo, not assumed.
 > below. The load-bearing unknown is **fold-engine feasibility for narrative state** (see §13)
 > — prototype that on a real book's `continuity-out.md` chain before treating this as final.
 
+> **Execution order — where `REPO_FIX_PLAN.md` fits.** `REPO_FIX_PLAN.md` is **not** a separate
+> predecessor. It is the foundation slice of this plan — every phase of it is absorbed into a
+> v2 milestone (full mapping in Appendix B). Execute it *as* M0, not as a standalone project:
+>
+> ```
+> M0   = REPO_FIX_PLAN Phase 0, 1, 7   ← do FIRST (hygiene, defaults, golden tests)
+> M1   = REPO_FIX_PLAN Phase 3         ← decouple (entry surface, AGENTS.md → bf)
+> M2   = NEW v2 work                   ← event-sourced canon
+> M2.5 = NEW v2 work                   ← persistent memory tier
+> M3   = REPO_FIX_PLAN Phase 2, 4, 5, 6 ← cleanup (exceptions, validator, adapters)
+> M4, M5
+> ```
+>
+> Golden tests must be captured in M0 **before** the M2/M3 refactor — that is the one hard
+> sequencing constraint. See Appendix B for the phase-by-phase mapping.
+
 ---
 
 ## 1. The Five-Layer Architecture
