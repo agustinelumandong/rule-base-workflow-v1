@@ -342,7 +342,8 @@ def cmd_packet(args: argparse.Namespace) -> int:
         return 2
 
     try:
-        markdown = packet_module.render_packet(book_folder, args.chapter)
+        task = getattr(args, "task", "all")
+        markdown = packet_module.render_packet(book_folder, args.chapter, task)
     except RuntimeError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2
@@ -959,6 +960,12 @@ def main() -> int:
     parser_packet = subparsers.add_parser("packet", help="Render a context packet for a chapter")
     parser_packet.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_packet.add_argument("--chapter", required=True, help="Chapter slug (e.g. chapter-01 or epilogue)")
+    parser_packet.add_argument(
+        "--task",
+        default="all",
+        choices=["all", "draft-prose", "continuity-check", "extract-memory", "revise-style", "validate-change"],
+        help="Task-specific context packet type (default: all)"
+    )
 
     # tui
     subparsers.add_parser("tui", help="Launch interactive Terminal User Interface (TUI)")
