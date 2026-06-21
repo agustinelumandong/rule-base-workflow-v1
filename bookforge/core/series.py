@@ -93,7 +93,7 @@ def carry_forward_book_continuity(from_book: Path, to_book: Path) -> str:
 
     try:
         content = continuity_path.read_text(encoding="utf-8")
-    except Exception as e:
+    except (OSError, UnicodeDecodeError) as e:
         return f"Failed to read continuity file: {e}"
 
     sections = parse_continuity_sections(content)
@@ -129,7 +129,7 @@ def carry_forward_book_continuity(from_book: Path, to_book: Path) -> str:
                 rulebook_path.write_text(existing_text + carry_over_block, encoding="utf-8")
         else:
             rulebook_path.write_text(f"# Rulebook\n" + carry_over_block, encoding="utf-8")
-    except Exception as e:
+    except (OSError, UnicodeDecodeError) as e:
         return f"Failed to update target rulebook: {e}"
 
     return f"Successfully carried forward continuity from {from_book.name} ({last_chap.slug}) into {to_book.name} rulebook."

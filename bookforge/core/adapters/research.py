@@ -39,7 +39,7 @@ class ManualBackend:
 
         try:
             content = pack_path.read_text(encoding="utf-8")
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
             return f"Error reading research pack: {e}"
 
         # Parse sections by headers (e.g. ## Category)
@@ -152,7 +152,7 @@ class NotebookLMBackend:
                     pass
                 return output
             return f"Error: NotebookLM query failed: {res.stderr.strip()}"
-        except Exception as e:
+        except (subprocess.SubprocessError, OSError) as e:
             return f"Error during NotebookLM query execution: {e}"
 
     def ingest(self, source_path: Path) -> None:

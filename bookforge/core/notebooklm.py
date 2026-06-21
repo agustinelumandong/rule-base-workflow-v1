@@ -52,7 +52,7 @@ def get_auth_status() -> dict[str, str | bool]:
             "email": "",
             "error": "Not authenticated. Run 'nlm login' to sign in."
         }
-    except Exception as e:
+    except (subprocess.SubprocessError, OSError) as e:
         return {
             "authenticated": False,
             "email": "",

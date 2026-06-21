@@ -190,7 +190,7 @@ def expansion_permission(pacing_class: str) -> str:
 def source_scan_status(book_folder: Path) -> str:
     scan_path = book_folder / "source-format-scan.md"
     if not scan_path.exists():
-        return "No source-format-scan.md found; run scan_source_format.py before planning when possible."
+        return "No source-format-scan.md found; run `bf init` before planning when possible."
     scan_text = read_optional(scan_path)
     if "Individual Chapter Word Counts:** present" in scan_text:
         return "Loaded source-format-scan.md; source contains individual chapter word-count guidance."

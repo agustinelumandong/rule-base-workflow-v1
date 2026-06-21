@@ -92,7 +92,7 @@ def diff_checkpoint(book_folder: Path, name: str) -> str:
                 content = curr_file.read_text(encoding="utf-8").splitlines()
                 for line in content:
                     diff_lines.append(f"+ {line}")
-            except Exception as e:
+            except (OSError, UnicodeDecodeError) as e:
                 diff_lines.append(f"+ [Binary or unreadable file: {e}]")
             diff_lines.append("")
 
@@ -103,7 +103,7 @@ def diff_checkpoint(book_folder: Path, name: str) -> str:
                 content = chk_file.read_text(encoding="utf-8").splitlines()
                 for line in content:
                     diff_lines.append(f"- {line}")
-            except Exception as e:
+            except (OSError, UnicodeDecodeError) as e:
                 diff_lines.append(f"- [Binary or unreadable file: {e}]")
             diff_lines.append("")
 
@@ -125,7 +125,7 @@ def diff_checkpoint(book_folder: Path, name: str) -> str:
                     if file_diff:
                         diff_lines.extend(file_diff)
                         diff_lines.append("")
-            except Exception as e:
+            except (OSError, UnicodeDecodeError):
                 # Fallback if binary file
                 pass
 

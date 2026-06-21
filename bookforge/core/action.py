@@ -139,7 +139,7 @@ def validate_scene_combat(draft_path: Path, plan_path: Path) -> tuple[list[str],
     try:
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         draft = draft_path.read_text(encoding="utf-8")
-    except Exception as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         failures.append(f"Failed to read/parse action plan or draft: {e}")
         return passes, warnings, failures
 

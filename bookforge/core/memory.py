@@ -629,7 +629,10 @@ class HeadroomMemoryBackend:
                 results = loop.run_until_complete(do_search())
             else:
                 results = asyncio.run(do_search())
-        except Exception as e:
+        except (RuntimeError, ValueError, KeyError, OSError, TypeError) as e:
+            import sys
+            sys.stderr.write(f"Failed to retrieve memories: {e}\n")
+            sys.stderr.flush()
             return []
 
         return [Chunk(content=r.content, score=r.score, metadata=r.metadata) for r in results]
@@ -692,7 +695,10 @@ class HeadroomMemoryBackend:
                 count = loop.run_until_complete(count_memories())
             else:
                 count = asyncio.run(count_memories())
-        except Exception as e:
+        except (RuntimeError, ValueError, KeyError, OSError, TypeError) as e:
+            import sys
+            sys.stderr.write(f"Failed to get memory stats: {e}\n")
+            sys.stderr.flush()
             count = 0
 
         return MemoryStats(
@@ -715,8 +721,10 @@ class HeadroomMemoryBackend:
                 loop.run_until_complete(do_clear())
             else:
                 asyncio.run(do_clear())
-        except Exception as e:
-            pass
+        except (RuntimeError, ValueError, KeyError, OSError, TypeError) as e:
+            import sys
+            sys.stderr.write(f"Failed to clear memories: {e}\n")
+            sys.stderr.flush()
 
 
 # ---------------------------------------------------------------------------
@@ -935,7 +943,7 @@ class MemoryMCPServer:
                     }
                 sys.stdout.write(json.dumps(res) + "\n")
                 sys.stdout.flush()
-            except Exception as e:
+            except (json.JSONDecodeError, KeyError, AttributeError, TypeError, ValueError, OSError) as e:
                 # Output standard JSON-RPC parse error
                 sys.stderr.write(f"MCP Stdio Error: {e}\n")
                 sys.stderr.flush()
@@ -975,7 +983,7 @@ class MemoryMCPServer:
                     self.send_header('Content-Type', 'application/json')
                     self.end_headers()
                     self.wfile.write(json.dumps(res).encode('utf-8'))
-                except Exception as e:
+                except (json.JSONDecodeError, KeyError, AttributeError, TypeError, ValueError, OSError) as e:
                     self.send_response(400)
                     self.end_headers()
                     self.wfile.write(str(e).encode('utf-8'))

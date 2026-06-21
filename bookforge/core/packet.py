@@ -513,7 +513,7 @@ def load_subgenre_rules(book_folder: Path) -> str:
             rules.append(f"\n{prompt_text}")
             
         return "\n".join(rules)
-    except Exception as e:
+    except (yaml.YAMLError, OSError, UnicodeDecodeError, KeyError, AttributeError) as e:
         return f"\n[Error loading subgenre rules: {e}]\n"
 
 
