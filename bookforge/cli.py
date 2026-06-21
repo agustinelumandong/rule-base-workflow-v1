@@ -21,6 +21,8 @@ from bookforge.core import persona as persona_module
 from bookforge.core import repair as repair_module
 from bookforge.core import relationship as relationship_module
 from bookforge.core import research as research_module
+from bookforge.core import pacing as pacing_module
+from bookforge.core import packet as packet_module
 from bookforge import config
 
 
@@ -307,6 +309,49 @@ def cmd_compile(args: argparse.Namespace) -> int:
     print(f"- **Output:** `{output_path}`")
     print(f"- **Draft Files Compiled:** {draft_count}")
     print(f"- **Compiled Words:** {word_count}")
+    return 0
+
+
+def cmd_pacing(args: argparse.Namespace) -> int:
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    reference_analysis = Path(args.reference_analysis) if args.reference_analysis else None
+    try:
+        markdown = pacing_module.build_plan(book_folder, reference_analysis)
+    except RuntimeError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 2
+
+    output_path = book_folder / "chapter-pacing-plan.md"
+    output_path.write_text(markdown, encoding="utf-8")
+    print(f"Wrote {output_path}")
+    return 0
+
+
+def cmd_packet(args: argparse.Namespace) -> int:
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    if not args.chapter:
+        print("Error: --chapter is required (e.g. chapter-01).", file=sys.stderr)
+        return 2
+
+    try:
+        markdown = packet_module.render_packet(book_folder, args.chapter)
+    except RuntimeError as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 2
+
+    output_folder = packet_module.chapter_folder(book_folder, args.chapter)
+    output_folder.mkdir(parents=True, exist_ok=True)
+    output_path = output_folder / "context-packet.md"
+    output_path.write_text(markdown, encoding="utf-8")
+    print(f"Wrote {output_path}")
     return 0
 
 
@@ -905,6 +950,16 @@ def main() -> int:
     parser_compile.add_argument("--output", help="Output Markdown path")
     parser_compile.add_argument("--no-title", action="store_true", help="Do not prepend book title")
 
+    # pacing
+    parser_pacing = subparsers.add_parser("pacing", help="Generate a source-locked chapter pacing plan")
+    parser_pacing.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_pacing.add_argument("--reference-analysis", help="Optional reference pacing calibration file")
+
+    # packet
+    parser_packet = subparsers.add_parser("packet", help="Render a context packet for a chapter")
+    parser_packet.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_packet.add_argument("--chapter", required=True, help="Chapter slug (e.g. chapter-01 or epilogue)")
+
     # tui
     subparsers.add_parser("tui", help="Launch interactive Terminal User Interface (TUI)")
 
@@ -1095,6 +1150,8 @@ def main() -> int:
         "status": cmd_status,
         "run-loop": cmd_run_loop,
         "compile": cmd_compile,
+        "pacing": cmd_pacing,
+        "packet": cmd_packet,
         "tui": cmd_tui,
         "analytics": cmd_analytics,
         "log-run": cmd_log_run,
