@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import yaml
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -63,7 +64,7 @@ def build_length_state(book_folder: Path, target_min_arg: int | None, target_max
 
     try:
         counts = length_checker.find_drafts(book_folder)
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         counts = []
     total_words = sum(item.words for item in counts)
     return LengthState(
@@ -274,7 +275,7 @@ def load_persistent_repairs(book_folder: Path) -> dict[str, int]:
     try:
         data = json.loads(target_file.read_text(encoding="utf-8"))
         return data.get("repair_attempts", {})
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -289,14 +290,14 @@ def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], 
     if state_file.exists():
         try:
             data = json.loads(state_file.read_text(encoding="utf-8"))
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
     elif legacy_file.exists():
         try:
             data = json.loads(legacy_file.read_text(encoding="utf-8"))
             # Clean up legacy file
             legacy_file.unlink(missing_ok=True)
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
             
     data["repair_attempts"] = repair_attempts
@@ -304,7 +305,7 @@ def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], 
     data["last_status"] = status
     try:
         state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception:
+    except OSError:
         pass
 
 
@@ -342,7 +343,7 @@ def run_loop_check(
 
     try:
         phase_sections = context_validator.parse_phase_chapters(book_folder)
-    except Exception:
+    except (yaml.YAMLError, OSError, KeyError, AttributeError):
         phase_sections = {}
     chapters = context_validator.discover_chapters(book_folder)
     reports = [context_validator.validate_chapter(chapter, phase_sections) for chapter in chapters]
@@ -364,7 +365,7 @@ def run_loop_check(
     try:
         rhythm_report = check_chapter_rhythm.analyze(book_folder)
         rhythm_issues = rhythm_report.issues
-    except Exception:
+    except (OSError, ValueError, KeyError, AttributeError, TypeError, UnicodeDecodeError):
         rhythm_report = None
         rhythm_issues = []
 

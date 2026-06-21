@@ -18,7 +18,7 @@ def discover_combat_scenes(scene_breakdown_path: Path) -> list[dict[str, str]]:
     
     try:
         content = scene_breakdown_path.read_text(encoding="utf-8")
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return []
 
     combat_scenes = []

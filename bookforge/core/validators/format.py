@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import yaml
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
@@ -313,7 +314,7 @@ def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIss
         if ledger_text:
             try:
                 expected_chapters = list(parse_phase_chapters(book_folder).keys())
-            except Exception:
+            except (yaml.YAMLError, OSError, KeyError, AttributeError):
                 expected_chapters = []
             for chapter_slug in expected_chapters:
                 if not _ledger_has_chapter_entry(ledger_text, chapter_slug):

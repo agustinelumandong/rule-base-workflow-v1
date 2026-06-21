@@ -95,7 +95,7 @@ class HeadroomBackend:
                     compressed_content = result.messages[0].get("content")
                     if isinstance(compressed_content, str) and len(compressed_content) < len(text):
                         return compressed_content
-        except Exception:
+        except (AttributeError, ValueError, TypeError, KeyError):
             pass
         return text
 
@@ -136,7 +136,7 @@ class HeadroomBackend:
                 final_text = "\n".join(compressed_blocks)
                 if len(final_text) < len(text):
                     return final_text
-            except Exception:
+            except (ValueError, TypeError, KeyError, AttributeError):
                 pass # Fall back to local compression on failure
                 
         return self.local.compress(text)

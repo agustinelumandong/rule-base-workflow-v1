@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import yaml
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -901,7 +902,7 @@ def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIss
         if ledger_text:
             try:
                 expected_chapters = list(parse_phase_chapters(book_folder).keys())
-            except Exception:
+            except (yaml.YAMLError, OSError, KeyError, AttributeError):
                 expected_chapters = []
             for chapter_slug in expected_chapters:
                 if not _ledger_has_chapter_entry(ledger_text, chapter_slug):
@@ -1172,7 +1173,7 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
             pov_match = re.search(r"(?i)^\s*[\-\*]\s*POV:\s*(\w+)", sb_text, re.MULTILINE)
             if pov_match:
                 pov_character = pov_match.group(1).lower()
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             pass
 
     all_chars = []
@@ -1181,7 +1182,7 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
         try:
             world_state = world_module.load_world_state(book_folder)
             all_chars = list(world_state.get("characters", {}).keys())
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError, KeyError):
             pass
 
     v_failures, v_warnings = voice_module.validate_dialogue_style(text)

@@ -41,7 +41,7 @@ def _compress_block_with_headroom(text: str) -> str:
                 compressed_content = result.messages[0].get("content")
                 if isinstance(compressed_content, str) and len(compressed_content) < len(text):
                     return compressed_content
-    except Exception:
+    except (AttributeError, ValueError, TypeError, KeyError):
         pass
     return text
 
@@ -88,7 +88,7 @@ def compress_text(text: str) -> str:
             final_text = "\n".join(compressed_blocks)
             if len(final_text) < len(text):
                 return final_text
-        except Exception:
+        except (ValueError, TypeError, KeyError, AttributeError):
             pass # Fall back to local compression on failure
             
     return compress_local(text)

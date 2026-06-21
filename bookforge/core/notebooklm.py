@@ -104,7 +104,7 @@ def list_notebooks() -> list[dict[str, str]]:
                     "sources": match.group(3) or "0"
                 })
         return notebooks
-    except Exception:
+    except (subprocess.SubprocessError, OSError, ValueError, AttributeError):
         return []
 
 
@@ -125,7 +125,7 @@ def get_associated_notebook(book_folder: Path) -> dict[str, str] | None:
         nb_title = data.get("notebook_title")
         if nb_id:
             return {"id": nb_id, "title": nb_title or "Associated Notebook"}
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         pass
     return None
 
@@ -142,12 +142,12 @@ def set_associated_notebook(book_folder: Path, notebook_id: str, title: str) -> 
     if state_file.exists():
         try:
             data = json.loads(state_file.read_text(encoding="utf-8"))
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
     elif legacy_file.exists():
         try:
             data = json.loads(legacy_file.read_text(encoding="utf-8"))
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
     
     data["notebook_id"] = notebook_id
@@ -264,7 +264,7 @@ def upload_local_sources(book_folder: Path, notebook_id: str) -> list[str]:
             )
             if res.returncode == 0:
                 uploaded.append(filepath.name)
-        except Exception:
+        except (subprocess.SubprocessError, OSError):
             pass
 
     return uploaded
@@ -304,7 +304,7 @@ def create_new_notebook(title: str) -> str | None:
         if match:
             return match.group(1)
             
-    except Exception:
+    except (subprocess.SubprocessError, OSError):
         pass
     return None
 
@@ -370,7 +370,7 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
                 carry_from = data.get("carry_from")
                 if carry_from:
                     break
-            except Exception:
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 pass
                 
     if carry_from:
@@ -406,7 +406,7 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
             )
             if res.returncode == 0:
                 uploaded_count += 1
-        except Exception:
+        except (subprocess.SubprocessError, OSError):
             pass
 
     # 4. Conduct web research to discover and import authentic historical context
@@ -441,7 +441,7 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
                 text=True,
                 check=False
             )
-    except Exception:
+    except (ImportError, KeyError, ValueError, AttributeError, subprocess.SubprocessError, OSError):
         pass
 
     # 5. Perform structured query to generate outline from all sources
@@ -471,7 +471,7 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
             if name_str and name_lower not in allowed and name_lower not in [b.lower() for b in active_banned]:
                 active_banned.append(name_str.capitalize())
         banned_names = active_banned
-    except Exception:
+    except (ImportError, KeyError, ValueError, AttributeError):
         pass
 
     banned_names_list = []
@@ -585,13 +585,13 @@ Provide exactly 12 chapters in the following format:
         elif legacy_file.exists():
             try:
                 state_data = json.loads(legacy_file.read_text(encoding="utf-8"))
-            except Exception:
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 pass
                 
         state_data["notebook_id"] = notebook_id
         state_data["outline_generated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         state_file.write_text(json.dumps(state_data, indent=2), encoding="utf-8")
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError, KeyError):
         pass
 
 

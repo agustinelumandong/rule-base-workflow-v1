@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -468,7 +469,7 @@ def render_packet(book_folder: Path, slug: str) -> str:
 def load_subgenre_rules(book_folder: Path) -> str:
     try:
         world_state = world_module.load_world_state(book_folder)
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError, KeyError):
         world_state = {}
     genre = world_state.get("genre", "western").lower()
     subgenre = world_state.get("subgenre", "classic").lower()

@@ -92,7 +92,7 @@ class ManualBackend:
         pack_path = ensure_research_pack(self.book_folder)
         try:
             old_content = pack_path.read_text(encoding="utf-8")
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             old_content = ""
 
         # Ingest single file or directory of markdown/text files
@@ -103,7 +103,7 @@ class ManualBackend:
             if f.is_file():
                 try:
                     new_content_blocks.append(f.read_text(encoding="utf-8"))
-                except Exception:
+                except (OSError, UnicodeDecodeError):
                     pass
 
         if not new_content_blocks:
@@ -172,7 +172,7 @@ class NotebookLMBackend:
                         text=True,
                         check=False
                     )
-                except Exception:
+                except (subprocess.SubprocessError, OSError):
                     pass
 
 

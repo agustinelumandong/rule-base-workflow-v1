@@ -8,11 +8,10 @@ import datetime
 from pathlib import Path
 from bookforge.core import validator as context_validator
 
-# Try importing tiktoken
 try:
     import tiktoken
     _ENCODING = tiktoken.get_encoding("cl100k_base")
-except Exception:
+except ImportError:
     _ENCODING = None
 
 
@@ -23,7 +22,7 @@ def estimate_tokens(text: str) -> int:
     if _ENCODING is not None:
         try:
             return len(_ENCODING.encode(text, disallowed_special=()))
-        except Exception:
+        except (ValueError, TypeError):
             pass
     # Fallback: roughly 1 token per 4 characters
     return max(1, len(text) // 4)
@@ -35,7 +34,7 @@ def get_file_metrics(filepath: Path) -> dict[str, int]:
         return {"lines": 0, "words": 0, "chars": 0, "tokens": 0}
     try:
         text = filepath.read_text(encoding="utf-8")
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return {"lines": 0, "words": 0, "chars": 0, "tokens": 0}
         
     lines = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
@@ -130,7 +129,7 @@ def load_analytics(book_folder: Path) -> dict[str, any]:
             if key not in data:
                 data[key] = default_val
         return data
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {
             "total_runs": 0,
             "total_input_tokens": 0,
@@ -142,9 +141,7 @@ def load_analytics(book_folder: Path) -> dict[str, any]:
 
 def save_analytics(book_folder: Path, data: dict[str, any]) -> None:
     path = get_analytics_file_path(book_folder)
-    try:
-        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception:
+    except OSError:
         pass
 
 

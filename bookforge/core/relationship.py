@@ -31,7 +31,7 @@ def load_relationships(book_folder: Path) -> list[dict]:
     try:
         with open(rel_file, "r", encoding="utf-8") as f:
             return json.load(f)
-    except Exception:
+    except (json.JSONDecodeError, OSError):
         return []
 
 

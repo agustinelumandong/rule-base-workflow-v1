@@ -26,7 +26,7 @@ def get_series_info(book_folder: Path) -> dict[str, str] | None:
                 data = json.loads(series_json_path.read_text(encoding="utf-8"))
                 if "name" in data:
                     series_name = data["name"]
-            except Exception:
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 pass
         return {
             "name": series_name,
@@ -151,7 +151,7 @@ def copy_shared_series_resources(to_book: Path) -> list[str]:
         try:
             shutil.copy2(series_bible, rulebook)
             copied.append(f"Initialized rulebook.md from series-bible.md")
-        except Exception:
+        except OSError:
             pass
 
     # Copy series research pack to research-pack.md
@@ -161,7 +161,7 @@ def copy_shared_series_resources(to_book: Path) -> list[str]:
         try:
             shutil.copy2(series_research, research_pack)
             copied.append(f"Initialized research-pack.md from series-research-pack.md")
-        except Exception:
+        except OSError:
             pass
 
     return copied

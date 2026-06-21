@@ -20,13 +20,13 @@ def load_world_state(book_folder: Path) -> dict:
     if state_path.exists():
         try:
             return json.loads(state_path.read_text(encoding="utf-8"))
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
     
     # Initialize default
     try:
         state_path.write_text(json.dumps(DEFAULT_WORLD_STATE, indent=2), encoding="utf-8")
-    except Exception:
+    except OSError:
         pass
     return json.loads(json.dumps(DEFAULT_WORLD_STATE))
 
@@ -36,7 +36,7 @@ def save_world_state(book_folder: Path, state: dict):
     state_path = Path(book_folder) / "world-state.json"
     try:
         state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
-    except Exception:
+    except OSError:
         pass
 
 
@@ -127,7 +127,7 @@ def discover_scenes_from_breakdown(breakdown_path: Path) -> list[dict]:
     
     try:
         content = breakdown_path.read_text(encoding="utf-8")
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return []
     
     # Split content by ## or ### headings

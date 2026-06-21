@@ -57,14 +57,14 @@ def load_registry(book_folder: Path | None = None) -> dict[str, any]:
                 data = yaml.safe_load(local_yaml.read_text(encoding="utf-8"))
                 if data and "personas" in data:
                     return data
-            except Exception:
+            except (yaml.YAMLError, OSError, UnicodeDecodeError):
                 pass
 
         local_json = Path(book_folder) / "persona-registry.json"
         if local_json.exists():
             try:
                 return json.loads(local_json.read_text(encoding="utf-8"))
-            except Exception:
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 pass
 
     # 2. Check root configurations next
@@ -74,20 +74,20 @@ def load_registry(book_folder: Path | None = None) -> dict[str, any]:
             data = yaml.safe_load(root_yaml.read_text(encoding="utf-8"))
             if data and "personas" in data:
                 return data
-        except Exception:
+        except (yaml.YAMLError, OSError, UnicodeDecodeError):
             pass
 
     root_json = Path("persona-registry.json")
     if root_json.exists():
         try:
             return json.loads(root_json.read_text(encoding="utf-8"))
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
 
     # 3. Create default in root and return
     try:
         root_json.write_text(json.dumps(DEFAULT_REGISTRY, indent=2), encoding="utf-8")
-    except Exception:
+    except OSError:
         pass
     return DEFAULT_REGISTRY
 

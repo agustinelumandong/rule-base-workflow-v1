@@ -392,7 +392,7 @@ def _world_state_character_names(world_state_path: Path) -> set[str]:
         return set()
     try:
         data = json.loads(world_state_path.read_text(encoding="utf-8"))
-    except Exception:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return set()
     characters = data.get("characters")
     if not isinstance(characters, dict):

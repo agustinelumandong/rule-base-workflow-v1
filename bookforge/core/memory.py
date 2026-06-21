@@ -182,7 +182,7 @@ def scan_and_chunk_book(book_folder: Path) -> list[tuple[str, dict[str, Any]]]:
                         "type": "canon_object",
                         "entity_id": obj_id
                     }))
-        except Exception:
+        except (yaml.YAMLError, OSError, KeyError, AttributeError):
             # Fallback to indexing snapshot as raw text chunks if parsing fails
             text = snapshot_path.read_text(encoding="utf-8")
             for idx, paragraph in enumerate(text.split("\n\n")):
@@ -421,8 +421,7 @@ def query_llm_for_rules(failed_session: str) -> list[Rule] | None:
                     file=r["file"],
                     change=r["change"]
                 ))
-            return rules
-    except Exception:
+    except (urllib.error.URLError, json.JSONDecodeError, KeyError, IndexError, ValueError):
         pass # Fall back to heuristics if API call fails
     return None
 
@@ -444,7 +443,7 @@ class LocalEmbeddingBackend:
             try:
                 data = json.loads(self.db_path.read_text(encoding="utf-8"))
                 self._chunks = data.get("chunks", [])
-            except Exception:
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 self._chunks = []
 
     def _save(self) -> None:
@@ -522,7 +521,7 @@ class LocalEmbeddingBackend:
                     for k, v in aliases.items():
                         if k.lower().strip() == norm_name:
                             return v
-            except Exception:
+            except (yaml.YAMLError, OSError, UnicodeDecodeError):
                 pass
 
         # 2. Fall back to semantic retrieval
@@ -559,7 +558,7 @@ class LocalEmbeddingBackend:
         if self.db_path.exists():
             try:
                 self.db_path.unlink()
-            except Exception:
+            except OSError:
                 pass
 
 
@@ -630,7 +629,7 @@ class HeadroomMemoryBackend:
                 results = loop.run_until_complete(do_search())
             else:
                 results = asyncio.run(do_search())
-        except Exception:
+        except Exception as e:
             return []
 
         return [Chunk(content=r.content, score=r.score, metadata=r.metadata) for r in results]
@@ -650,7 +649,7 @@ class HeadroomMemoryBackend:
                     for k, v in aliases.items():
                         if k.lower().strip() == norm_name:
                             return v
-            except Exception:
+            except (yaml.YAMLError, OSError, UnicodeDecodeError):
                 pass
 
         # 2. Fall back to semantic retrieval
@@ -693,7 +692,7 @@ class HeadroomMemoryBackend:
                 count = loop.run_until_complete(count_memories())
             else:
                 count = asyncio.run(count_memories())
-        except Exception:
+        except Exception as e:
             count = 0
 
         return MemoryStats(
@@ -716,7 +715,7 @@ class HeadroomMemoryBackend:
                 loop.run_until_complete(do_clear())
             else:
                 asyncio.run(do_clear())
-        except Exception:
+        except Exception as e:
             pass
 
 

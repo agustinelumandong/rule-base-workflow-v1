@@ -34,7 +34,7 @@ def load_yaml_file(path: Path) -> dict:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
             return data if isinstance(data, dict) else {}
-    except Exception:
+    except (yaml.YAMLError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -480,7 +480,7 @@ def validate_canon(book_folder: Path) -> List[ManuscriptIssue]:
         if ch.draft.exists():
             try:
                 draft_text = ch.draft.read_text(encoding="utf-8")
-            except Exception:
+            except (OSError, UnicodeDecodeError):
                 continue
                 
             # Name resolution
@@ -657,7 +657,7 @@ def migrate_legacy_book(book_folder: Path) -> None:
             ws = json.loads(world_state_path.read_text(encoding="utf-8"))
             legacy_chars = ws.get("characters", {})
             legacy_locs = ws.get("locations", [])
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
             
     # 2. Load legacy relationships
@@ -667,7 +667,7 @@ def migrate_legacy_book(book_folder: Path) -> None:
         try:
             import json
             legacy_rels = json.loads(relationships_path.read_text(encoding="utf-8"))
-        except Exception:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             pass
             
     # 3. Create characters.yml
@@ -819,7 +819,7 @@ def parse_continuity_out_to_event(continuity_path: Path) -> dict:
             parsed = yaml.safe_load(block)
             if isinstance(parsed, dict) and "events" in parsed:
                 events.extend(parsed["events"])
-        except Exception:
+        except (yaml.YAMLError, ValueError, TypeError):
             pass
             
     # Default section parser fallback
