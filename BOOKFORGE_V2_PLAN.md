@@ -422,10 +422,9 @@ the canon files.
       `.cursor/rules` / `copilot-instructions.md` / `GEMINI.md` / **OpenCode config**
 - [x] **Define `spec/model-routing.yml`** (extractor/reviewer/writer personas); wire
       `bf check-persona` to enforce it; have `bf init --agents opencode` emit `small_model` mapping
-- [~] ~~Convert 13 shim scripts to `bf` aliases or remove; rewrite `AGENTS.md` to `bf`~~
-      **Deferred to M5.** Shims still work (they delegate to `bookforge.core` via `from X import *`);
-      deleting them now would break every documented command in `AGENTS.md` and `README.md`.
-      Full removal at M5 once docs are migrated to `bf` CLI as primary.
+- [x] ~~Convert 13 shim scripts to `bf` aliases or remove; rewrite `AGENTS.md` to `bf`~~
+      **Done in M5.** The 14 shims are deleted; `bf pacing` + `bf packet` closed the two gaps with
+      no CLI equivalent; tests migrated to `bookforge.core.*` directly. See §M5 for detail.
 - [x] Remove `.agents/skills/*/agents/openai.yaml`; consolidate skill content into agent-neutral md
 - [x] Demote TUI (carried from M0 if not done): `bf tui` opt-in (done in M0.4 — no-arg → `status`)
 - **Shippable:** any agent drives the system; model-routing intent declared in-repo.
@@ -478,11 +477,14 @@ the canon files.
       `bookforge/core/validators/{format,style,continuity,orchestration}.py` now owns the
       implementation, `validators/__init__.py` defines the public API, and `validator.py` is a
       pure backward-compatible re-export.
-- [~] Shim removal (carried from M1.6): delete the 13 `.agents/skills/.../scripts/*.py` shims
-      once `AGENTS.md`/`README.md` are migrated to `bf` CLI as primary. **Deferred.** 15 shim
-      scripts still ship under `.agents/skills/manuscript-workflow-orchestrator/scripts/`; they
-      delegate via `from bookforge.core.validator import *`. Safe to keep until docs fully
-      migrate to `bf` as the primary entry surface.
+- [x] Shim removal (carried from M1.6): the 14 `.agents/skills/manuscript-workflow-orchestrator/scripts/*.py`
+      shims are **deleted**. `bf pacing` and `bf packet` were added to close the two gaps that had no
+      CLI equivalent; the 12 true shims were already covered by `bf validate`/`status`/`init`/etc.
+      Tests that loaded shims were migrated to `bookforge.core.*` directly; `test_packaged_shims.py`
+      and `test_new_scripts.py` were deleted (coverage preserved via `test_chain.py` + `test_scanner.py`).
+      `analyze_reference_structure.py` (western-story-pattern-analyzer) is retained — it is a standalone
+      tool, not a shim. `AGENTS.md`, `SKILL.md`, all `references/*.md`, and the live docs now use `bf`
+      exclusively; `docs/mm-chat.md` is left as a historical transcript.
 - **Shippable:** clean CLI, multi-vocabulary, adapter-pluggable, trustworthy validation.
 
 ### M4 — Full Change Workflow — ✅ COMPLETE
@@ -525,7 +527,7 @@ Week 4:   M5 (polish/docs/deprecation)
 | `tex-cade` defaults (22 files)                | Replaced with `book-example` or real sample           | M0                                       |
 | Codex/Antigravity/Gemini names in docs/engine | Stripped                                              | M1                                       |
 | `.agents/skills/*/agents/openai.yaml`         | Removed                                               | M1                                       |
-| 13 shim scripts                               | Thin `bf` aliases or removed                          | ~~M1~~ → **M5** (deferred; see §M1 note) |
+| 14 shim scripts                               | Removed; `bf pacing` + `bf packet` added for the 2 gaps | M5 (done)                             |
 | `notebooklm.py` (573 lines)                   | One adapter behind Protocol                           | M3                                       |
 | `humanizer` Claude-Code frontmatter           | Agent-neutral markdown                                | M1                                       |
 | TUI as no-arg default                         | Opt-in `bf tui`                                       | M0                                       |

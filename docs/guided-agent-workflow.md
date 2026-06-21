@@ -198,7 +198,7 @@ If `references/` or `references/timber/analysis/` is missing, continue with the 
 Generate a source-locked pacing plan with:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/plan_chapter_pacing.py books/<book-slug>
+bf pacing books/<book-slug>
 ```
 
 The output is:
@@ -214,19 +214,19 @@ Use that file to decide which chapters deserve lean, standard, expanded, major, 
 Run context validation after drafting, expanding, or revising:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>
+bf validate books/<book-slug>
 ```
 
-Run length validation after context validation:
+Length and rhythm checks are folded into full validation. Length validation runs inline:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
+bf validate books/<book-slug>
 ```
 
-Run chapter rhythm validation after length validation when chapter variation matters:
+Chapter rhythm runs inline in status when chapter variation matters:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>
+bf status books/<book-slug>
 ```
 
 Run style-risk scan on chapter drafts:
@@ -313,10 +313,10 @@ The agent can run multi-step passes when prompted, but the user still controls w
 
 Future level: autonomous loop.
 
-A future autonomous loop would add a controller command such as:
+The autonomous loop controller is available via:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/<book-slug> --target-min 30300 --target-max 30900
+bf run-loop books/<book-slug>
 ```
 
 That controller would:

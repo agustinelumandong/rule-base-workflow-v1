@@ -211,10 +211,9 @@ Requirements:
 Run:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/tex-cade
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/tex-cade
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/tex-cade
-python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/tex-cade --target-min 30000 --target-max 31000
+bf validate books/tex-cade
+bf status books/tex-cade
+bf run-loop books/tex-cade
 ```
 
 Run style scan:
@@ -226,7 +225,7 @@ rg -n "absolutely|completely|relentless|massive|sharp|heavy|pure|extremely|perfe
 Recompile:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/compile_manuscript.py books/tex-cade
+bf compile books/tex-cade
 ```
 
 ## Acceptance Criteria

@@ -92,7 +92,7 @@ To make the plot logic airtight, we need to modify the active book outline and r
 1. **Update Validator Script:** If the `bookforge` validator checks names or specific plot points, verify it has the new name list.
 2. **Run Validation:** Run the manuscript context validator to verify that the changes did not introduce any consistency or temporal conflicts:
    ```bash
-   python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/tex-cade
+   bf validate books/tex-cade
    ```
 
 ---

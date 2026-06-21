@@ -48,16 +48,27 @@ To maintain narrative cohesion, consistency, and style quality, the BookForge sy
 
 ## 2. Core Workflow Commands
 
-Always use the unified `bf` CLI command set. Avoid invoking scripts inside `.agents/skills/.../scripts/` directly as they are deprecated.
+Always use the unified `bf` CLI command set. The legacy orchestrator scripts under `.agents/skills/manuscript-workflow-orchestrator/scripts/` **have been removed** — `bf` is now the sole entry surface. Do not invent or call those script paths.
 
-| Legacy Workflow Script | Modern CLI Equivalent | Description |
+| Removed Legacy Script | Use instead | Notes |
 | :--- | :--- | :--- |
 | `scan_source_format.py` | `bf init` | Initializes or scans book folder config |
-| `validate_manuscript_context.py` | `bf validate` | Runs all validation and continuity checks |
-| `check_manuscript_length.py` | `bf validate` | Checks manuscript length constraints |
+| `validate_manuscript_context.py` | `bf validate` | Runs all deterministic, style, and canon validations |
+| `check_manuscript_length.py` | `bf validate` | Length constraints are part of full validation |
+| `check_continuity_chain.py` | `bf validate` / `bf status` | Continuity check runs inline in both |
+| `check_chapter_rhythm.py` | `bf status` | Rhythm analysis runs inline in status |
+| `check_chapter_gaps.py` | `bf status` | Gap check runs inline in status |
+| `check_narrative_quality.py` | `bf validate` / `bf run-loop` | Narrative quality runs in validation and the loop |
+| `check_context_budget.py` | `bf validate` / `bf run-loop` | Budget check folded into validation/loop |
+| `scan_banned_words.py` | `bf validate` | Banned-word/style scan is part of validation |
 | `plan_chapter_pacing.py` | `bf pacing` | Generates a source-locked pacing plan |
-| `run_manuscript_loop.py` | `bf loop` | Runs autonomous compiler and repair loops |
-| `apply_chapter_event` / scripts | `bf apply change` | Compiles, events, and archives staging change |
+| `build_context_packet.py` | `bf packet` | Renders a chapter context packet |
+| `compile_manuscript.py` | `bf compile` | Compiles drafts into a single manuscript |
+| `run_manuscript_loop.py` | `bf run-loop` | Checks loop state and prints the next action |
+| `resolve_unknowns.py` | `bf resolve-unknowns` | Runs the unknowns resolution wizard |
+| `apply_chapter_event` / scripts | `bf apply change` | Validates, appends event, re-folds, compiles, archives |
+
+> **Note:** `analyze_reference_structure.py` under `western-story-pattern-analyzer/scripts/` is **not** a legacy shim — it is a standalone reference-analysis tool for that skill and remains in place.
 
 ### Core CLI Workflow Execution Order:
 1. **Initialize**: Prepare the workspace:

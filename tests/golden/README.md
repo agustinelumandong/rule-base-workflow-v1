@@ -9,7 +9,7 @@ refactor (event-sourced canon, validator decomposition, type migration).
 |---|---|---|
 | `bf-status.txt` | `bf status books/book-example` | File validation, structure gaps, continuity chain, rhythm |
 | `bf-run-loop.txt` | `bf run-loop books/book-example --target-min 30000 --target-max 31000` | Loop controller status, decision, reason, next action, length state, book-level issues |
-| `validate-manuscript-context.txt` | `validate_manuscript_context.py books/book-example` | Book files validation, chapter status table |
+| `validate-manuscript-context.txt` | `bf validate books/book-example` | Book files validation, chapter status table |
 
 ## What the output means
 
@@ -29,7 +29,7 @@ If the refactor is intentional, regenerate these files and note the reason in th
 # After an engine change, re-run and diff:
 python -c "import sys; sys.argv=['bf','status','books/book-example']; from bookforge.cli import main; sys.exit(main())" | diff - tests/golden/bf-status.txt
 python -c "import sys; sys.argv=['bf','run-loop','books/book-example','--target-min','30000','--target-max','31000']; from bookforge.cli import main; sys.exit(main())" | diff - tests/golden/bf-run-loop.txt
-python -c "import sys; sys.argv=['v','books/book-example']; from bookforge.core.validator import main; sys.exit(main())" | diff - tests/golden/validate-manuscript-context.txt
+python -c "import sys; sys.argv=['bf','validate','books/book-example']; from bookforge.cli import main; sys.exit(main())" | diff - tests/golden/validate-manuscript-context.txt
 ```
 
 Empty diff = no behavior change. Non-empty = investigate before proceeding.

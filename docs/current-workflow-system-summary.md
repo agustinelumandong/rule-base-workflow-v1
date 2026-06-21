@@ -180,7 +180,7 @@ Context packet is small chapter bundle. It prevents full-book context bloat.
 Build command:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py books/<book-slug> --chapter chapter-XX
+bf packet books/<book-slug> --chapter chapter-XX
 ```
 
 Packet includes:
@@ -221,13 +221,13 @@ Order matters:
 Context validation command:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>
+bf validate books/<book-slug>
 ```
 
 Chapter semantic prompt command:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug> --chapter chapter-XX --ai-prompt
+bf validate books/<book-slug> --chapter chapter-XX --review-prompt
 ```
 
 Validator checks:
@@ -259,7 +259,7 @@ Rule: fix `FAIL` before length work. Treat `WARN` as review or repair target.
 Command:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
+bf validate books/<book-slug>
 ```
 
 Length checker reports:
@@ -290,7 +290,7 @@ If short, expand only inside approved scene breakdowns with source-supported act
 Command:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/<book-slug> --target-min 30000 --target-max 31000
+bf run-loop books/<book-slug>
 ```
 
 Loop is controller, not writer.
@@ -330,7 +330,7 @@ Loop also prints:
 Command:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>
+bf status books/<book-slug>
 ```
 
 It flags:
@@ -348,7 +348,7 @@ Rhythm warnings are advisory unless user asks for rhythm repair.
 Command:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/compile_manuscript.py books/<book-slug>
+bf compile books/<book-slug>
 ```
 
 Compile reads chapter draft files and writes:
@@ -445,19 +445,19 @@ These tests cover source scan target parsing, pacing plan behavior, and context 
 Run intake:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/hope-long-trails
+bf init books/hope-long-trails
 ```
 
 Run current validation:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/hope-long-trails
+bf validate books/hope-long-trails
 ```
 
 Run loop:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/hope-long-trails --target-min 30000 --target-max 31000
+bf run-loop books/hope-long-trails
 ```
 
 Current next real production step:

@@ -38,7 +38,7 @@ The project turns a loose AI-assisted writing process into a repeatable workflow
 | `docs/` | Current workflow documentation and future product plans |
 | `tests/` | Focused tests for core modules and packaged script shims |
 
-The local scripts under `.agents/skills/manuscript-workflow-orchestrator/scripts/` are generally thin compatibility shims. For example, `run_manuscript_loop.py` imports and delegates to `bookforge.core.loop`, while `validate_manuscript_context.py` delegates to `bookforge.core.validator`. The package under `bookforge/core/` is therefore the implementation source of truth.
+The local scripts under `.agents/skills/manuscript-workflow-orchestrator/scripts/` were previously thin compatibility shims (e.g. `run_manuscript_loop.py` delegated to `bookforge.core.loop`, `validate_manuscript_context.py` delegated to `bookforge.core.validator`). **These shims have been removed**; the `bf` CLI is now the sole entry surface and the package under `bookforge/core/` is the implementation source of truth.
 
 ### Current Implementation Versus Product Plan
 
