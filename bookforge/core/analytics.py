@@ -141,6 +141,8 @@ def load_analytics(book_folder: Path) -> dict[str, any]:
 
 def save_analytics(book_folder: Path, data: dict[str, any]) -> None:
     path = get_analytics_file_path(book_folder)
+    try:
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except OSError:
         pass
 

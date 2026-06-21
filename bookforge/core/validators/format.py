@@ -364,7 +364,7 @@ def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIss
                     "Direct editing of rulebook.md is deprecated. Please use the event-sourced change workflow (bf memory learn/apply-learning) instead.",
                     file=rulebook_path,
                 ))
-        except Exception:
+        except (subprocess.SubprocessError, OSError, FileNotFoundError):
             pass
 
     unknown_failures = unknowns_module.check_unknowns(book_folder)

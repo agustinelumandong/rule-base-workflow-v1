@@ -918,6 +918,23 @@ def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIss
                         file=rulebook_path,
                     ))
 
+        # Flag direct edits of rulebook.md (superseded by event-sourced canon flow).
+        # Git may be absent or the path may be outside a repo; treat those as no-op.
+        import subprocess
+        try:
+            res = subprocess.run(
+                ["git", "status", "--porcelain", str(rulebook_path)],
+                capture_output=True, text=True, check=True,
+            )
+            if res.stdout.strip():
+                issues.append(_make_issue(
+                    "VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED",
+                    "Direct editing of rulebook.md is deprecated. Please use the event-sourced change workflow (bf memory learn/apply-learning) instead.",
+                    file=rulebook_path,
+                ))
+        except (subprocess.SubprocessError, OSError, FileNotFoundError):
+            pass
+
     unknown_failures = unknowns_module.check_unknowns(book_folder)
     for failure in unknown_failures:
         issues.append(_make_issue(

@@ -56,7 +56,7 @@ class LocalRegexBackend:
             if re.match(r"^[=\-_*]{3,}$", l):
                 continue
 
-            processed.append(line)
+            processed.append(l)
 
         # Consolidate multiple blank lines into at most one blank line
         res = "\n".join(processed)
