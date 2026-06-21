@@ -6,9 +6,12 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from bookforge.core.headroom import compress_text
+from bookforge.core.adapters.compression import get_compression_backend
 from bookforge.core import world as world_module
 from bookforge.core.scanner import source_path
+
+def compress_text(text: str) -> str:
+    return get_compression_backend().compress(text)
 
 COMPRESSED_STYLE_LOCK = (
     "Literal Western prose; no AI echo words; no modern/clinical terms; "

@@ -1,0 +1,108 @@
+"""BookForge Validators Package.
+
+Re-exports key symbols from submodules for backward compatibility
+with code that imports directly from `bookforge.core.validators`.
+"""
+
+from bookforge.core.validators.style import (
+    DEFAULT_SETTINGS,
+    BANNED_AI_ECHO_WORDS,
+    MODERN_OR_CLINICAL_WORDS,
+    INTERNAL_MONOLOGUE_PHRASES,
+    FORBIDDEN_CONFLICT_PATTERNS,
+    PROJECT_RULE_BANNED_NAME_LABELS,
+    contains_any,
+    check_ing_openers,
+    extract_proper_names,
+    check_pronoun_loops,
+    dialogue_tags,
+    check_em_dash_anchors,
+    forbidden_length_language,
+    check_forbidden_conflicts,
+    check_style_review_signals,
+)
+
+from bookforge.core.validators.format import (
+    REQUIRED_BOOK_FILES,
+    BEAT_REQUIRED_MARKERS,
+    REQUIRED_RULEBOOK_SECTIONS,
+    RULEBOOK_UNKNOWN_ALLOWED_SECTIONS,
+    UNRESOLVED_MARKERS,
+    CONTEXT_LOCK_MARKER,
+    CONTEXT_LOCK_END_MARKER,
+    BEAT_RE,
+    RuleMeta,
+    RULE_META,
+    ChapterFiles,
+    read_text,
+    find_project_root,
+    load_project_settings,
+    chapter_sort_key,
+    discover_chapters,
+    parse_phase_chapters,
+    validate_required_book_file_issues,
+    validate_required_book_files,
+    validate_scene_breakdown,
+    _make_issue,
+)
+
+from bookforge.core.validators.continuity import (
+    check_unprofiled_period_terms,
+    check_context_lock_unknowns,
+    normalize_heading_name,
+    _extract_rulebook_section,
+    _extract_unknown_markers,
+    _ledger_has_chapter_entry,
+    validate_continuity_out_issues,
+    validate_continuity_out,
+)
+
+__all__ = [
+    # style
+    "DEFAULT_SETTINGS",
+    "BANNED_AI_ECHO_WORDS",
+    "MODERN_OR_CLINICAL_WORDS",
+    "INTERNAL_MONOLOGUE_PHRASES",
+    "FORBIDDEN_CONFLICT_PATTERNS",
+    "PROJECT_RULE_BANNED_NAME_LABELS",
+    "contains_any",
+    "check_ing_openers",
+    "extract_proper_names",
+    "check_pronoun_loops",
+    "dialogue_tags",
+    "check_em_dash_anchors",
+    "forbidden_length_language",
+    "check_forbidden_conflicts",
+    "check_style_review_signals",
+    # format
+    "REQUIRED_BOOK_FILES",
+    "BEAT_REQUIRED_MARKERS",
+    "REQUIRED_RULEBOOK_SECTIONS",
+    "RULEBOOK_UNKNOWN_ALLOWED_SECTIONS",
+    "UNRESOLVED_MARKERS",
+    "CONTEXT_LOCK_MARKER",
+    "CONTEXT_LOCK_END_MARKER",
+    "BEAT_RE",
+    "RuleMeta",
+    "RULE_META",
+    "ChapterFiles",
+    "read_text",
+    "find_project_root",
+    "load_project_settings",
+    "chapter_sort_key",
+    "discover_chapters",
+    "parse_phase_chapters",
+    "validate_required_book_file_issues",
+    "validate_required_book_files",
+    "validate_scene_breakdown",
+    "_make_issue",
+    # continuity
+    "check_unprofiled_period_terms",
+    "check_context_lock_unknowns",
+    "normalize_heading_name",
+    "_extract_rulebook_section",
+    "_extract_unknown_markers",
+    "_ledger_has_chapter_entry",
+    "validate_continuity_out_issues",
+    "validate_continuity_out",
+]

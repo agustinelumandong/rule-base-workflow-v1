@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import yaml
 from pathlib import Path
 from bookforge.core import analytics as analytics_module
 
@@ -47,27 +48,45 @@ DEFAULT_REGISTRY = {
 
 
 def load_registry(book_folder: Path | None = None) -> dict[str, any]:
-    """Finds and loads the persona-registry.json config."""
-    # 1. Check book folder override
+    """Finds and loads the model-routing.yml or legacy persona-registry.json config."""
+    # 1. Check book folder local overrides first (both YAML and JSON)
     if book_folder:
-        local_path = Path(book_folder) / "persona-registry.json"
-        if local_path.exists():
+        local_yaml = Path(book_folder) / "spec" / "model-routing.yml"
+        if local_yaml.exists():
             try:
-                return json.loads(local_path.read_text(encoding="utf-8"))
+                data = yaml.safe_load(local_yaml.read_text(encoding="utf-8"))
+                if data and "personas" in data:
+                    return data
             except Exception:
                 pass
 
-    # 2. Check root folder
-    root_path = Path("persona-registry.json")
-    if root_path.exists():
+        local_json = Path(book_folder) / "persona-registry.json"
+        if local_json.exists():
+            try:
+                return json.loads(local_json.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+    # 2. Check root configurations next
+    root_yaml = Path("spec/model-routing.yml")
+    if root_yaml.exists():
         try:
-            return json.loads(root_path.read_text(encoding="utf-8"))
+            data = yaml.safe_load(root_yaml.read_text(encoding="utf-8"))
+            if data and "personas" in data:
+                return data
+        except Exception:
+            pass
+
+    root_json = Path("persona-registry.json")
+    if root_json.exists():
+        try:
+            return json.loads(root_json.read_text(encoding="utf-8"))
         except Exception:
             pass
 
     # 3. Create default in root and return
     try:
-        root_path.write_text(json.dumps(DEFAULT_REGISTRY, indent=2), encoding="utf-8")
+        root_json.write_text(json.dumps(DEFAULT_REGISTRY, indent=2), encoding="utf-8")
     except Exception:
         pass
     return DEFAULT_REGISTRY
@@ -115,16 +134,75 @@ def check_persona_capabilities(
     
     # 2. Model authorization verification
     allowed_models = p_config.get("allowed_models", [])
-    if model not in allowed_models:
-        return False, f"Model '{model}' is not authorized for persona '{persona_name}' (allowed: {allowed_models})."
+    examples = p_config.get("examples", [])
+    model_class = p_config.get("model_class")
+
+    # Class mappings: cheap, mid, strong
+    model_classes = {
+        "cheap": ["gpt-4o-mini", "claude-3-5-haiku", "gemini-1.5-flash", "local-7b"],
+        "mid": ["gpt-4o", "claude-3-5-haiku", "claude-3-5-sonnet", "gemini-1.5-pro", "gpt-4o-mini"],
+        "strong": ["claude-3-5-sonnet", "gpt-4o", "gemini-1.5-pro", "gpt-4", "opus"]
+    }
+
+    model_ok = False
+    if allowed_models and model in allowed_models:
+        model_ok = True
+    elif model in examples:
+        model_ok = True
+    elif model_class:
+        allowed_class_models = model_classes.get(model_class, [])
+        if model in allowed_class_models:
+            model_ok = True
+        else:
+            for acm in allowed_class_models:
+                if acm in model or model in acm:
+                    model_ok = True
+                    break
+
+    if not model_ok:
+        allowed_desc = allowed_models or examples or [f"class: {model_class}"]
+        return False, f"Model '{model}' is not authorized for persona '{persona_name}' (allowed: {allowed_desc})."
 
     # 3. Action authorization verification
     allowed_actions = p_config.get("allowed_actions", [])
-    if action not in allowed_actions:
-        return False, f"Action '{action}' is not authorized for persona '{persona_name}' (allowed: {allowed_actions})."
+    tasks = p_config.get("tasks", [])
+    
+    # Map legacy actions to v2 tasks
+    action_mappings = {
+        "draft": "draft_prose",
+        "style": "style_scan_semantic",
+        "validate": "validate_review",
+        "init": "memory_build",
+        "plan": "classify_beats",
+        "status": "summarize_continuity",
+        "init-action": "memory_build",
+        "compile": "memory_build"
+    }
+    mapped_action = action_mappings.get(action, action)
+    
+    action_ok = False
+    if action in allowed_actions or action in tasks:
+        action_ok = True
+    elif mapped_action in allowed_actions or mapped_action in tasks:
+        action_ok = True
+    else:
+        for t in tasks + allowed_actions:
+            if action in t or t in action:
+                action_ok = True
+                break
+
+    if not action_ok:
+        return False, f"Action '{action}' is not authorized for persona '{persona_name}' (allowed: {allowed_actions or tasks})."
 
     # 4. Token limit verification
-    token_limit = p_config.get("token_budget_limit", 100000)
+    default_limits = {
+        "extractor": 100000,
+        "planner": 100000,
+        "writer": 50000,
+        "reviewer": 80000
+    }
+    default_limit = default_limits.get(persona_name, 100000)
+    token_limit = p_config.get("token_budget_limit", default_limit)
     if projected_input_tokens > token_limit:
         return False, f"Projected input tokens ({projected_input_tokens}) exceed persona '{persona_name}' budget limit ({token_limit})."
 

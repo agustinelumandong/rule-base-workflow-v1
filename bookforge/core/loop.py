@@ -261,27 +261,52 @@ def classify(
 
 
 def load_persistent_repairs(book_folder: Path) -> dict[str, int]:
-    state_file = book_folder / "loop-state.json"
-    if not state_file.exists():
+    state_file = book_folder / "state" / "loop.json"
+    legacy_file = book_folder / "loop-state.json"
+    
+    # Backward compatibility fallback
+    target_file = state_file
+    if not state_file.exists() and legacy_file.exists():
+        target_file = legacy_file
+        
+    if not target_file.exists():
         return {}
     try:
-        data = json.loads(state_file.read_text(encoding="utf-8"))
+        data = json.loads(target_file.read_text(encoding="utf-8"))
         return data.get("repair_attempts", {})
     except Exception:
         return {}
 
 
 def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], status: str) -> None:
-    state_file = book_folder / "loop-state.json"
-    data = {
-        "repair_attempts": repair_attempts,
-        "last_run": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "last_status": status,
-    }
+    state_dir = book_folder / "state"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    state_file = state_dir / "loop.json"
+    
+    # Read existing if any (to preserve other keys like last_run/last_status)
+    data = {}
+    legacy_file = book_folder / "loop-state.json"
+    if state_file.exists():
+        try:
+            data = json.loads(state_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    elif legacy_file.exists():
+        try:
+            data = json.loads(legacy_file.read_text(encoding="utf-8"))
+            # Clean up legacy file
+            legacy_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+            
+    data["repair_attempts"] = repair_attempts
+    data["last_run"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    data["last_status"] = status
     try:
         state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception:
         pass
+
 
 
 def _required_book_file_issues(book_folder: Path) -> tuple[list[str], list[object]]:

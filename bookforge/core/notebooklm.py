@@ -109,12 +109,18 @@ def list_notebooks() -> list[dict[str, str]]:
 
 
 def get_associated_notebook(book_folder: Path) -> dict[str, str] | None:
-    """Reads `loop-state.json` inside the book folder to fetch linked notebook details."""
-    state_file = book_folder / "loop-state.json"
-    if not state_file.exists():
+    """Reads `state/notebooklm.json` (or legacy `loop-state.json`) inside the book folder to fetch linked notebook details."""
+    state_file = book_folder / "state" / "notebooklm.json"
+    legacy_file = book_folder / "loop-state.json"
+    
+    target_file = state_file
+    if not state_file.exists() and legacy_file.exists():
+        target_file = legacy_file
+        
+    if not target_file.exists():
         return None
     try:
-        data = json.loads(state_file.read_text(encoding="utf-8"))
+        data = json.loads(target_file.read_text(encoding="utf-8"))
         nb_id = data.get("notebook_id")
         nb_title = data.get("notebook_title")
         if nb_id:
@@ -125,12 +131,22 @@ def get_associated_notebook(book_folder: Path) -> dict[str, str] | None:
 
 
 def set_associated_notebook(book_folder: Path, notebook_id: str, title: str) -> None:
-    """Persists the linked notebook ID and title inside `loop-state.json`."""
-    state_file = book_folder / "loop-state.json"
+    """Persists the linked notebook ID and title inside `state/notebooklm.json`."""
+    state_dir = book_folder / "state"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    state_file = state_dir / "notebooklm.json"
+    
     data = {}
+    legacy_file = book_folder / "loop-state.json"
+    
     if state_file.exists():
         try:
             data = json.loads(state_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    elif legacy_file.exists():
+        try:
+            data = json.loads(legacy_file.read_text(encoding="utf-8"))
         except Exception:
             pass
     
@@ -141,24 +157,12 @@ def set_associated_notebook(book_folder: Path, notebook_id: str, title: str) -> 
     state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+
 def query_notebook(notebook_id: str, query: str) -> str:
     """Queries the given notebook with a specific question using `nlm notebook query`."""
-    if not is_nlm_available():
-        return "Error: nlm CLI is not installed or available."
-
-    try:
-        res = subprocess.run(
-            ["nlm", "notebook", "query", notebook_id, query],
-            capture_output=True,
-            text=True,
-            check=False
-        )
-        if res.returncode == 0:
-            return res.stdout.strip()
-        else:
-            return f"Query failed with exit code {res.returncode}:\n{res.stderr.strip()}"
-    except Exception as e:
-        return f"Error during query execution: {str(e)}"
+    from bookforge.core.adapters.research import NotebookLMBackend
+    backend = NotebookLMBackend(Path("."), notebook_id=notebook_id)
+    return backend.query(query)
 
 
 def sync_research_to_pack(book_folder: Path, notebook_id: str) -> bool:
@@ -354,23 +358,32 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
                 files_to_upload.append(path)
 
     # Check prior book's continuity/compiled drafts if carry-from or sequential
-    state_file = book_folder / "loop-state.json"
-    if state_file.exists():
-        try:
-            data = json.loads(state_file.read_text(encoding="utf-8"))
-            carry_from = data.get("carry_from")
-            if carry_from:
-                carry_path = Path(carry_from)
-                if carry_path.exists():
-                    for name in ("rulebook.md", "mood-lock.md"):
-                        p = carry_path / name
-                        if p.exists():
-                            files_to_upload.append(p)
-                    compiled = carry_path / f"{carry_path.name}-compiled.md"
-                    if compiled.exists():
-                        files_to_upload.append(compiled)
-        except Exception:
-            pass
+    state_file = book_folder / "state" / "notebooklm.json"
+    loop_file = book_folder / "state" / "loop.json"
+    legacy_file = book_folder / "loop-state.json"
+    
+    carry_from = None
+    for sf in (state_file, loop_file, legacy_file):
+        if sf.exists():
+            try:
+                data = json.loads(sf.read_text(encoding="utf-8"))
+                carry_from = data.get("carry_from")
+                if carry_from:
+                    break
+            except Exception:
+                pass
+                
+    if carry_from:
+        carry_path = Path(carry_from)
+        if carry_path.exists():
+            for name in ("rulebook.md", "mood-lock.md"):
+                p = carry_path / name
+                if p.exists():
+                    files_to_upload.append(p)
+            compiled = carry_path / f"{carry_path.name}-compiled.md"
+            if compiled.exists():
+                files_to_upload.append(compiled)
+
 
     # Unique files list (resolve absolute paths)
     unique_paths = []
@@ -560,14 +573,26 @@ Provide exactly 12 chapters in the following format:
     
     # Update loop state
     try:
-        state_file = book_folder / "loop-state.json"
+        state_dir = book_folder / "state"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        state_file = state_dir / "notebooklm.json"
+        
         state_data = {}
+        legacy_file = book_folder / "loop-state.json"
+        
         if state_file.exists():
             state_data = json.loads(state_file.read_text(encoding="utf-8"))
+        elif legacy_file.exists():
+            try:
+                state_data = json.loads(legacy_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+                
         state_data["notebook_id"] = notebook_id
         state_data["outline_generated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         state_file.write_text(json.dumps(state_data, indent=2), encoding="utf-8")
     except Exception:
         pass
+
 
     return True, f"Successfully created notebook, uploaded {uploaded_count} source files, and wrote outline to `{dest_outline.relative_to(book_folder.parent.parent)}`"
