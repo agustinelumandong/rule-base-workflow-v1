@@ -78,24 +78,24 @@ lossy memory layers, and it is the reason Layer 3 is forbidden from mutating can
 
 ### 2.1 Four vocabularies, one engine (git-flow / event-sourcing / save-state / OpenSpec)
 
-| Concept | git-flow | event sourcing | save-state | OpenSpec |
-|---|---|---|---|---|
-| Canonical state | main branch | aggregate state | save file | specs/ |
-| Unit of change | feature branch | event | checkpoint | change |
-| Validation | CI on PR | validate-on-apply | load+check | openspec validate |
-| Promote | merge | append event | save | openspec apply |
+| Concept         | git-flow       | event sourcing    | save-state | OpenSpec          |
+| --------------- | -------------- | ----------------- | ---------- | ----------------- |
+| Canonical state | main branch    | aggregate state   | save file  | specs/            |
+| Unit of change  | feature branch | event             | checkpoint | change            |
+| Validation      | CI on PR       | validate-on-apply | load+check | openspec validate |
+| Promote         | merge          | append event      | save       | openspec apply    |
 
 All four are the same machine. Exposed as Layer-4 CLI aliases so writers, collaborators,
 architects, and agents each get their vocabulary.
 
 ### 2.2 Three memory options, one subsystem
 
-| Want | First-class tier | Headroom MCP | Pluggable adapter |
-|---|---|---|---|
-| Agent-agnostic (no MCP dependency) | ✅ | ❌ | ✅ |
-| Reuse Headroom's existing MCP | ❌ | ✅ | ⚠️ only if it's a backend |
-| Swappable / no tool privileged | ⚠️ Headroom privileged | ❌ Headroom-only | ✅ |
-| Works even when agent doesn't speak MCP | ✅ | ❌ | ✅ |
+| Want                                    | First-class tier      | Headroom MCP    | Pluggable adapter        |
+| --------------------------------------- | --------------------- | --------------- | ------------------------ |
+| Agent-agnostic (no MCP dependency)      | ✅                     | ❌               | ✅                        |
+| Reuse Headroom's existing MCP           | ❌                     | ✅               | ⚠️ only if it's a backend |
+| Swappable / no tool privileged          | ⚠️ Headroom privileged | ❌ Headroom-only | ✅                        |
+| Works even when agent doesn't speak MCP | ✅                     | ❌               | ✅                        |
 
 **Merge:** one `MemoryBackend` Protocol; Headroom is the reference backend exposed both as a
 library (via `bf memory`) and optionally as an MCP server (`bf memory serve --mcp`); cheap
@@ -109,11 +109,11 @@ shifted without clear cause" (a soft signal). Fiction continuity is graded. The 
 uses **three lock levels** — and these map directly onto the `Severity` enum that already exists
 in `bookforge/core/issue.py` (`Severity.HARD / SOFT / INFO`) but is not yet used this way.
 
-| Lock level | Maps to | Behavior | Examples |
-|---|---|---|---|
-| **Strict** | `Severity.HARD` | Blocks `bf apply`. Canon mutation impossible until an explicit approved event resolves it. | Character identity, alias → entity, ammo count, death, destroyed object, ownership |
-| **Guarded** | `Severity.SOFT` | Requires evidence/transition logic to change; `bf apply` proceeds but emits a reviewable warning. | Injuries, relationships, supplies, motivations, social standing, knowledge state |
-| **Soft** | `Severity.INFO` | Consistency preferred; a drift produces a review signal, not a block. | Mood, replaceable clothing, incidental descriptive detail |
+| Lock level  | Maps to         | Behavior                                                                                          | Examples                                                                           |
+| ----------- | --------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **Strict**  | `Severity.HARD` | Blocks `bf apply`. Canon mutation impossible until an explicit approved event resolves it.        | Character identity, alias → entity, ammo count, death, destroyed object, ownership |
+| **Guarded** | `Severity.SOFT` | Requires evidence/transition logic to change; `bf apply` proceeds but emits a reviewable warning. | Injuries, relationships, supplies, motivations, social standing, knowledge state   |
+| **Soft**    | `Severity.INFO` | Consistency preferred; a drift produces a review signal, not a block.                             | Mood, replaceable clothing, incidental descriptive detail                          |
 
 **Why this matters:** the "dead character being treated in chapter 9" post-mortem
 (`outline_feedback_analysis.md`) is a *Strict* violation. "Mara seems angry without setup" is a
@@ -228,13 +228,13 @@ books/<book-slug>/
 
 `continuity-out.md` → event mapping:
 
-| continuity-out section | Event mutation (→ folds into snapshot.yml) |
-|---|---|
-| Characters (alive/injured/absent) | status mutations |
-| Changes (possessions/injuries/secrets/alliances/resources) | inventory/relationship/secret mutations |
-| Locations (where key characters end) | location mutations |
-| Human Stakes Carried / Unresolved Pressure | carried-forward state (part of the fold) |
-| Next Chapter Must Know | invariants the next event must not violate |
+| continuity-out section                                     | Event mutation (→ folds into snapshot.yml) |
+| ---------------------------------------------------------- | ------------------------------------------ |
+| Characters (alive/injured/absent)                          | status mutations                           |
+| Changes (possessions/injuries/secrets/alliances/resources) | inventory/relationship/secret mutations    |
+| Locations (where key characters end)                       | location mutations                         |
+| Human Stakes Carried / Unresolved Pressure                 | carried-forward state (part of the fold)   |
+| Next Chapter Must Know                                     | invariants the next event must not violate |
 
 `bf canon build` folds entities+events into `snapshot.yml` (lossless rebuild — delete it,
 regenerate from events). This is the OpenSpec invariant made literal: source of truth is only
@@ -245,13 +245,13 @@ ever reached by replaying validated events.
 Adapted from `docs/BOOKFORGE-MASTER-PLAN.md` §7. A flat `characters.yml` over-profiles
 incidental people and under-profiles protagonists. Use tiers with minimum-detail-per-tier:
 
-| Tier | Use | Minimum fields |
-|---|---|---|
-| **Main** | Protagonists, antagonists, major POV | Full: identity, appearance, personality, motivations, voice, arc, relationships, forbidden changes |
-| **Major supporting** | Recurring allies, rivals, family, mentors | Identity, role, distinguishing traits, voice guidance, relationships, continuity constraints |
-| **Recurring side** | Recurring officials, workers, informants | Medium: purpose, traits, voice, relationships, pressure behavior |
-| **Minor named** | Plot-relevant witness, courier, deputy | Lightweight: identity, purpose, role, voice summary, continuity notes |
-| **Incidental** | One-scene background people, no continuity effect | Descriptor only (`the older woman behind the desk`); no profile |
+| Tier                 | Use                                               | Minimum fields                                                                                     |
+| -------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Main**             | Protagonists, antagonists, major POV              | Full: identity, appearance, personality, motivations, voice, arc, relationships, forbidden changes |
+| **Major supporting** | Recurring allies, rivals, family, mentors         | Identity, role, distinguishing traits, voice guidance, relationships, continuity constraints       |
+| **Recurring side**   | Recurring officials, workers, informants          | Medium: purpose, traits, voice, relationships, pressure behavior                                   |
+| **Minor named**      | Plot-relevant witness, courier, deputy            | Lightweight: identity, purpose, role, voice summary, continuity notes                              |
+| **Incidental**       | One-scene background people, no continuity effect | Descriptor only (`the older woman behind the desk`); no profile                                    |
 
 **Governance rules** (also from the master plan):
 - A proper-named character requires a stable `character_id` + at least a proposed profile
@@ -513,19 +513,19 @@ Week 4:   M5 (polish/docs/deprecation)
 
 ## 10. What Gets Removed / Deprecated
 
-| Item | Fate | Milestone |
-|---|---|---|
-| `compile_helper.py`, `scratch_*.py` | Deleted | M0 |
-| `tex-cade` defaults (22 files) | Replaced with `book-example` or real sample | M0 |
-| Codex/Antigravity/Gemini names in docs/engine | Stripped | M1 |
-| `.agents/skills/*/agents/openai.yaml` | Removed | M1 |
-| 13 shim scripts | Thin `bf` aliases or removed | ~~M1~~ → **M5** (deferred; see §M1 note) |
-| `notebooklm.py` (573 lines) | One adapter behind Protocol | M3 |
-| `humanizer` Claude-Code frontmatter | Agent-neutral markdown | M1 |
-| TUI as no-arg default | Opt-in `bf tui` | M0 |
-| `rulebook.md` (monolithic) | Superseded by `canon/` + `spec/`; deprecated after M2 | M2/M5 |
-| `world-state.json` / `relationships.json` | Migrated into `canon/entities/` + events | M2 |
-| 45 bare `except Exception` | Specific exceptions + logging | M3 |
+| Item                                          | Fate                                                  | Milestone                                |
+| --------------------------------------------- | ----------------------------------------------------- | ---------------------------------------- |
+| `compile_helper.py`, `scratch_*.py`           | Deleted                                               | M0                                       |
+| `tex-cade` defaults (22 files)                | Replaced with `book-example` or real sample           | M0                                       |
+| Codex/Antigravity/Gemini names in docs/engine | Stripped                                              | M1                                       |
+| `.agents/skills/*/agents/openai.yaml`         | Removed                                               | M1                                       |
+| 13 shim scripts                               | Thin `bf` aliases or removed                          | ~~M1~~ → **M5** (deferred; see §M1 note) |
+| `notebooklm.py` (573 lines)                   | One adapter behind Protocol                           | M3                                       |
+| `humanizer` Claude-Code frontmatter           | Agent-neutral markdown                                | M1                                       |
+| TUI as no-arg default                         | Opt-in `bf tui`                                       | M0                                       |
+| `rulebook.md` (monolithic)                    | Superseded by `canon/` + `spec/`; deprecated after M2 | M2/M5                                    |
+| `world-state.json` / `relationships.json`     | Migrated into `canon/entities/` + events              | M2                                       |
+| 45 bare `except Exception`                    | Specific exceptions + logging                         | M3                                       |
 
 ---
 
