@@ -91,6 +91,7 @@ RULE_META: dict[str, RuleMeta] = {
     "VALIDATOR_POV_VIOLATION": RuleMeta("VALIDATOR_POV_VIOLATION", Severity.HARD, IssueCategory.STYLE),
     "VALIDATOR_SENTENCE_OPENER_ISSUE": RuleMeta("VALIDATOR_SENTENCE_OPENER_ISSUE", Severity.SOFT, IssueCategory.STYLE),
     "VALIDATOR_STYLE_REVIEW_SIGNAL": RuleMeta("VALIDATOR_STYLE_REVIEW_SIGNAL", Severity.SOFT, IssueCategory.STYLE),
+    "VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED": RuleMeta("VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED", Severity.SOFT, IssueCategory.CONTEXT),
 }
 
 
@@ -352,6 +353,19 @@ def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIss
                         f"Rulebook `Chapter Continuity Ledger` is missing `{chapter_slug}` coverage.",
                         file=rulebook_path,
                     ))
+
+        # Check if rulebook.md is edited directly (modified in git)
+        import subprocess
+        try:
+            res = subprocess.run(["git", "status", "--porcelain", str(rulebook_path)], capture_output=True, text=True, check=True)
+            if res.stdout.strip():
+                issues.append(_make_issue(
+                    "VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED",
+                    "Direct editing of rulebook.md is deprecated. Please use the event-sourced change workflow (bf memory learn/apply-learning) instead.",
+                    file=rulebook_path,
+                ))
+        except Exception:
+            pass
 
     unknown_failures = unknowns_module.check_unknowns(book_folder)
     for failure in unknown_failures:
