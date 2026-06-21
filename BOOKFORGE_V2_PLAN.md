@@ -415,12 +415,12 @@ the canon files.
 - [x] **Bonus:** installed `pytest` + `pyyaml` (3 tests were failing on missing `yaml` import)
 - **Shippable:** cleaner repo, works on Windows, tests tracked. **Verified:** 109/109 tests pass; golden output identical post-M1.
 
-### M1 — Decouple from Agents + Model Routing Skeleton (~5 days, parallel with M2) — 🟡 PARTIAL
+### M1 — Decouple from Agents + Model Routing Skeleton (~5 days, parallel with M2) — ✅ COMPLETE
 - [x] Strip Codex/Antigravity/Gemini names from `AGENTS.md`, `docs/workflow-v5.md`, all
       `SKILL.md` files, `loop.py`/`cli.py` help text
-- [ ] Establish `AGENTS.md` as primary; build `bf init --agents` to generate `CLAUDE.md` /
+- [x] Establish `AGENTS.md` as primary; build `bf init --agents` to generate `CLAUDE.md` /
       `.cursor/rules` / `copilot-instructions.md` / `GEMINI.md` / **OpenCode config**
-- [ ] **Define `spec/model-routing.yml`** (extractor/reviewer/writer personas); wire
+- [x] **Define `spec/model-routing.yml`** (extractor/reviewer/writer personas); wire
       `bf check-persona` to enforce it; have `bf init --agents opencode` emit `small_model` mapping
 - [~] ~~Convert 13 shim scripts to `bf` aliases or remove; rewrite `AGENTS.md` to `bf`~~
       **Deferred to M5.** Shims still work (they delegate to `bookforge.core` via `from X import *`);
@@ -429,54 +429,53 @@ the canon files.
 - [x] Remove `.agents/skills/*/agents/openai.yaml`; consolidate skill content into agent-neutral md
 - [x] Demote TUI (carried from M0 if not done): `bf tui` opt-in (done in M0.4 — no-arg → `status`)
 - **Shippable:** any agent drives the system; model-routing intent declared in-repo.
-- **Status:** 3 of 5 active bullets done. Remaining 2 (`bf init --agents` + `spec/model-routing.yml`) are the model-routing skeleton.
 
-### M2 — Event-Sourced Canon Core (Layers 1+2, ~6-8 days, parallel with M2.5/M3) — ⏳ NOT STARTED
-- [ ] Define `canon/entities/*.yml` schemas (characters, aliases, locations, objects) + validation
-- [ ] Define `canon/events/chapter-NN.event.yml` schema (structured continuity-out → event)
-- [ ] Build the **fold engine**: `bf canon build` re-derives `canon/state/snapshot.yml` from
+### M2 — Event-Sourced Canon Core (Layers 1+2, ~6-8 days, parallel with M2.5/M3) — ✅ COMPLETE
+- [x] Define `canon/entities/*.yml` schemas (characters, aliases, locations, objects) + validation
+- [x] Define `canon/events/chapter-NN.event.yml` schema (structured continuity-out → event)
+- [x] Build the **fold engine**: `bf canon build` re-derives `canon/state/snapshot.yml` from
       entities + events (canon fold is Layer 1, NOT the memory tier)
-- [ ] Build canon validators: alias resolution, timeline ordering, cross-event consistency (the
+- [x] Build canon validators: alias resolution, timeline ordering, cross-event consistency (the
       "no dead character acting" check), entity-vs-event coherence
-- [ ] Build `bf migrate` (old rulebook/world-state/relationships/continuity-out → entities +
+- [x] Build `bf migrate` (old rulebook/world-state/relationships/continuity-out → entities +
       events, lossless, idempotent)
-- [ ] **Build the gate (Layer 2):** `bf apply change` as the ONLY canon mutation path;
+- [x] **Build the gate (Layer 2):** `bf apply change` as the ONLY canon mutation path;
       `bf validate` must pass before append
-- [ ] Separate `loop-state.json` into pure controller state (`state/loop.json`) — remove
+- [x] Separate `loop-state.json` into pure controller state (`state/loop.json`) — remove
       NotebookLM coupling
 - ⚠️ **Load-bearing unknown (blocks freeze):** prototype the fold on a real `continuity-out.md`
       chain before committing — narrative state is graded/decaying, not discrete. See §13.
 - **Shippable:** event-sourced canon with protected source of truth; entity lookup works;
       rollback is a fold replay.
 
-### M2.5 — Persistent Memory Tier (Layer 3, ~4-5 days, parallel with M3) — ⏳ NOT STARTED
-- [ ] Define `MemoryBackend` Protocol (retrieve/learn/stats)
-- [ ] `HeadroomMemoryBackend`: wraps `headroom.compress`/`retrieve`/`stats` + `headroom learn` +
+### M2.5 — Persistent Memory Tier (Layer 3, ~4-5 days, parallel with M3) — ✅ COMPLETE
+- [x] Define `MemoryBackend` Protocol (retrieve/learn/stats)
+- [x] `HeadroomMemoryBackend`: wraps `headroom.compress`/`retrieve`/`stats` + `headroom learn` +
       `SharedContext`; usable as library via `bf memory *`
-- [ ] `LocalEmbeddingBackend`: zero-dep fallback (TF-IDF / keyword index over canon+drafts+history)
-- [ ] `bf memory build/search/resolve/learn/apply-learning/stats`, where `learn` creates a
+- [x] `LocalEmbeddingBackend`: zero-dep fallback (TF-IDF / keyword index over canon+drafts+history)
+- [x] `bf memory build/search/resolve/learn/apply-learning/stats`, where `learn` creates a
       proposal and `apply-learning` validates + promotes approved rules into `AGENTS.md` / `spec/`
-- [ ] `bf memory serve --mcp`: expose the active backend as MCP tools (headroom_compress/
+- [x] `bf memory serve --mcp`: expose the active backend as MCP tools (headroom_compress/
       retrieve/stats) for agents that prefer agent-driven calls — **opt-in, not required**
-- [ ] `bf memory learn` produces proposals only; only `bf memory apply-learning` (after
+- [x] `bf memory learn` produces proposals only; only `bf memory apply-learning` (after
       validation) mutates `AGENTS.md` / `spec/` — `learn` never writes the contract directly
 - **Shippable:** persistent cross-session semantic memory; Headroom first-class but swappable;
       agent-agnostic by default, MCP-optional.
 
-### M3 — CLI Vocabularies + Adapters + Cleanup (Layer 4 + compression/research, ~6-8 days, parallel) — ⏳ NOT STARTED
-- [ ] Implement Layer 4 writer verbs as aliases over the gate: `bf checkpoint save/load/diff`,
+### M3 — CLI Vocabularies + Adapters + Cleanup (Layer 4 + compression/research, ~6-8 days, parallel) — ✅ COMPLETE
+- [x] Implement Layer 4 writer verbs as aliases over the gate: `bf checkpoint save/load/diff`,
       `bf restore`
-- [ ] Implement Layer 4 opt-in: git-tracking guidance, `bf init --git` for branch-per-chapter
+- [x] Implement Layer 4 opt-in: git-tracking guidance, `bf init --git` for branch-per-chapter
       workflow
-- [ ] Reorganize `bf` subcommands per §5
-- [ ] Implement adapter Protocols; move `headroom.py` and `notebooklm.py` behind
+- [x] Reorganize `bf` subcommands per §5
+- [x] Implement adapter Protocols; move `headroom.py` and `notebooklm.py` behind
       `adapters/compression.py` and `adapters/research.py`
-- [ ] Rewrite context-packet renderer to pull from `canon/` (fallback to old `rulebook.md`)
-- [ ] Fix the 45 bare `except Exception` sites (specific exceptions + logging) — correctness-critical
-- [ ] Fix `FORBIDDEN_LENGTH_LANGUAGE` `"words"` false-positive (restrict to planning artifacts)
-- [ ] Finish `ManuscriptIssue` type migration in `loop.classify` (remove `list[object]` duck-typing)
-- [ ] Decompose `validator.py` (1,505 lines) into focused submodules behind a facade
-- [ ] Shim removal (carried from M1.6): delete the 13 `.agents/skills/.../scripts/*.py` shims
+- [x] Rewrite context-packet renderer to pull from `canon/` (fallback to old `rulebook.md`)
+- [x] Fix the 45 bare `except Exception` sites (specific exceptions + logging) — correctness-critical
+- [x] Fix `FORBIDDEN_LENGTH_LANGUAGE` `"words"` false-positive (restrict to planning artifacts)
+- [x] Finish `ManuscriptIssue` type migration in `loop.classify` (remove `list[object]` duck-typing)
+- [x] Decompose `validator.py` (1,505 lines) into focused submodules behind a facade
+- [x] Shim removal (carried from M1.6): delete the 13 `.agents/skills/.../scripts/*.py` shims
       once `AGENTS.md`/`README.md` are migrated to `bf` CLI as primary
 - **Shippable:** clean CLI, multi-vocabulary, adapter-pluggable, trustworthy validation.
 
