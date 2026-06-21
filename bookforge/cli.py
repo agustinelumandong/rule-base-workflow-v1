@@ -629,6 +629,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
     from bookforge.core import canon
     from bookforge.core import validator as context_validator
     from bookforge.core.issue import Severity
+    import shutil
     book_folder = Path(args.book_folder)
 
     if args.apply_command == "change":
@@ -639,30 +640,67 @@ def cmd_apply(args: argparse.Namespace) -> int:
         chapters = context_validator.discover_chapters(book_folder)
         target_ch = [c for c in chapters if c.slug == chapter_id]
 
+        if not target_ch:
+            print(f"Error: Chapter '{chapter_id}' not found in changes/ or chapters/.", file=sys.stderr)
+            return 1
+
+        ch_files = target_ch[0]
+
         book_issues = list(context_validator.validate_required_book_file_issues(book_folder))
         canon_issues = canon.validate_canon(book_folder)
         book_issues.extend(canon_issues)
 
         book_failures = [i.message for i in book_issues if i.severity == Severity.HARD]
         phase_sections = context_validator.parse_phase_chapters(book_folder)
-        reports = [context_validator.validate_chapter(c, phase_sections) for c in target_ch]
+        reports = [context_validator.validate_chapter(ch_files, phase_sections)]
 
         if context_validator.overall_status(book_failures, reports) == "FAIL":
             print("Error: Validation failed. Cannot apply change.", file=sys.stderr)
+            # Print failure details to help user/agent diagnose
+            for msg in book_failures:
+                print(f"  [BOOK FAILURE] {msg}", file=sys.stderr)
+            for r in reports:
+                for msg in r.failures:
+                    print(f"  [CHAPTER FAILURE] {msg}", file=sys.stderr)
             return 1
 
         # Check for continuity-out.md
-        continuity_path = book_folder / "changes" / chapter_id / "continuity-out.md"
+        continuity_path = ch_files.folder / "continuity-out.md"
         if not continuity_path.exists():
-            continuity_path = book_folder / "chapters" / chapter_id / "continuity-out.md"
-
-        if not continuity_path.exists():
-            print(f"Error: Missing continuity-out.md for {chapter_id}.", file=sys.stderr)
+            print(f"Error: Missing continuity-out.md for {chapter_id} in {ch_files.folder}.", file=sys.stderr)
             return 1
 
+        # 1. Append Event & Re-fold Canon
         change_data = canon.parse_continuity_out_to_event(continuity_path)
         canon.apply_chapter_event(book_folder, chapter_id, change_data)
         print(f"Applied event for {chapter_id} and re-folded snapshot.")
+
+        # 2. Compile Draft & Archive Change
+        if "changes" in ch_files.folder.parts:
+            dest_dir = book_folder / "chapters" / chapter_id
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            
+            dest_draft_name = "epilogue.md" if chapter_id == "epilogue" else f"{chapter_id}.md"
+            
+            # Copy active authoring files to canonical names
+            if ch_files.draft.exists():
+                shutil.copy2(ch_files.draft, dest_dir / dest_draft_name)
+            if ch_files.scene_breakdown.exists():
+                shutil.copy2(ch_files.scene_breakdown, dest_dir / "scene-breakdown.md")
+            if ch_files.drafting_plan.exists():
+                shutil.copy2(ch_files.drafting_plan, dest_dir / "drafting-plan.md")
+            shutil.copy2(continuity_path, dest_dir / "continuity-out.md")
+            
+            print(f"Compiled draft files into {dest_dir}")
+
+            # Archive staging folder
+            archive_dir = book_folder / ".bookforge" / "archive" / "changes" / chapter_id
+            if archive_dir.exists():
+                shutil.rmtree(archive_dir)
+            archive_dir.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(ch_files.folder), str(archive_dir))
+            print(f"Archived staging folder to {archive_dir}")
+
         return 0
     return 1
 
