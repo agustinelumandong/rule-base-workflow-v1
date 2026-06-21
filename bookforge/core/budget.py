@@ -125,7 +125,12 @@ def render_report(book_folder: Path, slug: str | None, mode: str) -> str:
             "## Rule",
             "",
             "- Load the smallest source set that can complete the current mode.",
-            "- Build or refresh `context-packet.md` before chapter drafting, repair, style, validation, or expansion work.",
+            "- Build or refresh the chapter's `context-packet.md` using the task-specific parameters:",
+            "  * Drafting, Repair, or Expansion: run `bf packet --task draft-prose`",
+            "  * Style check: run `bf packet --task revise-style`",
+            "  * Validation check: run `bf packet --task validate-change`",
+            "  * Continuity validation: run `bf packet --task continuity-check`",
+            "  * Memory extraction: run `bf packet --task extract-memory`",
         ]
     )
     return "\n".join(lines)
