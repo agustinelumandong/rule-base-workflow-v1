@@ -66,6 +66,12 @@ LAYER 1 — CANON TIER (event-sourced)
 **Hard rules:** Layer 2 is non-negotiable (no drift). Layer 3 never *is* canon — it retrieves
 and compresses *around* it. Layer 5 is swappable (no lock-in to OpenCode or any one harness).
 
+**First principle — compressed context is not truth.** Compression (Headroom, local regex,
+any retriever) may reduce what a model *reads*, but it never replaces canonical files, approved
+artifacts, review decisions, or validator source material. Canon is the only truth; everything
+above Layer 1 is a view onto it. This single rule protects canon from silent drift through
+lossy memory layers, and it is the reason Layer 3 is forbidden from mutating canon directly.
+
 ---
 
 ## 2. Why the Merge Works
@@ -94,6 +100,33 @@ architects, and agents each get their vocabulary.
 **Merge:** one `MemoryBackend` Protocol; Headroom is the reference backend exposed both as a
 library (via `bf memory`) and optionally as an MCP server (`bf memory serve --mcp`); cheap
 models do extraction via the harness.
+
+### 2.3 Continuity lock levels (the gate is not binary)
+
+Adapted from `docs/BOOKFORGE-MASTER-PLAN.md` §9. A binary validate-passes-or-fails gate can't
+distinguish "Tex is dead in ch6 but speaking in ch9" (a hard contradiction) from "Mara's mood
+shifted without clear cause" (a soft signal). Fiction continuity is graded. The gate therefore
+uses **three lock levels** — and these map directly onto the `Severity` enum that already exists
+in `bookforge/core/issue.py` (`Severity.HARD / SOFT / INFO`) but is not yet used this way.
+
+| Lock level | Maps to | Behavior | Examples |
+|---|---|---|---|
+| **Strict** | `Severity.HARD` | Blocks `bf apply`. Canon mutation impossible until an explicit approved event resolves it. | Character identity, alias → entity, ammo count, death, destroyed object, ownership |
+| **Guarded** | `Severity.SOFT` | Requires evidence/transition logic to change; `bf apply` proceeds but emits a reviewable warning. | Injuries, relationships, supplies, motivations, social standing, knowledge state |
+| **Soft** | `Severity.INFO` | Consistency preferred; a drift produces a review signal, not a block. | Mood, replaceable clothing, incidental descriptive detail |
+
+**Why this matters:** the "dead character being treated in chapter 9" post-mortem
+(`outline_feedback_analysis.md`) is a *Strict* violation. "Mara seems angry without setup" is a
+*Soft* signal. The current binary gate treats both the same; the lock levels let the gate
+respond proportionally. Implementation cost is low — `Severity` already exists, the enum is
+already in `loop.classify`; we just need validators to emit the right level per rule and the
+gate to respect `INFO` (pass), `SOFT` (pass+warn), `HARD` (block).
+
+**Default lockable domains** (from the master plan, §9): character names + aliases, animal
+identities, weapons + ammunition, injuries/health, money, supplies, inventory, locations,
+travel state, timeline, motivations, relationships, personality baselines, secrets, knowledge
+boundaries, objects, documents, promises, setup/payoff threads. A lock changes only through an
+approved `StateTransition` (an event), a canon change, or a scoped override with reason+audit.
 
 ---
 
@@ -145,19 +178,46 @@ Core product:                 BookForge CLI + canon + validation + memory
 
 ## 4. Canon Model (Layer 1 — event-sourced)
 
+### 4.1 The durable-vs-current boundary (the key correction)
+
+Canon is split by **what changes** — not just by file type. This is the single most important
+correction in this plan, lifted from `docs/BOOKFORGE-MASTER-PLAN.md` §7/§9.
+
+- **Durable identity (CanonCore):** who a character *is* — name, role, physical marker, voice,
+  arc constraints, POV rules. Does NOT change per chapter. Lives in `canon/entities/`.
+- **Current state (story-state / MemoryVault):** where they *are now* — location, injuries,
+  inventory, emotional condition, relationship status, knowledge state. Changes every chapter.
+  Lives in the event fold (`canon/state/snapshot.yml`), rebuilt from `canon/events/`.
+
+The earlier draft of this plan muddled the boundary by putting `world-state.yml` (current
+location/injuries/inventory — *current* state by definition) under `canon/entities/`. That was
+wrong. Canon holds durable identity only; the per-chapter mutations belong in the event fold.
+
+```
+DURABLE (canon/entities/, rarely changes)        CURRENT (canon/state/snapshot.yml, fold output)
+─────────────────────────────────────────────    ─────────────────────────────────────────────
+characters.yml  → name, role, physical marker,   (current location, injuries, inventory,
+                  voice, POV, tier, arc          emotional state — derived from events)
+locations.yml   → place + function               (current occupancy — derived)
+objects.yml     → durable profile (capacity,     (current holder, count, condition — derived)
+                  type, constraints)
+```
+
+### 4.2 On-disk layout
+
 ```
 books/<book-slug>/
   canon/
-    entities/                      # STATIC definitions
-      characters.yml               # canonical name, role, physical marker, voice, POV, first_seen
+    entities/                      # DURABLE — does not change per chapter
+      characters.yml               # canonical name, role, physical marker, voice, POV, tier
       aliases.yml                  # alias -> entity (Tex -> tex_cade)
-      locations.yml                # places + function
-      objects.yml                  # MacGuffins/signature gear
-    events/                        # APPEND-ONLY — Layer 1
-      chapter-01.event.yml         # structured continuity-out
+      locations.yml                # places + function (choke point, dead drop)
+      objects.yml                  # durable profiles: MacGuffins/gear (capacity, type, rules)
+    events/                        # APPEND-ONLY — Layer 1 (the change log)
+      chapter-01.event.yml         # structured continuity-out (status/location/inventory mutations)
       chapter-02.event.yml
     state/
-      snapshot.yml                 # DERIVED fold (rebuildable; bf memory build regenerates it)
+      snapshot.yml                 # DERIVED fold = entities + all events (current truth; rebuildable)
   spec/
     premise.md  guardrails.md  tone.md  chapters.yml  model-routing.yml
   changes/
@@ -168,7 +228,7 @@ books/<book-slug>/
 
 `continuity-out.md` → event mapping:
 
-| continuity-out section | Event mutation |
+| continuity-out section | Event mutation (→ folds into snapshot.yml) |
 |---|---|
 | Characters (alive/injured/absent) | status mutations |
 | Changes (possessions/injuries/secrets/alliances/resources) | inventory/relationship/secret mutations |
@@ -176,17 +236,39 @@ books/<book-slug>/
 | Human Stakes Carried / Unresolved Pressure | carried-forward state (part of the fold) |
 | Next Chapter Must Know | invariants the next event must not violate |
 
-`bf memory build` folds entities+events into `snapshot.yml` (lossless rebuild — delete it,
+`bf canon build` folds entities+events into `snapshot.yml` (lossless rebuild — delete it,
 regenerate from events). This is the OpenSpec invariant made literal: source of truth is only
 ever reached by replaying validated events.
 
-### Entity memory (~200–500 tokens per packet)
+### 4.3 Character tiers (not every character needs a full profile)
+
+Adapted from `docs/BOOKFORGE-MASTER-PLAN.md` §7. A flat `characters.yml` over-profiles
+incidental people and under-profiles protagonists. Use tiers with minimum-detail-per-tier:
+
+| Tier | Use | Minimum fields |
+|---|---|---|
+| **Main** | Protagonists, antagonists, major POV | Full: identity, appearance, personality, motivations, voice, arc, relationships, forbidden changes |
+| **Major supporting** | Recurring allies, rivals, family, mentors | Identity, role, distinguishing traits, voice guidance, relationships, continuity constraints |
+| **Recurring side** | Recurring officials, workers, informants | Medium: purpose, traits, voice, relationships, pressure behavior |
+| **Minor named** | Plot-relevant witness, courier, deputy | Lightweight: identity, purpose, role, voice summary, continuity notes |
+| **Incidental** | One-scene background people, no continuity effect | Descriptor only (`the older woman behind the desk`); no profile |
+
+**Governance rules** (also from the master plan):
+- A proper-named character requires a stable `character_id` + at least a proposed profile
+  *before* the name may appear in an approved artifact.
+- Promotion (incidental → minor named → recurring side) requires a `CharacterPromotionRequest`
+  citing why the person now matters; preserves descriptor lineage; doesn't silently rewrite prose.
+- A model cannot approve, promote, or expand its own naming allowance — only `bf apply` after
+  human review can.
+
+### 4.4 Entity memory example (~200–500 tokens per packet)
 
 ```yaml
-# canon/entities/characters.yml
+# canon/entities/characters.yml — DURABLE identity only
 characters:
   tex_cade:
     canonical: "Tex Cade"
+    tier: main
     role: protagonist
     physical_marker: "scar on left hand"
     voice: "clipped, few words, Texas plain"
@@ -194,11 +276,13 @@ characters:
     first_seen: chapter-01
   mara_vale:
     canonical: "Mara Vale"
+    tier: major_supporting
     role: ally
     physical_marker: "red bandana, braided hair"
     voice: "formal, educated"
     pov: disallowed
     first_seen: chapter-02
+  # Incidental characters never appear here — they stay as descriptors in the draft.
 
 # canon/entities/aliases.yml
 aliases:
@@ -208,6 +292,9 @@ aliases:
   miss vale: mara_vale
   mara: mara_vale
 ```
+
+Current state (location, injuries, inventory) is **never** in `characters.yml` — it lives in
+the fold output `canon/state/snapshot.yml`, updated by applying chapter events.
 
 ---
 

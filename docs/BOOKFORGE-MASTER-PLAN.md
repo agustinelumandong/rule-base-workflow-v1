@@ -1,6 +1,13 @@
 # BookForge Master Plan
 
-**Status:** Frozen authoritative full-product capability blueprint
+> **⚠️ This is a product vision document, NOT a status report.**
+> Capabilities described here (ReviewDesk UI, hosted operations, publisher, provider routing,
+> CanonCore/MemoryVault services) are **target architecture**, not implemented code. As of the
+> last audit there is no `review-app/`, `services/`, or `api/` directory on disk; `bookforge/`
+> is a local CLI engine only. Treat this file as the long-term north star. For executable
+> engineering against the real codebase, see `BOOKFORGE_V2_PLAN.md` at the repo root.
+
+**Status:** Product vision and capability blueprint (not an implementation status report)
 **Version:** v2026-06-13
 **Updated:** 2026-06-13
 **Sources:** Current BookForge notes, legacy CanonForge plans, workflow studies, reference packs, and Superpowers implementation plans under `docs/info-plan/`
