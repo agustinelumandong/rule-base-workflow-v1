@@ -44,7 +44,7 @@ Do not put book-specific artifacts in the project root.
 Before generating `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, or scene breakdowns, run:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>
+bf init books/<book-slug>
 ```
 
 Use `source-format-scan.md` to identify the source shape. Different bibles may have different section names, missing context, act structure, chapter word counts, hooks, tension notes, or transition notes.

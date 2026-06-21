@@ -5,7 +5,7 @@ Use this to create or update `rulebook.md` and `mood-lock.md` from the target bo
 Read `source-format-scan.md` first. If it does not exist, run:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>
+bf init books/<book-slug>
 ```
 
 ## `rulebook.md`

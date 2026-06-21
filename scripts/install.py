@@ -170,35 +170,40 @@ def main():
         print("         git restore .agents/skills/")
         manual_count += 1
         
-    # ── Section 4: Orchestrator Scripts ──────────────────────────────────────────
-    print(f"\n── 4. Orchestrator Scripts {'─' * 32}")
-    
-    orc_dir = proj_root / ".agents" / "skills" / "manuscript-workflow-orchestrator" / "scripts"
-    required_scripts = [
-        "build_context_packet.py", "check_chapter_gaps.py",
-        "check_chapter_rhythm.py", "check_context_budget.py",
-        "check_continuity_chain.py", "check_manuscript_length.py",
-        "check_narrative_quality.py", "compile_manuscript.py",
-        "plan_chapter_pacing.py", "run_manuscript_loop.py",
-        "scan_banned_words.py", "scan_source_format.py",
-        "validate_manuscript_context.py"
+    # ── Section 4: Orchestrator CLI (bf) ─────────────────────────────────────────
+    print(f"\n── 4. Orchestrator CLI (bf) {'─' * 35}")
+
+    # Legacy orchestrator scripts have been removed; the unified `bf` CLI is now
+    # the sole entry surface. Verify the key subcommands are registered.
+    required_cmds = [
+        "init", "status", "validate", "compile", "pacing", "packet",
+        "run-loop", "resolve-unknowns", "canon", "apply", "memory", "checkpoint",
     ]
-    
-    missing_scripts = []
-    for script in required_scripts:
-        script_file = orc_dir / script
-        if not script_file.exists():
-            missing_scripts.append(script)
-            
-    if not missing_scripts:
-        print(f"  ✅  All {len(required_scripts)} orchestrator scripts present")
+
+    missing_cmds = []
+    for cmd in required_cmds:
+        # Prefer the installed `bf` entrypoint; fall back to the module form.
+        import subprocess
+        bf_check = subprocess.run(
+            ["bf", cmd, "--help"], capture_output=True
+        ) if shutil.which("bf") else None
+        if bf_check and bf_check.returncode == 0:
+            continue
+        mod_check = subprocess.run(
+            [sys.executable, "-m", "bookforge.cli", cmd, "--help"],
+            capture_output=True,
+        )
+        if mod_check.returncode != 0:
+            missing_cmds.append(cmd)
+
+    if not missing_cmds:
+        print(f"  ✅  All {len(required_cmds)} bf subcommands available")
         skipped_count += 1
     else:
-        print(f"  ❌  Missing {len(missing_scripts)} script(s):")
-        for s in missing_scripts:
-            print(f"       - {s}")
-        print("  ⚠️   Scripts are part of the git repository. Restore with:")
-        print("         git restore .agents/skills/manuscript-workflow-orchestrator/scripts/")
+        print(f"  ❌  Missing {len(missing_cmds)} bf subcommand(s):")
+        for c in missing_cmds:
+            print(f"       - bf {c}")
+        print("  ⚠️   Reinstall bookforge (pip install -e .) to register the bf entrypoint.")
         manual_count += 1
         
     # ── Section 5: Headroom (Context Compression) ─────────────────────────────────

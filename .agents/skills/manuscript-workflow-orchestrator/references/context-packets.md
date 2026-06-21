@@ -5,7 +5,7 @@ Use context packets to keep chapter work token-balanced. A packet is a compact s
 ## Command
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py books/<book-slug> --chapter chapter-XX
+bf packet books/<book-slug> --chapter chapter-XX
 ```
 
 Output:

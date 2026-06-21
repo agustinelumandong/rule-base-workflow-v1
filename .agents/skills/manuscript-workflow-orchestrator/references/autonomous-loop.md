@@ -20,7 +20,7 @@ The loop is agent-driven. Python controls scanning, status, prioritization, and 
 Before chapter-level prose edits, refresh the chapter context packet:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py books/<book-slug> --chapter chapter-XX
+bf packet books/<book-slug> --chapter chapter-XX
 ```
 
 ## Source Lock
@@ -84,21 +84,21 @@ Do not add unsupported names, motives, backstory, locations, lore, relationships
 Run:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/tex-cade --target-min 30000 --target-max 31000
+bf run-loop books/tex-cade
 ```
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_narrative_quality.py books/tex-cade
+bf validate books/tex-cade
 ```
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/tex-cade
+bf status books/tex-cade
 ```
 
 Optional repair-attempt tracking:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/tex-cade --repair-attempt chapter-08=2
+bf run-loop books/tex-cade --repair-attempt chapter-08=2
 ```
 
 ## Expansion Guidance

@@ -5,10 +5,10 @@ Use the length checker after drafting, expansion, compilation, or revision passe
 ## Command
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/tex-cade
+bf validate books/tex-cade
 ```
 
-Replace `books/tex-cade` with the target book folder.
+Length constraints are part of full validation. Replace `books/tex-cade` with the target book folder.
 
 ## Rules
 

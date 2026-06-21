@@ -8,8 +8,10 @@ Load the smallest source set that can safely complete the current prompt mode.
 
 ## Checker
 
+Context budget checking is folded into validation:
+
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_context_budget.py books/<book-slug> --chapter chapter-XX --mode drafting
+bf validate books/<book-slug> --chapter chapter-XX
 ```
 
 Modes:

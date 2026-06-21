@@ -60,7 +60,7 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Use any capable AI coding agent (Codex, Claude Code, Gemini CLI, Cursor, Copilot, Zed, OpenCode, or equivalent) as the primary tool. BookForge is agent-agnostic; the `bf` CLI is the contract.
 - Treat a secondary model as optional review only.
 - Before rulebook or chapter planning, run the source format scan:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>`
+  `bf init books/<book-slug>`
 - Use `source-format-scan.md` to identify present/missing bible sections, chapter-list detail, and target source before normalizing artifacts.
 - Before approving sequel planning artifacts, compare major character names against prior sibling book folders. Avoid reusing the same first name for a new major emotional-stakes character unless it is intentional and documented.
 - If no user, source, or rulebook word target exists, default to `~30,000 words` as book-level planning guidance only.
@@ -76,30 +76,30 @@ For a target folder such as `books/tex-cade/`, create or update:
 - Use the autonomous loop controller to decide stop/continue state after draft, repair, expansion, and validation passes. The agent performs prose edits; the `bf` script controls state and next action.
 - For chapter-level work, build or refresh `chapters/chapter-XX/context-packet.md` and use prompt modes to keep context compact.
 - For a full book check, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`
+  `bf validate books/<book-slug>`
 - For a narrative quality pass, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_narrative_quality.py books/<book-slug>`
+  `bf validate books/<book-slug>` (narrative quality is part of full validation)
 - For a length check, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>`
+  `bf validate books/<book-slug>` (length constraints are part of full validation)
 - For an autonomous loop check, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/run_manuscript_loop.py books/<book-slug> --target-min 30000 --target-max 31000`
+  `bf run-loop books/<book-slug>` (target range is sourced from the book's own length rules)
 - For a context packet, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/build_context_packet.py books/<book-slug> --chapter chapter-XX`
+  `bf packet books/<book-slug> --chapter chapter-XX`
 - For a context budget check, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_context_budget.py books/<book-slug> --chapter chapter-XX --mode drafting`
+  `bf validate books/<book-slug> --chapter chapter-XX` (budget is folded into validation)
 - For a chapter pacing plan, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/plan_chapter_pacing.py books/<book-slug>`
+  `bf pacing books/<book-slug>`
 - Mark missing facts as `UNKNOWN` unless the missing detail blocks drafting, then ask the user.
 - Use `.agents/skills/western-manuscript-style/` whenever drafting or revising Western prose.
 - Use `.agents/skills/humanizer/` after style/continuity passes when the draft sounds generic, padded, promotional, overexplained, or AI-written.
 - Humanizer cleanup must preserve plot, continuity, POV, Western tone, and source facts; it is a polish pass, not a rewrite license.
 - After drafting or expanding a chapter, write `continuity-out.md` using the required template in [references/continuity-out-template.md](references/continuity-out-template.md).
 - For a fast style scan (with line numbers), run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_banned_words.py books/<book-slug>`
+  `bf validate books/<book-slug>` (the banned-word/style scan runs as part of validation)
 - For a continuity chain check, run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_continuity_chain.py books/<book-slug>`
+  `bf validate books/<book-slug>` (continuity check runs inline)
 - For a chapter gap check (source vs folders), run:
-  `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_gaps.py books/<book-slug>`
+  `bf status books/<book-slug>` (gap check runs inline in status)
 - For a resolve-unknowns check (run first, before any drafting or loop work), run:
   `bf resolve-unknowns books/<book-slug>` — but if there are unresolved items, resolve them in chat using the format below, not with the CLI wizard.
 

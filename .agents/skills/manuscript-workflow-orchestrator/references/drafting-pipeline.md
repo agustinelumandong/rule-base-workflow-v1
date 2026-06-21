@@ -68,7 +68,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
 
 ## Phase 5: Autonomous Loop
 
-Use `scripts/run_manuscript_loop.py` after every draft, expansion, repair, or final validation pass when the user wants an autonomous workflow.
+Use `bf run-loop` after every draft, expansion, repair, or final validation pass when the user wants an autonomous workflow.
 
 - Run the loop controller after context validation and length checks are available.
 - Continue only when the loop report says `CONTINUE`.
@@ -78,8 +78,8 @@ Use `scripts/run_manuscript_loop.py` after every draft, expansion, repair, or fi
 - Run narrative-quality and rhythm rebalance only after the manuscript is within the book-level target range.
 - If the loop reports `NEEDS_PACING_REBALANCE`, run one targeted rebalance cycle on the recommended chapter before further expansion.
 - If the loop reports `NEEDS_PACING_REBALANCE`, run:
-  - `scripts/check_narrative_quality.py books/<book-slug>`
-  - `scripts/check_chapter_rhythm.py books/<book-slug>`
+  - `bf validate books/<book-slug>` (narrative quality is part of full validation)
+  - `bf status books/<book-slug>` (rhythm analysis runs inline)
 - If the loop recommends chapter work, refresh that chapter's context packet before editing prose.
 - If the loop reports `DONE`, stop and report the final state.
 - If the loop reports `BLOCKED`, stop and ask for user direction.
@@ -129,16 +129,16 @@ Use broad book or chapter targets only as planning context. Never add filler to 
 
 ## Reference-Guided Pacing
 
-Use `scripts/plan_chapter_pacing.py` to create `chapter-pacing-plan.md` when chapter lengths need natural variation. The plan may use optional reference analysis from `.agents/skills/western-story-pattern-analyzer/`, but current book source remains authoritative. Longer treatment must be justified by approved source movement such as confrontation, rescue, siege, reveal, reversal, consequence, or moral pressure.
+Use `bf pacing` to create `chapter-pacing-plan.md` when chapter lengths need natural variation. The plan may use optional reference analysis from `.agents/skills/western-story-pattern-analyzer/`, but current book source remains authoritative. Longer treatment must be justified by approved source movement such as confrontation, rescue, siege, reveal, reversal, consequence, or moral pressure.
 
 ## Length Progress Check
 
-Use `scripts/check_manuscript_length.py` from the orchestrator skill to report current words, remaining words, per-chapter counts, and pacing warnings. Treat warnings as planning signals. Expand from approved beats and continuity facts only.
+Length constraints are part of full validation. Run `bf validate books/<book-slug>` to report current words, remaining words, per-chapter counts, and pacing warnings. Treat warnings as planning signals. Expand from approved beats and continuity facts only.
 
 ## Context Validation Check
 
-Use `scripts/validate_manuscript_context.py` from the orchestrator skill to verify required files, chapter draft presence, scene-breakdown beat structure, automated `phase-0.md` source overlap, beat-to-draft coverage, forbidden fixed-count language, unresolved markers, and style-risk warnings. Use `--ai-prompt --chapter chapter-XX` to generate a semantic review prompt (for any capable AI agent) when a chapter needs deeper source-match review.
+Use `bf validate` to verify required files, chapter draft presence, scene-breakdown beat structure, automated `phase-0.md` source overlap, beat-to-draft coverage, forbidden fixed-count language, unresolved markers, and style-risk warnings. Use `--review-prompt --chapter chapter-XX` to generate a semantic review prompt (for any capable AI agent) when a chapter needs deeper source-match review.
 
 ## Token-Balanced Context
 
-Use `scripts/build_context_packet.py` before chapter-level work and `scripts/check_context_budget.py` when unsure what to load. Full manuscripts and full rulebooks are for planning rebuilds, final review, or source-blocking repairs; normal chapter work should use the compact packet.
+Use `bf packet` before chapter-level work; the context budget is folded into `bf validate` when unsure what to load. Full manuscripts and full rulebooks are for planning rebuilds, final review, or source-blocking repairs; normal chapter work should use the compact packet.

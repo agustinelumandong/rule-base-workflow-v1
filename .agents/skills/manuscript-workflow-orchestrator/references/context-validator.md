@@ -7,13 +7,13 @@ Use the context validator after chapter drafting, chapter expansion, chapter com
 Run the deterministic validator for the whole book:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/tex-cade
+bf validate books/tex-cade
 ```
 
 Generate an AI semantic review prompt for one chapter:
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/tex-cade --chapter chapter-02 --ai-prompt
+bf validate books/tex-cade --chapter chapter-02 --review-prompt
 ```
 
 Replace `books/tex-cade` and `chapter-02` with the target book folder and chapter slug.

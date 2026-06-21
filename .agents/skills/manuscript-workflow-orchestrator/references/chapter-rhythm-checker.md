@@ -5,11 +5,11 @@ Use the rhythm checker after context validation and length checks when the manus
 ## Command
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_chapter_rhythm.py books/<book-slug>
+bf status books/<book-slug>
 ```
 
 ```bash
-python .agents/skills/manuscript-workflow-orchestrator/scripts/check_narrative_quality.py books/<book-slug>
+bf validate books/<book-slug>
 ```
 
 ## What It Flags

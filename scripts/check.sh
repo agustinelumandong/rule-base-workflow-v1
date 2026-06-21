@@ -189,47 +189,29 @@ if [[ "$NLM_ONLY" == false ]]; then
 fi
 
 # ═══════════════════════════════════════════════════════════
-# Section 4 — Orchestrator Scripts
+# Section 4 — Manuscript Orchestrator CLI (bf)
 # ═══════════════════════════════════════════════════════════
 if [[ "$NLM_ONLY" == false ]]; then
-  print_header "4. Manuscript Orchestrator Scripts"
+  print_header "4. Manuscript Orchestrator CLI (bf)"
 
-  ORC_DIR="$PROJ_ROOT/.agents/skills/manuscript-workflow-orchestrator/scripts"
-  REQUIRED_SCRIPTS=(
-    "build_context_packet.py"
-    "check_chapter_gaps.py"
-    "check_chapter_rhythm.py"
-    "check_context_budget.py"
-    "check_continuity_chain.py"
-    "check_manuscript_length.py"
-    "check_narrative_quality.py"
-    "compile_manuscript.py"
-    "plan_chapter_pacing.py"
-    "run_manuscript_loop.py"
-    "scan_banned_words.py"
-    "scan_source_format.py"
-    "validate_manuscript_context.py"
+  # Legacy orchestrator scripts have been removed; the unified `bf` CLI is now
+  # the sole entry surface. Verify the key subcommands are registered.
+  REQUIRED_CMDS=(
+    "init" "status" "validate" "compile" "pacing" "packet"
+    "run-loop" "resolve-unknowns" "canon" "apply" "memory" "checkpoint"
   )
 
-  SCRIPTS_FOUND=0
-  for script in "${REQUIRED_SCRIPTS[@]}"; do
-    if [[ -f "$ORC_DIR/$script" ]]; then
-      ((SCRIPTS_FOUND++)) || true
+  CMDS_FOUND=0
+  for cmd in "${REQUIRED_CMDS[@]}"; do
+    if bf "$cmd" --help >/dev/null 2>&1 || python3 -m bookforge.cli "$cmd" --help >/dev/null 2>&1; then
+      ((CMDS_FOUND++)) || true
     else
-      check_fail "Missing orchestrator script: $script"
+      check_fail "Missing bf subcommand: bf $cmd"
     fi
   done
 
-  if [[ $SCRIPTS_FOUND -eq ${#REQUIRED_SCRIPTS[@]} ]]; then
-    check_pass "All ${#REQUIRED_SCRIPTS[@]} orchestrator scripts present"
-  fi
-
-  # Importability check for the main runner
-  RUNNER_CHECK=$(python3 "$ORC_DIR/run_manuscript_loop.py" --help 2>&1 | head -2 || true)
-  if echo "$RUNNER_CHECK" | grep -qi "usage\|error\|book\|required\|option"; then
-    check_pass "run_manuscript_loop.py is executable"
-  else
-    check_warn "run_manuscript_loop.py may have an issue — check manually"
+  if [[ $CMDS_FOUND -eq ${#REQUIRED_CMDS[@]} ]]; then
+    check_pass "All ${#REQUIRED_CMDS[@]} bf subcommands available"
   fi
 fi
 
