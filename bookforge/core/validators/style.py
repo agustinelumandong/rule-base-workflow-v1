@@ -77,6 +77,10 @@ MODERN_OR_CLINICAL_WORDS = [
 
 INTERNAL_MONOLOGUE_PHRASES = ["he felt", "he realized", "he thought", "she felt", "she realized", "she thought"]
 
+# Compatibility vocabulary used by the loop's broad style scan. Precise draft
+# validation is handled by forbidden_length_language().
+FORBIDDEN_LENGTH_LANGUAGE = ["word count", "words", "quota", "target"]
+
 FORBIDDEN_CONFLICT_PATTERNS = {
     "water rights": r"\bwater\s+rights?\b",
     "syndicate": r"\bsyndicates?\b",

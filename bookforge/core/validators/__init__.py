@@ -9,8 +9,10 @@ from bookforge.core.validators.style import (
     BANNED_AI_ECHO_WORDS,
     MODERN_OR_CLINICAL_WORDS,
     INTERNAL_MONOLOGUE_PHRASES,
+    FORBIDDEN_LENGTH_LANGUAGE,
     FORBIDDEN_CONFLICT_PATTERNS,
     PROJECT_RULE_BANNED_NAME_LABELS,
+    DIALOGUE_TAG_RE,
     contains_any,
     check_ing_openers,
     extract_proper_names,
@@ -57,14 +59,32 @@ from bookforge.core.validators.continuity import (
     validate_continuity_out,
 )
 
+from bookforge.core.validators.orchestration import (
+    ChapterReport,
+    key_terms,
+    coverage,
+    extract_scene_fields,
+    validate_draft,
+    validate_source_alignment,
+    validate_chapter,
+    collect_all_issues,
+    overall_status,
+    render_report,
+    parse_args,
+    build_ai_prompt,
+    main,
+)
+
 __all__ = [
     # style
     "DEFAULT_SETTINGS",
     "BANNED_AI_ECHO_WORDS",
     "MODERN_OR_CLINICAL_WORDS",
     "INTERNAL_MONOLOGUE_PHRASES",
+    "FORBIDDEN_LENGTH_LANGUAGE",
     "FORBIDDEN_CONFLICT_PATTERNS",
     "PROJECT_RULE_BANNED_NAME_LABELS",
+    "DIALOGUE_TAG_RE",
     "contains_any",
     "check_ing_openers",
     "extract_proper_names",
@@ -105,4 +125,18 @@ __all__ = [
     "_ledger_has_chapter_entry",
     "validate_continuity_out_issues",
     "validate_continuity_out",
+    # orchestration
+    "ChapterReport",
+    "key_terms",
+    "coverage",
+    "extract_scene_fields",
+    "validate_draft",
+    "validate_source_alignment",
+    "validate_chapter",
+    "collect_all_issues",
+    "overall_status",
+    "render_report",
+    "parse_args",
+    "build_ai_prompt",
+    "main",
 ]
