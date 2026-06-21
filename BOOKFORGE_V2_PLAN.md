@@ -479,14 +479,15 @@ the canon files.
       once `AGENTS.md`/`README.md` are migrated to `bf` CLI as primary
 - **Shippable:** clean CLI, multi-vocabulary, adapter-pluggable, trustworthy validation.
 
-### M4 — Full Change Workflow (~3-4 days, on top of M2+M2.5+M3) — ⏳ NOT STARTED
-- [ ] `changes/chapter-NN/proposal.md` + `beats.md` as the authoring unit
-- [ ] `bf apply change <book> <id>` promotes: validate → append event → re-fold → compile draft →
+### M4 — Full Change Workflow — ✅ COMPLETE
+- [x] `changes/chapter-NN/proposal.md` + `beats.md` as the authoring unit
+- [x] `bf apply change <book> <id>` promotes: validate → append event → re-fold → compile draft →
       archive change
-- [ ] `bf validate --chapter N` enforces chapter-vs-spec before apply (the OpenSpec
+- [x] `bf validate --chapter N` enforces chapter-vs-spec before apply (the OpenSpec
       "validate before merge")
-- [ ] `bf apply` refuses if validation fails — the deterministic gate made visible
+- [x] `bf apply` refuses if validation fails — the deterministic gate made visible
 - **Shippable:** chapter work follows proposal→validate→apply discipline; canon stays clean.
+
 
 ### M5 — Polish, Docs, Deprecation (~2-3 days) — ⏳ NOT STARTED
 - [ ] Comprehensive `AGENTS.md` rewrite (agent-neutral, `bf`-based, references 5-layer model)
