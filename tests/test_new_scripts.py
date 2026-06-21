@@ -21,7 +21,10 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[1] / ".agents" / "skills" / "manu
 class NewScriptsTests(unittest.TestCase):
     def test_check_narrative_quality_is_in_script_inventory(self):
         repo_root = Path(__file__).resolve().parents[1]
-        for relative_path in ("scripts/check.sh", "scripts/install.sh"):
+        # scripts/install.sh is now a thin delegating stub to install.py, so the
+        # canonical script inventory lives in check.sh (health check) and
+        # install.py (the real installer).
+        for relative_path in ("scripts/check.sh", "scripts/install.py"):
             script_text = (repo_root / relative_path).read_text(encoding="utf-8")
             self.assertIn("check_narrative_quality.py", script_text)
 

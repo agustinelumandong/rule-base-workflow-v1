@@ -48,6 +48,12 @@ def test_manual_research_backend(tmp_path):
     import bookforge.core.research
     bookforge.core.research.DEFAULT_TEMPLATE_PATH = template
 
+    # Seed the book's research-pack.md from the monkeypatched template so the
+    # backend has something to query (ManualBackend reads from the book folder).
+    from bookforge.core.research import ensure_research_pack
+    pack_path = ensure_research_pack(book_folder)
+    assert pack_path.exists()
+
     backend = get_research_backend(book_folder, "manual")
     assert isinstance(backend, ManualBackend)
 
