@@ -4,10 +4,17 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
+from bookforge.core.issue import IssueCategory, ManuscriptIssue, Severity, compute_fingerprint
 from bookforge.core.scanner import TargetInfo, resolve_target, source_path
+
+
+DEFAULT_CONTRACT_MIN = 30000
+DEFAULT_CONTRACT_MAX = 31000
+DEFAULT_SOFT_MARGIN_RATIO = 0.01
 
 
 @dataclass(frozen=True)
@@ -15,6 +22,43 @@ class DraftCount:
     label: str
     words: int
     is_epilogue: bool = False
+
+
+@dataclass(frozen=True)
+class LengthIssue:
+    rule_id: str
+    severity: Severity
+    message: str
+    chapter: Optional[str] = None
+    file: Optional[Path] = None
+
+
+LENGTH_RULE_META = {
+    "LENGTH_UNDER_SOFT_MIN": (Severity.HARD, "Total draft is below soft minimum ({soft_min} words); expansion is required."),
+    "LENGTH_ABOVE_SOFT_MAX": (Severity.HARD, "Total draft is above soft maximum ({soft_max} words); trimming is required."),
+    "LENGTH_UNDER_CONTRACT_MIN": (Severity.SOFT, "Total draft is below contract minimum ({target_min} words) but inside soft tolerance."),
+    "LENGTH_ABOVE_CONTRACT_MAX": (Severity.SOFT, "Total draft is above contract maximum ({target_max} words) but inside soft tolerance."),
+    "LENGTH_CHAPTER_BELOW_AVERAGE": (Severity.SOFT, "{label} is far below the current chapter average; revisit approved beats for source-supported expansion."),
+}
+
+
+def _make_length_issue(
+    rule_id: str,
+    chapter: Optional[str],
+    file: Optional[Path],
+    **format_kwargs,
+) -> ManuscriptIssue:
+    severity, base_message = LENGTH_RULE_META.get(rule_id, (Severity.INFO, "Length issue"))
+    message = base_message.format(**format_kwargs)
+    return ManuscriptIssue(
+        severity=severity,
+        category=IssueCategory.LENGTH,
+        chapter=chapter,
+        file=file,
+        rule_id=rule_id,
+        message=message,
+        fingerprint=compute_fingerprint(rule_id, file, None, None),
+    )
 
 
 def word_count(path: Path) -> int:
@@ -62,6 +106,68 @@ def pct(value: float) -> str:
     return f"{value:.1f}%"
 
 
+def contract_range(target: TargetInfo) -> tuple[int, int]:
+    target_min = target.words or DEFAULT_CONTRACT_MIN
+    return target_min, target_min + 1000
+
+
+def soft_range(target_min: int, target_max: int) -> tuple[int, int]:
+    soft_margin = int(target_min * DEFAULT_SOFT_MARGIN_RATIO)
+    return target_min - soft_margin, target_max + soft_margin
+
+
+def analyze_length(book_folder: Path, target: TargetInfo, counts: list[DraftCount]) -> tuple[ManuscriptIssue, ...]:
+    issues: list[ManuscriptIssue] = []
+    total = sum(item.words for item in counts)
+    normal_chapters = [item for item in counts if not item.is_epilogue]
+    target_min, target_max = contract_range(target)
+    soft_min, soft_max = soft_range(target_min, target_max)
+
+    if total < soft_min:
+        issues.append(_make_length_issue(
+            "LENGTH_UNDER_SOFT_MIN",
+            chapter=None,
+            file=book_folder,
+            soft_min=soft_min,
+        ))
+    elif total > soft_max:
+        issues.append(_make_length_issue(
+            "LENGTH_ABOVE_SOFT_MAX",
+            chapter=None,
+            file=book_folder,
+            soft_max=soft_max,
+        ))
+    elif total < target_min:
+        issues.append(_make_length_issue(
+            "LENGTH_UNDER_CONTRACT_MIN",
+            chapter=None,
+            file=book_folder,
+            target_min=target_min,
+        ))
+    elif total > target_max:
+        issues.append(_make_length_issue(
+            "LENGTH_ABOVE_CONTRACT_MAX",
+            chapter=None,
+            file=book_folder,
+            target_max=target_max,
+        ))
+
+    if normal_chapters:
+        chapter_average = round(sum(item.words for item in normal_chapters) / len(normal_chapters))
+        low_chapter_threshold = round(chapter_average * 0.70) if chapter_average else 0
+
+        for item in normal_chapters:
+            if low_chapter_threshold and item.words < low_chapter_threshold:
+                issues.append(_make_length_issue(
+                    "LENGTH_CHAPTER_BELOW_AVERAGE",
+                    chapter=item.label,
+                    file=None,
+                    label=item.label,
+                ))
+
+    return tuple(issues)
+
+
 def build_report(book_folder: Path, target: TargetInfo, counts: list[DraftCount]) -> str:
     total = sum(item.words for item in counts)
     remaining = max(target.words - total, 0)
@@ -74,6 +180,10 @@ def build_report(book_folder: Path, target: TargetInfo, counts: list[DraftCount]
     )
     low_chapter_threshold = round(chapter_average * 0.70) if chapter_average else 0
 
+    issues = analyze_length(book_folder, target, counts)
+    target_min, target_max = contract_range(target)
+    soft_min, soft_max = soft_range(target_min, target_max)
+
     lines = [
         "# Manuscript Length Report",
         "",
@@ -85,6 +195,8 @@ def build_report(book_folder: Path, target: TargetInfo, counts: list[DraftCount]
         f"- **Remaining Words:** {remaining}",
         f"- **Complete:** {pct(complete)}",
         f"- **Average Chapter Words:** {chapter_average}",
+        f"- **Contract Range:** {target_min:,} - {target_max:,} words",
+        f"- **Soft Range:** {soft_min:,} - {soft_max:,} words",
         "",
         "## Draft Counts",
         "",
@@ -97,21 +209,17 @@ def build_report(book_folder: Path, target: TargetInfo, counts: list[DraftCount]
 
     lines.extend(["", "## Warnings", ""])
 
-    warnings: list[str] = []
-    if total < target.words * 0.90:
-        warnings.append(
-            f"Total draft is below 90% of target; expansion is needed without padding or invented story."
-        )
+    hard_issues = [i for i in issues if i.severity == Severity.HARD]
+    soft_issues = [i for i in issues if i.severity == Severity.SOFT]
 
-    for item in normal_chapters:
-        if low_chapter_threshold and item.words < low_chapter_threshold:
-            warnings.append(
-                f"{item.label} is far below the current chapter average; revisit approved beats for source-supported expansion."
-            )
+    if hard_issues:
+        for issue in hard_issues:
+            lines.append(f"- FAIL: {issue.message}")
+    if soft_issues:
+        for issue in soft_issues:
+            lines.append(f"- WARN: {issue.message}")
 
-    if warnings:
-        lines.extend(f"- {warning}" for warning in warnings)
-    else:
+    if not issues:
         lines.append("- No length warnings.")
 
     lines.extend(
@@ -156,4 +264,3 @@ def main() -> int:
 
     print(build_report(book_folder, target, counts))
     return 0
-

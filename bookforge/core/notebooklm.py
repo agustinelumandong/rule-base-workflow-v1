@@ -440,6 +440,32 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
     )
     research_response = query_notebook(notebook_id, research_query)
     
+    # Load dynamic name policy if settings.json exists
+    banned_names = ["Voss"]
+    try:
+        from bookforge.core.validator import load_project_settings
+        settings = load_project_settings(book_folder)
+        name_policy = settings.get("name_policy", {})
+        config_banned = name_policy.get("banned_names", [])
+        config_allowed = name_policy.get("allowed_names", [])
+
+        active_banned = ["Voss"]
+        allowed = {str(name).strip().lower() for name in config_allowed}
+
+        for name in config_banned:
+            name_str = str(name).strip()
+            name_lower = name_str.lower()
+            if name_str and name_lower not in allowed and name_lower not in [b.lower() for b in active_banned]:
+                active_banned.append(name_str.capitalize())
+        banned_names = active_banned
+    except Exception:
+        pass
+
+    banned_names_list = []
+    for b_name in banned_names:
+        banned_names_list.append(f'- The name "{b_name}" (do not use "{b_name}" as a character name, location name, or family name)')
+    banned_names_str = "\n".join(banned_names_list)
+
     # Construct the master prompt for outline generation
     generator_prompt = f"""
 Based on the following historical details and context from the research sources:
@@ -455,7 +481,7 @@ The plot must be completely different from previous books and must strictly excl
 - Water rights
 - Mineral rights
 - A trial scene
-- The name "Voss" (do not use "Voss" as a character name, location name, or family name)
+{banned_names_str}
 
 Use new character names, original conflicts, and a differentiated setting. Make any travel or search sequences active and exciting by incorporating active scouting, environmental hazards, or significant discoveries.
 The protagonist is Tex Cade. His gear/weapons: matched pair of Colt .45 Peacemakers, Bowie knife, Ranger star.
@@ -545,4 +571,3 @@ Provide exactly 12 chapters in the following format:
         pass
 
     return True, f"Successfully created notebook, uploaded {uploaded_count} source files, and wrote outline to `{dest_outline.relative_to(book_folder.parent.parent)}`"
-

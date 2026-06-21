@@ -1,0 +1,133 @@
+{
+  "name_policy": {
+    "banned_names": [
+      "silas"
+    ],
+    "allowed_names": []
+  },
+  "style_review": {
+    "enabled": true,
+    "review_only": true,
+    "max_summary_words_without_dialogue": 120,
+    "analysis_terms": [
+      "realized",
+      "processed",
+      "understood",
+      "psychological",
+      "emotional",
+      "motif",
+      "symbolism"
+    ],
+    "formal_dialogue_terms": [
+      "traverse",
+      "obscures",
+      "therefore",
+      "endeavor",
+      "proceed"
+    ],
+    "time_jump_terms": [
+      "hours later",
+      "days later",
+      "weeks later",
+      "after some time"
+    ],
+    "warn_short_sentence_runs": false,
+    "banned_terms": [
+      "no clean answer",
+      "tactical position",
+      "leverage",
+      "pressure point",
+      "emotional cost",
+      "control the ground",
+      "move fast",
+      "stay focused",
+      "legalese"
+    ]
+  },
+  "narrative_quality": {
+    "antagonists": {
+      "vex": {
+        "markers": ["vex"],
+        "tactical_motifs": [
+          "blackmail",
+          "frame",
+          "evidence",
+          "payoff",
+          "legacy",
+          "debt",
+          "network",
+          "field",
+          "deal",
+          "remnant",
+          "remnants",
+          "mark",
+          "ledger",
+          "rumor",
+          "warrant"
+        ]
+      },
+      "klyne": {
+        "markers": ["jethro klyne", "klyne"],
+        "tactical_motifs": [
+          "leak",
+          "watch",
+          "trail",
+          "report",
+          "warrant",
+          "tracker",
+          "range",
+          "dispatch",
+          "surveillance",
+          "involvement",
+          "surface",
+          "route"
+        ]
+      },
+      "rooke": {
+        "markers": ["thaddeus rooke", "thaddeus", "rooke"],
+        "tactical_motifs": [
+          "survey",
+          "rail",
+          "paperwork",
+          "displace",
+          "claim",
+          "legal",
+          "statement",
+          "deposition",
+          "witness",
+          "hearing",
+          "pressure"
+        ]
+      },
+      "fane": {
+        "markers": ["darrow fane", "fane"],
+        "tactical_motifs": [
+          "enforcer",
+          "clash",
+          "ambush",
+          "intimidate",
+          "confront",
+          "duel",
+          "bar",
+          "pushing",
+          "pressure"
+        ]
+      },
+      "draven": {
+        "markers": ["milo draven", "draven"],
+        "tactical_motifs": [
+          "rustler",
+          "horse",
+          "supply",
+          "raid",
+          "smoke",
+          "ring",
+          "forage",
+          "rustling",
+          "involvement",
+          "surface"
+        ]
+      }
+    }
+  }
+}

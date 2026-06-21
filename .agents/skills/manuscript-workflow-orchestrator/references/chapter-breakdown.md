@@ -36,7 +36,7 @@ Generate beats from the source chapter outline. Each beat should contain:
 - Context Match Check: source match, no skipped plot movement, no unsupported additions, prior continuity preserved, next beat set up without invented context, and no introduction of forbidden business/syndicate schemes (plots must focus on classic Western adventure).
 - POV owner if clear from source; otherwise mark `UNKNOWN`.
 - Optional pacing fields when useful: Pacing Class, Elastic Range, Why This Beat Is Short/Long, Expansion Permission, and Reference Rhythm Note.
-- Optional series-strength fields when source-supported: Hero Cost, Villain Presence, Supporting Agency, Quiet Humanizing Beat, Legacy Pressure Payoff, and Proof/Consequence Payoff.
+- Optional series-strength fields when source-supported: Hero Cost, Villain Presence, Supporting Agency, Quiet Humanizing Beat, Legacy Pressure Payoff, Proof/Consequence Payoff, and Evidence/Frame-Up Logic.
 
 Beat count is source-determined. Do not force every chapter into the same number of beats. Create one beat for each meaningful required story movement, emotional turn, tactical transition, or continuity exit in the source chapter. Add a transition beat only when the story would otherwise jump past necessary context. Stop when the chapter's required movement and continuity out are complete.
 
@@ -111,6 +111,7 @@ Use this shape for every beat:
 - **Quiet Humanizing Beat:** [If source-supported, the brief lower-pressure beat that makes a rescued, hostage, family, or revenge-stake character feel like a person before the climax; otherwise `UNKNOWN`.]
 - **Legacy Pressure Payoff:** [If source-supported, the concrete prior wound, dead ally, old command, mark, ledger, or remembered sign that makes a series-arc villain confrontation personal; otherwise `UNKNOWN`.]
 - **Proof/Consequence Payoff:** [If source-supported, evidence, public courage, exposed truth, reputation cost, rescue consequence, or moral result beyond gunfire.]
+- **Evidence/Frame-Up Logic:** [If source-supported, how planted evidence, altered brands, forged papers, counterfeit goods, witness knowledge, or sabotage works in practical terms. Identify who knows what, why they know it, and what physical proof survives. If not relevant, write `UNKNOWN`.]
 
 ### Beat Instructions
 
@@ -129,6 +130,8 @@ Use this shape for every beat:
 - It preserves prior continuity.
 - It sets up the next beat without forcing invented context.
 - It does not introduce plots or details centered around syndicates, water rights, land grabs, property disputes, organized corruption, business conspiracies, or business schemes. All conflicts must focus on classic Western adventure themes (outlaws, bounty hunters, manhunts, betrayals, trail survival).
+- It preserves current-book name locks by default, and rewrites prior-book continuity only when a series-wide or system-forward cleanup is explicitly in scope.
+- If the beat relies on a confession, planted clue, stampede, altered brand, counterfeit object, or frame-up, the mechanism is practical and source-supported.
 ```
 
 ## `chapters/chapter-XX/scene-breakdown.md`

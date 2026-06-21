@@ -19,6 +19,8 @@ Create a durable series bible with these sections:
 - World and setting: primary locations, geography, law and order, social pressure, economy, hazards. Include a **Setting Pressure List**: the specific terrain features, crossings, weather events, supply limits, or repair demands that will force decisions in this book.
 - Continuity facts: timeline, prior wounds, alliances, grudges, dead characters, known secrets.
 - Series arc: recurring conflict, unresolved betrayal, future threat, romantic tension, next-book hook.
+- Current Book Locks: book-specific banned names, allowed exceptions, plot-mechanics constraints, and style priorities for the current target book by default. Do not use this section to bypass project-level bans such as globally banned names. Broader series/system cleanup must be explicit.
+- Plot Mechanics Guardrails: when the source uses a frame-up, counterfeit item, false evidence, altered brand, planted clue, hidden saboteur, or witness confession, state the practical mechanism and proof path. Name who can know the truth, why they know it, what physical evidence exists, and how the tactic preserves rather than destroys the evidence needed for discovery.
 - Ending State for Book N+1: bullet list of where each major character stands at the book's close — who is dead/alive/escaped/compromised, what secrets are destroyed or still hidden, what debts or obligations carry forward, any world-level change, and any named hook for the next book.
 - Unknowns: important missing facts marked as `UNKNOWN`.
 
@@ -52,6 +54,22 @@ For Western books, reference `.agents/skills/western-manuscript-style/` and its 
 ## No Invention Rule
 
 Do not invent named places, backstory events, relationships, or series mythology beyond the source. If a fact is necessary but absent, mark it as `UNKNOWN` and continue where possible.
+
+## Current-Book Name Locks
+
+If the user gives a current-book banned name, add it to `rulebook.md` under `Current Book Locks` and apply it to the active book's new outline, planning artifacts, and drafts by default. Run a broader replacement through prior books, compiled manuscripts, research packs, or old context packets only when the user explicitly asks for a series-wide or system-forward cleanup and accepts that old-book compatibility is not required.
+
+If a requested book-local exception conflicts with `AGENTS.md` or another project-level rule, do not bypass the project rule through a local setting. Flag the conflict in `Unknowns` or ask the user to approve changing the higher-priority rule.
+
+## Frame-Up And Evidence Mechanics
+
+When a book uses a setup such as altered cattle brands, counterfeit goods, planted proof, forged papers, or a witness confession:
+
+- record the antagonist's practical tactic,
+- record why the evidence survives long enough to be discovered,
+- record who knows the antagonist's identity and why,
+- record any physical proof the protagonist can inspect,
+- keep the villain's power personal, outlaw, coercive, or tactical rather than institutional, property-based, business-based, or political.
 
 ## Outline Quality Gate
 

@@ -3,17 +3,20 @@
 
 from __future__ import annotations
 
-import re
 import json
+import re
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from bookforge.core import validator as context_validator
-from bookforge.core import length as length_checker
-from bookforge.core import rhythm as check_chapter_rhythm
 from bookforge.core import chain as check_continuity_chain
+from bookforge.core import length as length_checker
 from bookforge.core import narrative_quality
+from bookforge.core import rhythm as check_chapter_rhythm
+from bookforge.core import validator as context_validator
+from bookforge.core.issue import IssueCategory, ManuscriptIssue, Severity
+
 
 STYLE_TERMS = (
     context_validator.BANNED_AI_ECHO_WORDS
@@ -42,6 +45,11 @@ class LengthState:
     total_words: int
     remaining_to_min: int
     counts: list[length_checker.DraftCount]
+
+
+def soft_length_bounds(target_min: int, target_max: int) -> tuple[int, int]:
+    soft_margin = int(target_min * 0.01)
+    return target_min - soft_margin, target_max + soft_margin
 
 
 def build_length_state(book_folder: Path, target_min_arg: int | None, target_max_arg: int | None) -> LengthState:
@@ -89,7 +97,7 @@ def scan_style_issues(book_folder: Path) -> list[StyleIssue]:
 
 
 def mode_for_status(status: str) -> str:
-    if status in ("NEEDS_CONTEXT_REPAIR", "NEEDS_CONTINUITY_REPAIR"):
+    if status in ("NEEDS_BOOK_REPAIR", "NEEDS_CONTEXT_REPAIR", "NEEDS_CONTINUITY_REPAIR"):
         return "repair"
     if status == "NEEDS_STYLE_REPAIR":
         return "style"
@@ -97,7 +105,7 @@ def mode_for_status(status: str) -> str:
         return "expansion"
     if status == "NEEDS_PACING_REBALANCE":
         return "repair"
-    if status == "DONE":
+    if status in ("DONE", "DONE_WITH_WARNINGS"):
         return "final"
     return "blocked"
 
@@ -131,6 +139,14 @@ def issue_chapters(reports: list[context_validator.ChapterReport]) -> list[str]:
     chapters: list[str] = []
     for report in reports:
         if report.failures or report.warnings:
+            chapters.append(report.chapter.slug)
+    return chapters
+
+
+def hard_issue_chapters(reports: list[context_validator.ChapterReport]) -> list[str]:
+    chapters: list[str] = []
+    for report in reports:
+        if report.failures:
             chapters.append(report.chapter.slug)
     return chapters
 
@@ -172,41 +188,75 @@ def choose_rebalance_chapter(counts: object) -> str:
     return f"chapter-{int(match.group(1)):02d}" if match else selected.label
 
 
+def _severity_of(issue: object) -> Severity:
+    severity = getattr(issue, "severity", None)
+    if isinstance(severity, Severity):
+        return severity
+    if isinstance(severity, str):
+        return Severity.HARD if severity.upper() == "HARD" else Severity.SOFT
+    level = getattr(issue, "level", None)
+    if isinstance(level, str):
+        return Severity.HARD if level.upper() in {"FAIL", "HARD"} else Severity.SOFT
+    return Severity.SOFT
+
+
+def _message_of(issue: object) -> str:
+    return str(getattr(issue, "message", issue))
+
+
 def classify(
     length_state: LengthState,
-    book_failures: list[str],
+    book_failures: list[object],
     reports: list[context_validator.ChapterReport],
     style_issues: list[StyleIssue],
     repair_attempts: dict[str, int],
     max_repair_attempts: int,
     continuity_failures: list[str],
-    narrative_issues: list[narrative_quality.NarrativeIssue] | None = None,
-    rhythm_issues: list[str] | None = None,
+    narrative_issues: list[object] | tuple[object, ...] | None = None,
+    rhythm_issues: list[object] | tuple[object, ...] | None = None,
 ) -> tuple[str, str]:
-    narrative_issues = narrative_issues or []
-    rhythm_issues = rhythm_issues or []
-    problem_chapters = issue_chapters(reports)
+    narrative_issues = list(narrative_issues or [])
+    rhythm_issues = list(rhythm_issues or [])
+    problem_chapters = hard_issue_chapters(reports)
     repeated_blockers = [
         slug for slug in problem_chapters if repair_attempts.get(slug, 0) >= max_repair_attempts
     ]
+
+    hard_book_issues = [issue for issue in book_failures if _severity_of(issue) == Severity.HARD]
+    if hard_book_issues:
+        return "NEEDS_BOOK_REPAIR", "Book-level hard issues must be fixed before expansion."
     if book_failures:
-        return "BLOCKED", "Required book files are missing or empty."
+        return "DONE_WITH_WARNINGS", "Book-level soft warnings remain; autonomous loop stops with soft warnings."
     if repeated_blockers:
         return "BLOCKED", f"Repair attempt limit reached for: {', '.join(repeated_blockers)}."
-    if any(report.failures or report.warnings for report in reports):
-        return "NEEDS_CONTEXT_REPAIR", "Context validator reported chapter failures or warnings."
+    if any(report.failures for report in reports):
+        return "NEEDS_CONTEXT_REPAIR", "Context validator reported chapter failures."
     if continuity_failures:
         return "NEEDS_CONTINUITY_REPAIR", f"Continuity chain check failed: {continuity_failures[0]}."
     if style_issues:
         return "NEEDS_STYLE_REPAIR", "Style-risk scan found flagged draft lines."
+
+    soft_min, soft_max = soft_length_bounds(length_state.target_min, length_state.target_max)
+    if length_state.total_words < soft_min:
+        return "NEEDS_EXPANSION", "Manuscript is below target soft minimum."
+    if length_state.total_words > soft_max:
+        return "BLOCKED", "Manuscript is above soft maximum; request trim/review before continuing."
+
+    soft_warnings: list[str] = []
     if length_state.total_words < length_state.target_min:
-        return "NEEDS_EXPANSION", "Manuscript is below target minimum."
-    if length_state.total_words > length_state.target_max:
-        return "BLOCKED", "Manuscript is above target maximum; request trim/review before continuing."
-    if rhythm_issues:
-        return "NEEDS_PACING_REBALANCE", f"Rhythm checker found {len(rhythm_issues)} issue(s)."
-    if narrative_issues:
-        return "NEEDS_PACING_REBALANCE", "Narrative quality checks flagged repetition or reduced character pressure."
+        soft_warnings.append("Manuscript is within soft tolerance below target minimum.")
+    elif length_state.total_words > length_state.target_max:
+        soft_warnings.append("Manuscript is within soft tolerance above target maximum.")
+    soft_warnings.extend(report.warnings[0] for report in reports if report.warnings)
+    soft_warnings.extend(_message_of(issue) for issue in rhythm_issues if _severity_of(issue) != Severity.HARD)
+    soft_warnings.extend(_message_of(issue) for issue in narrative_issues if _severity_of(issue) != Severity.HARD)
+
+    hard_rhythm = [issue for issue in rhythm_issues if _severity_of(issue) == Severity.HARD]
+    hard_narrative = [issue for issue in narrative_issues if _severity_of(issue) == Severity.HARD]
+    if hard_rhythm or hard_narrative:
+        return "NEEDS_PACING_REBALANCE", "Hard rhythm or narrative checks require repair."
+    if soft_warnings:
+        return "DONE_WITH_WARNINGS", "Manuscript is within stop range with soft warnings only."
     return "DONE", "Manuscript is within target range with clean deterministic checks."
 
 
@@ -226,7 +276,7 @@ def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], 
     data = {
         "repair_attempts": repair_attempts,
         "last_run": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "last_status": status
+        "last_status": status,
     }
     try:
         state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -234,12 +284,28 @@ def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], 
         pass
 
 
+def _required_book_file_issues(book_folder: Path) -> tuple[list[str], list[object]]:
+    result = context_validator.validate_required_book_files(book_folder)
+    if isinstance(result, tuple) and len(result) == 2 and all(isinstance(item, list) for item in result):
+        passes, failures = result
+        issues = [
+            ManuscriptIssue(
+                severity=Severity.HARD,
+                category=IssueCategory.CONTEXT,
+                message=failure,
+            )
+            for failure in failures
+        ]
+        return passes, issues
+    return [], list(result)
+
+
 def run_loop_check(
     book_folder: Path,
     target_min: int | None = None,
     target_max: int | None = None,
     cli_attempts: dict[str, int] | None = None,
-    max_repair_attempts: int = 3
+    max_repair_attempts: int = 3,
 ) -> tuple[str, str, str]:
     if cli_attempts is None:
         cli_attempts = {}
@@ -247,16 +313,18 @@ def run_loop_check(
     repair_attempts = {**persistent_attempts, **cli_attempts}
 
     length_state = build_length_state(book_folder, target_min, target_max)
-    book_passes, book_failures, reports = context_validator.validate_required_book_files(book_folder), [], []
-    
-    phase_sections = context_validator.parse_phase_chapters(book_folder)
+    _book_passes, book_failures = _required_book_file_issues(book_folder)
+
+    try:
+        phase_sections = context_validator.parse_phase_chapters(book_folder)
+    except Exception:
+        phase_sections = {}
     chapters = context_validator.discover_chapters(book_folder)
     reports = [context_validator.validate_chapter(chapter, phase_sections) for chapter in chapters]
-    book_passes, book_failures = context_validator.validate_required_book_files(book_folder)
 
     style_issues = scan_style_issues(book_folder)
 
-    continuity_failures = []
+    continuity_failures: list[str] = []
     for chapter in chapters:
         if chapter.draft.exists() and chapter.draft.read_text(encoding="utf-8").strip():
             continuity_path = chapter.folder / "continuity-out.md"
@@ -270,7 +338,7 @@ def run_loop_check(
     narrative_issues = narrative_quality.analyze(book_folder).issues
     try:
         rhythm_report = check_chapter_rhythm.analyze(book_folder)
-        rhythm_issues = [issue.message for issue in rhythm_report.issues]
+        rhythm_issues = rhythm_report.issues
     except Exception:
         rhythm_report = None
         rhythm_issues = []
@@ -287,7 +355,7 @@ def run_loop_check(
         rhythm_issues,
     )
 
-    context_problem_chapters = issue_chapters(reports)
+    context_problem_chapters = hard_issue_chapters(reports)
     if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
         current_repairing = context_problem_chapters[0]
         repair_attempts[current_repairing] = repair_attempts.get(current_repairing, 0) + 1
@@ -299,8 +367,7 @@ def run_loop_check(
 
     save_persistent_repairs(book_folder, repair_attempts, status)
 
-    # Render loop report output
-    context_status = context_validator.overall_status(book_failures, reports)
+    book_failure_messages = [_message_of(issue) for issue in book_failures]
     expansion_chapter = choose_expansion_chapter(reports, length_state.counts)
     rebalance_chapter = choose_rebalance_chapter(rhythm_report or length_state.counts)
     prompt_mode = mode_for_status(status)
@@ -312,13 +379,14 @@ def run_loop_check(
         continuity_failures,
         rebalance_chapter,
     )
-    
-    packet_command = f"bf run-loop {book_folder} (generates packet automatically)"
-    budget_command = f"bf run-loop {book_folder} (budgets context automatically)"
 
-    decision = "STOP" if status in ("DONE", "BLOCKED") else "CONTINUE"
+    decision = "STOP" if status in ("DONE", "DONE_WITH_WARNINGS", "BLOCKED") else "CONTINUE"
     if status == "DONE":
         next_action = "No manuscript action needed. Report final status to the user."
+    elif status == "DONE_WITH_WARNINGS":
+        next_action = "Stop autonomous editing and report remaining soft warnings to the user."
+    elif status == "NEEDS_BOOK_REPAIR":
+        next_action = "Repair book-level rulebook, source, or configuration issues before chapter work."
     elif status == "NEEDS_CONTEXT_REPAIR":
         next_action = f"Repair context issues in `{context_problem_chapters[0]}` before length or style work."
     elif status == "NEEDS_CONTINUITY_REPAIR":
@@ -332,6 +400,7 @@ def run_loop_check(
     else:
         next_action = "Stop and ask the user for direction."
 
+    soft_min, soft_max = soft_length_bounds(length_state.target_min, length_state.target_max)
     lines = [
         "# BookForge Loop Report",
         "",
@@ -343,24 +412,32 @@ def run_loop_check(
         "",
         "## Length State",
         f"- **Current Words:** {length_state.total_words} / Min target: {length_state.target_min}",
+        f"- **Contract Range:** {length_state.target_min:,} - {length_state.target_max:,}",
+        f"- **Soft Range:** {soft_min:,} - {soft_max:,}",
     ]
-    
-    # Rhythm advisory
+
+    if book_failure_messages:
+        lines.extend(["", "## Book-Level Issues", ""])
+        lines.extend(f"- {message}" for message in book_failure_messages)
+
     if rhythm_report and rhythm_report.issues:
         lines.extend(["", "## Rhythm Notes", ""])
         for issue in rhythm_report.issues:
-            lines.append(f"- {issue.message}")
+            lines.append(f"- {_message_of(issue)}")
 
     if narrative_issues:
         lines.extend(["", "## Narrative Quality Notes", ""])
         for issue in narrative_issues[:12]:
-            lines.append(f"- {issue.chapter}: {issue.dimension} - {issue.message}")
+            chapter = getattr(issue, "chapter", "book")
+            dimension = getattr(issue, "dimension", getattr(getattr(issue, "category", ""), "name", "Narrative"))
+            lines.append(f"- {chapter}: {dimension} - {_message_of(issue)}")
 
     return status, reason, "\n".join(lines)
 
 
 def main() -> int:
     import argparse
+
     parser = argparse.ArgumentParser(
         description="Autonomous Manuscript Loop: reports next Codex action."
     )
@@ -398,12 +475,12 @@ def main() -> int:
                 except ValueError:
                     pass
 
-    status, reason, report = run_loop_check(
+    status, _reason, report = run_loop_check(
         book_folder=book_folder,
         target_min=args.target_min,
         target_max=args.target_max,
         cli_attempts=cli_attempts,
-        max_repair_attempts=args.max_repair_attempts
+        max_repair_attempts=args.max_repair_attempts,
     )
     print(report)
     return 2 if status == "BLOCKED" else 0

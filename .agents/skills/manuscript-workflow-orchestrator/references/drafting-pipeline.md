@@ -21,6 +21,8 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
   3. **Temporal Logic:** Travel duration is realistic, time of day is tracked logically, and injury recovery timeline is believable.
 - Check names, locations, weapons, injuries, horses, timeline, and character knowledge.
 - Check prior sibling books for major-character first-name collisions before approving sequel character names. If a new major character repeats a prior important first name, rename them or document why the reuse is intentional.
+- Enforce current-book name locks inside the active target book's new outline, planning artifacts, and drafts by default. Rewrite prior books, compiled manuscripts, old context packets, or research packs only when the user explicitly asks for a series-wide or system-forward cleanup and accepts that old-book compatibility is not required.
+- For frame-up, sabotage, counterfeit, altered-brand, planted-proof, or witness-confession plots, verify the practical logic before drafting: who knows the truth, why they know it, what physical proof exists, how the tactic gets discovered, and why the antagonist's action does not destroy the evidence they need.
 - Add transition notes between scenes.
 - Run a pre-draft beat verification pass before any scene prose is drafted.
 - For each beat, confirm Source Anchor, Continuity In, Required Story Movement, Continuity Out, Do Not Invent, and Context Match Check.
@@ -104,6 +106,18 @@ Use this after deterministic checks pass and before final handoff. This rubric i
 - **Quiet Humanizing Beat:** For rescue, hostage, family-duty, or revenge stakes, confirm the manuscript includes at least one brief source-supported quiet beat that makes the person at risk concrete before the action resolves.
 - **Legacy Pressure Payoff:** For series-arc villains tied to the protagonist's old wound, confirm at least one source-supported memory, name, command, mark, ledger, or physical sign appears before the final confrontation.
 - **Proof/Consequence Payoff:** Confirm the ending or major turn pays off through proof, public courage, exposed truth, rescue consequence, reputation cost, moral result, or town/family resolve, not only gunfire.
+- **Frame-Up Mechanics:** If the book uses planted evidence, altered brands, counterfeit items, a confession, a stampede, or sabotage, confirm the mechanism is practical and source-supported. The evidence must survive discovery, the person revealing facts must have a reason to know them, and the villain's tactic must remain outlaw/personal pressure rather than land, property, business, or political-machine control.
+
+## Style And Pacing Feedback Rubric
+
+Use this as human-facing review guidance, not a hard validator or loop blocker:
+
+- **Rugged Dialogue:** Cowboys, lawmen, outlaws, and frontier families speak in short, direct, plain sentences unless the source gives a reason otherwise.
+- **Show Conversations:** Do not summarize planning, friction, bonding, or moral-decision conversations when the reader needs to experience the exchange.
+- **No Behavioral Over-Analysis:** Avoid explaining character psychology, motives, symbolism, or subtext in the narrative voice. Show choices through action, silence, work, and direct speech.
+- **Continuous Transitions:** Bridge major travel or time jumps with source-supported labor, scouting, weather, fatigue, repairs, camp movement, sign reading, or hazard.
+
+These items may guide manual revision or an AI semantic review prompt. They must not become hard automated failures until a focused test suite proves the checks are reliable and low-noise.
 
 If the source does not support one of these strengths, mark it `UNKNOWN` in planning or review notes rather than inventing story to satisfy the rubric.
 
