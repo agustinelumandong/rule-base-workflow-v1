@@ -78,10 +78,122 @@ def cmd_init(args: argparse.Namespace) -> int:
         carry_msg = series_module.carry_forward_book_continuity(carry_from_path, book_folder)
         print(carry_msg)
 
+    # Create local spec directory and model-routing.yml
+    spec_dir = book_folder / "spec"
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    model_routing_path = spec_dir / "model-routing.yml"
+    if not model_routing_path.exists():
+        default_model_routing = (
+            "personas:\n"
+            "  extractor:\n"
+            "    model_class: cheap\n"
+            "    examples: [gemini-1.5-flash, gpt-4o-mini, local-7b]\n"
+            "    tasks: [memory_build, resolve_alias, summarize_continuity, classify_beats]\n"
+            "  reviewer:\n"
+            "    model_class: mid\n"
+            "    examples: [gpt-4o, claude-3-5-haiku]\n"
+            "    tasks: [validate_review, style_scan_semantic]\n"
+            "  writer:\n"
+            "    model_class: strong\n"
+            "    examples: [claude-3-5-sonnet, gpt-4o]\n"
+            "    tasks: [draft_prose]\n\n"
+            "global_budget_cap_usd: 15.00\n"
+        )
+        model_routing_path.write_text(default_model_routing, encoding="utf-8")
+        print(f"Created: {model_routing_path}")
+
     # Create chapters structure stub
     chapters_dir = book_folder / "chapters"
     chapters_dir.mkdir(exist_ok=True)
-    
+
+    # 3. Generate Agent Configurations if requested
+    agent_list = []
+    if hasattr(args, "agents") and args.agents:
+        agent_list = [a.strip().lower() for a in args.agents.split(",") if a.strip()]
+        for agent in agent_list:
+            if agent == "claude":
+                Path("CLAUDE.md").write_text(
+                    "# Claude Code Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: As a Claude Code agent, you have direct CLI access. Always use the `bf` CLI command for checks and operations rather than trying to parse rulebooks or run-loops manually.\n",
+                    encoding="utf-8"
+                )
+                print("Created: CLAUDE.md")
+            elif agent == "cursor":
+                Path(".cursorrules").write_text(
+                    "# Cursor Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: Cursor should use its built-in code search and refer to `AGENTS.md` before starting to write or edit any Western manuscript draft or rulebook files.\n",
+                    encoding="utf-8"
+                )
+                print("Created: .cursorrules")
+            elif agent == "copilot":
+                Path("copilot-instructions.md").write_text(
+                    "# GitHub Copilot Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: Avoid modern or clinical language in all copilot suggestions. Refer to the style lock in `AGENTS.md`.\n",
+                    encoding="utf-8"
+                )
+                print("Created: copilot-instructions.md")
+            elif agent == "gemini":
+                Path("GEMINI.md").write_text(
+                    "# Gemini Agent Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: Gemini agents should utilize the `manuscript-workflow-orchestrator` tools and `bf` command line utility to validate and compile manuscripts.\n",
+                    encoding="utf-8"
+                )
+                print("Created: GEMINI.md")
+            elif agent == "opencode":
+                opencode_yml = (
+                    "# OpenCode Configuration\n"
+                    "model_routing:\n"
+                    "  small_model:\n"
+                    "    persona: extractor\n"
+                    "    tasks:\n"
+                    "      - memory_build\n"
+                    "      - resolve_alias\n"
+                    "      - summarize_continuity\n"
+                    "      - classify_beats\n"
+                    "  large_model:\n"
+                    "    persona: writer\n"
+                    "    tasks:\n"
+                    "      - draft_prose\n"
+                    "  reviewer_model:\n"
+                    "    persona: reviewer\n"
+                    "    tasks:\n"
+                    "      - validate_review\n"
+                    "      - style_scan_semantic\n"
+                )
+                Path(".opencode.yml").write_text(opencode_yml, encoding="utf-8")
+                print("Created: .opencode.yml")
+            elif agent == "codex":
+                Path("CODEX.md").write_text(
+                    "# Codex Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: Codex should read rulebook constraints and ensure no trial scenes, water/mineral rights, or syndicate-style conflicts are created.\n",
+                    encoding="utf-8"
+                )
+                print("Created: CODEX.md")
+            elif agent == "zed":
+                Path("ZED.md").write_text(
+                    "# Zed Instructions\n\nImport: AGENTS.md\n\nPlease read and follow the instructions in [AGENTS.md](AGENTS.md) at the root of this project.\n\nNote: Zed assistant should adhere to the Western manuscript style-lock rules specified in `AGENTS.md`.\n",
+                    encoding="utf-8"
+                )
+                print("Created: ZED.md")
+
+    # 4. Git Integration if requested
+    if hasattr(args, "git") and args.git:
+        import subprocess
+        try:
+            subprocess.run(["git", "init"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            files_to_add = [str(book_folder)]
+            agent_files = {
+                "claude": "CLAUDE.md",
+                "cursor": ".cursorrules",
+                "copilot": "copilot-instructions.md",
+                "gemini": "GEMINI.md",
+                "opencode": ".opencode.yml",
+                "codex": "CODEX.md",
+                "zed": "ZED.md"
+            }
+            for a in agent_list:
+                if a in agent_files and Path(agent_files[a]).exists():
+                    files_to_add.append(agent_files[a])
+            subprocess.run(["git", "add"] + files_to_add, check=True)
+            print("Initialized Git repository and staged assets.")
+        except Exception as e:
+            print(f"Warning: Git initialization failed: {e}", file=sys.stderr)
+
     print(f"\nSuccessfully initialized book pipeline in: '{book_folder}'")
     return 0
 
@@ -448,6 +560,280 @@ def cmd_nlm(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_canon(args: argparse.Namespace) -> int:
+    from bookforge.core import canon
+    book_folder = Path(args.book_folder)
+    if args.canon_command == "build":
+        print(f"Folding canon for '{book_folder}'...")
+        canon.fold_canon(book_folder)
+        print("Canon successfully folded and written to canon/state/snapshot.yml")
+        return 0
+    elif args.canon_command == "validate":
+        print(f"Validating canon for '{book_folder}'...")
+        issues = canon.validate_canon(book_folder)
+        has_hard = any(i.is_hard for i in issues)
+        for i in issues:
+            lbl = "FAIL" if i.is_hard else "WARN"
+            print(f"  [{lbl}] {i.message}")
+        if has_hard:
+            print("Validation failed with hard errors.")
+            return 1
+        print("Canon is valid.")
+        return 0
+    return 1
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    from bookforge.core import validator as context_validator
+    from bookforge.core import canon
+    from bookforge.core.issue import Severity
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    chapters = context_validator.discover_chapters(book_folder)
+    if args.chapter:
+        chapters = [chapter for chapter in chapters if chapter.slug == args.chapter]
+        if not chapters:
+            print(f"Error: chapter not found: {args.chapter}", file=sys.stderr)
+            return 2
+
+    if args.review_prompt:
+        if len(chapters) != 1:
+            print("Error: --review-prompt requires exactly one chapter via --chapter.", file=sys.stderr)
+            return 2
+        try:
+            print(context_validator.build_ai_prompt(book_folder, chapters[0]))
+        except RuntimeError as error:
+            print(f"Error: {error}", file=sys.stderr)
+            return 2
+        return 0
+
+    book_issues = list(context_validator.validate_required_book_file_issues(book_folder))
+    canon_issues = canon.validate_canon(book_folder)
+    book_issues.extend(canon_issues)
+
+    book_passes = [i.message for i in book_issues if i.severity == Severity.INFO]
+    book_failures = [i.message for i in book_issues if i.severity == Severity.HARD]
+    book_warnings = [i.message for i in book_issues if i.severity == Severity.SOFT]
+
+    phase_sections = context_validator.parse_phase_chapters(book_folder)
+    reports = [context_validator.validate_chapter(chapter, phase_sections) for chapter in chapters]
+
+    print(context_validator.render_report(book_folder, book_passes, book_failures, book_warnings, reports))
+    return 1 if context_validator.overall_status(book_failures, reports) == "FAIL" else 0
+
+
+def cmd_apply(args: argparse.Namespace) -> int:
+    from bookforge.core import canon
+    from bookforge.core import validator as context_validator
+    from bookforge.core.issue import Severity
+    book_folder = Path(args.book_folder)
+
+    if args.apply_command == "change":
+        chapter_id = args.chapter_id
+
+        # Pre-validation
+        print(f"Pre-validating changes for '{chapter_id}'...")
+        chapters = context_validator.discover_chapters(book_folder)
+        target_ch = [c for c in chapters if c.slug == chapter_id]
+
+        book_issues = list(context_validator.validate_required_book_file_issues(book_folder))
+        canon_issues = canon.validate_canon(book_folder)
+        book_issues.extend(canon_issues)
+
+        book_failures = [i.message for i in book_issues if i.severity == Severity.HARD]
+        phase_sections = context_validator.parse_phase_chapters(book_folder)
+        reports = [context_validator.validate_chapter(c, phase_sections) for c in target_ch]
+
+        if context_validator.overall_status(book_failures, reports) == "FAIL":
+            print("Error: Validation failed. Cannot apply change.", file=sys.stderr)
+            return 1
+
+        # Check for continuity-out.md
+        continuity_path = book_folder / "changes" / chapter_id / "continuity-out.md"
+        if not continuity_path.exists():
+            continuity_path = book_folder / "chapters" / chapter_id / "continuity-out.md"
+
+        if not continuity_path.exists():
+            print(f"Error: Missing continuity-out.md for {chapter_id}.", file=sys.stderr)
+            return 1
+
+        change_data = canon.parse_continuity_out_to_event(continuity_path)
+        canon.apply_chapter_event(book_folder, chapter_id, change_data)
+        print(f"Applied event for {chapter_id} and re-folded snapshot.")
+        return 0
+    return 1
+
+
+def cmd_migrate(args: argparse.Namespace) -> int:
+    from bookforge.core import canon
+    book_folder = Path(args.book_folder)
+    print(f"Migrating '{book_folder}' legacy assets to v2 event-sourced canon...")
+    canon.migrate_legacy_book(book_folder)
+    print("Migration complete. Event-sourced canon is active.")
+    return 0
+
+
+def cmd_checkpoint(args: argparse.Namespace) -> int:
+    from bookforge.core import checkpoint as checkpoint_core
+    book_folder = Path(args.book_folder)
+
+    if args.checkpoint_command == "save":
+        print(f"Saving checkpoint '{args.name}' for '{book_folder}'...")
+        checkpoint_core.save_checkpoint(book_folder, args.name)
+        print(f"Checkpoint '{args.name}' saved successfully.")
+        return 0
+
+    elif args.checkpoint_command == "load":
+        print(f"Loading checkpoint '{args.name}' for '{book_folder}'...")
+        try:
+            checkpoint_core.load_checkpoint(book_folder, args.name)
+            print(f"Checkpoint '{args.name}' loaded successfully.")
+            return 0
+        except FileNotFoundError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+
+    elif args.checkpoint_command == "restore":
+        print(f"Restoring checkpoint '{args.name}' for '{book_folder}'...")
+        try:
+            checkpoint_core.restore_checkpoint(book_folder, args.name)
+            print(f"Checkpoint '{args.name}' restored successfully.")
+            return 0
+        except FileNotFoundError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+
+    elif args.checkpoint_command == "diff":
+        try:
+            diff_text = checkpoint_core.diff_checkpoint(book_folder, args.name)
+            if diff_text.strip():
+                print(diff_text)
+            else:
+                print("No differences found.")
+            return 0
+        except FileNotFoundError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+
+    return 1
+
+
+def cmd_memory(args: argparse.Namespace) -> int:
+    from bookforge.core import memory as memory_core
+    import uuid
+    import yaml
+    
+    book_folder = Path(args.book_folder)
+    backend = memory_core.get_memory_backend(book_folder)
+    
+    if args.memory_command == "build":
+        print(f"Building memory index for '{book_folder}'...")
+        backend.build(book_folder)
+        stats = backend.stats()
+        print(f"Memory build complete. Backend: {stats.backend_type}. Memories indexed: {stats.num_memories}")
+        return 0
+        
+    elif args.memory_command == "retrieve":
+        print(f"Searching memory for: '{args.query}'")
+        chunks = backend.retrieve(args.query, limit=args.limit)
+        if not chunks:
+            print("No relevant memories found.")
+            return 0
+        for i, chunk in enumerate(chunks, 1):
+            source_file = chunk.metadata.get("file", "unknown")
+            print(f"[{i}] Score: {chunk.score:.4f} | Source: {source_file}")
+            print(f"    {chunk.content}")
+            print("-" * 60)
+        return 0
+        
+    elif args.memory_command == "resolve":
+        print(f"Resolving alias: '{args.name}'")
+        resolved = backend.resolve(book_folder, args.name)
+        if resolved:
+            print(f"Resolved to Canonical ID: '{resolved}'")
+        else:
+            print("Could not resolve name.")
+        return 0
+        
+    elif args.memory_command == "learn":
+        log_path = Path(args.log_file)
+        if args.log_file == "-":
+            log_content = sys.stdin.read()
+        elif log_path.exists():
+            log_content = log_path.read_text(encoding="utf-8")
+        else:
+            print(f"Error: Log file not found: {args.log_file}", file=sys.stderr)
+            return 1
+            
+        print("Analyzing validation log and proposing corrective rules...")
+        rules = backend.learn(log_content)
+        if not rules:
+            print("No corrective rules proposed.")
+            return 0
+            
+        # Create proposals directory
+        proposals_dir = book_folder / ".bookforge" / "proposals"
+        proposals_dir.mkdir(parents=True, exist_ok=True)
+        
+        proposal_id = str(uuid.uuid4())
+        proposal_file = proposals_dir / f"{proposal_id}.yml"
+        
+        proposal_data = {
+            "proposal_id": proposal_id,
+            "rules": [
+                {
+                    "id": r.id,
+                    "pattern": r.pattern,
+                    "replacement": r.replacement,
+                    "reason": r.reason,
+                    "file": r.file,
+                    "change": r.change
+                }
+                for r in rules
+            ]
+        }
+        
+        proposal_file.write_text(yaml.dump(proposal_data, sort_keys=False), encoding="utf-8")
+        print(f"\nGenerated Rule Proposal: {proposal_id}")
+        print(f"Saved to: {proposal_file}")
+        print("\nProposed Rules:")
+        for r in rules:
+            print(f"  - [{r.id}] Target: {r.file}")
+            print(f"    Reason: {r.reason}")
+            print(f"    Change:\n{r.change}")
+            print()
+        return 0
+        
+    elif args.memory_command == "apply-learning":
+        proposal_id = args.proposal_id
+        print(f"Applying rule proposal '{proposal_id}'...")
+        try:
+            modified = memory_core.apply_proposal_rules(book_folder, proposal_id)
+            print("Successfully applied rules. Modified files:")
+            for f in modified:
+                print(f"  - {f}")
+            return 0
+        except FileNotFoundError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+            
+    elif args.memory_command == "serve":
+        server = memory_core.MemoryMCPServer(backend)
+        if args.http:
+            print(f"Starting memory MCP HTTP Server on port {args.port}...")
+            server.run_http(port=args.port)
+        else:
+            print("Starting memory MCP stdio Server...")
+            server.run_stdio()
+        return 0
+        
+    return 1
+
+
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -459,7 +845,9 @@ def main() -> int:
     # init
     parser_init = subparsers.add_parser("init", help="Initialize a new book structure")
     parser_init.add_argument("book_folder", help="Path to book folder (e.g. books/my-book)")
-    parser_init.add_argument("--carry-from", help="Optional path to completed prior book in the series")
+    parser_init.add_argument("--carry-from", "--from", dest="carry_from", help="Optional path to completed prior book in the series")
+    parser_init.add_argument("--agents", help="Comma-separated list of agents to configure (e.g. opencode,claude,cursor,copilot,gemini,codex,zed)")
+    parser_init.add_argument("--git", action="store_true", help="Initialize a Git repository and stage assets")
 
     # status
     parser_status = subparsers.add_parser("status", help="Show pipeline diagnostics and validations")
@@ -566,6 +954,94 @@ def main() -> int:
     parser_nlm_gen_out = nlm_subparsers.add_parser("generate-outline", help="Create a unique notebook, upload sources, and query to generate outline")
     parser_nlm_gen_out.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
+    # canon
+    parser_canon = subparsers.add_parser("canon", help="Event-sourced canon fold engine and checks")
+    canon_subparsers = parser_canon.add_subparsers(dest="canon_command", required=True)
+
+    # canon build
+    parser_canon_build = canon_subparsers.add_parser("build", help="Fold all events to build the current state snapshot")
+    parser_canon_build.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # canon validate
+    parser_canon_validate = canon_subparsers.add_parser("validate", help="Validate entity schemas and sequence history")
+    parser_canon_validate.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # validate
+    parser_validate = subparsers.add_parser("validate", help="Run full deterministic, style, and canon validations")
+    parser_validate.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_validate.add_argument("--chapter", help="Chapter ID to restrict checks (e.g. chapter-01)")
+    parser_validate.add_argument("--review-prompt", action="store_true", help="Generate AI semantic review prompt")
+
+    # apply
+    parser_apply = subparsers.add_parser("apply", help="Gate command: apply transitions and append chapter events")
+    apply_subparsers = parser_apply.add_subparsers(dest="apply_command", required=True)
+    parser_apply_change = apply_subparsers.add_parser("change", help="Parse, validate, and append chapter mutations")
+    parser_apply_change.add_argument("book_folder", help="Path to book folder")
+    parser_apply_change.add_argument("chapter_id", help="Chapter ID (e.g., chapter-01)")
+
+    # migrate
+    parser_migrate = subparsers.add_parser("migrate", help="Migrate legacy book assets to event-sourced structures")
+    parser_migrate.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # memory
+    parser_memory = subparsers.add_parser("memory", help="Persistent Memory Tier (build, retrieve, resolve, learn, apply-learning, serve)")
+    memory_subparsers = parser_memory.add_subparsers(dest="memory_command", required=True)
+
+    # memory build
+    parser_mem_build = memory_subparsers.add_parser("build", help="Build memory index from book assets")
+    parser_mem_build.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # memory retrieve
+    parser_mem_retrieve = memory_subparsers.add_parser("retrieve", help="Query the persistent memory index")
+    parser_mem_retrieve.add_argument("query", help="Text query to search for")
+    parser_mem_retrieve.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_mem_retrieve.add_argument("--limit", type=int, default=10, help="Max results to return")
+
+    # memory resolve
+    parser_mem_resolve = memory_subparsers.add_parser("resolve", help="Resolve name to canonical ID")
+    parser_mem_resolve.add_argument("name", help="Name or alias to resolve")
+    parser_mem_resolve.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # memory learn
+    parser_mem_learn = memory_subparsers.add_parser("learn", help="Analyze failed session logs to suggest corrective rules")
+    parser_mem_learn.add_argument("log_file", help="Path to log file (or '-' for stdin)")
+    parser_mem_learn.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # memory apply-learning
+    parser_mem_apply = memory_subparsers.add_parser("apply-learning", help="Apply proposed rules to rulebook/instructions")
+    parser_mem_apply.add_argument("proposal_id", help="Proposal UUID to apply")
+    parser_mem_apply.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # memory serve
+    parser_mem_serve = memory_subparsers.add_parser("serve", help="Serve memory MCP tools over stdio/HTTP")
+    parser_mem_serve.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_mem_serve.add_argument("--port", type=int, default=8000, help="HTTP server port")
+    parser_mem_serve.add_argument("--http", action="store_true", help="Run HTTP server instead of stdio")
+
+    # checkpoint
+    parser_checkpoint = subparsers.add_parser("checkpoint", help="Local checkpoint stashing (save, load, diff, restore)")
+    checkpoint_subparsers = parser_checkpoint.add_subparsers(dest="checkpoint_command", required=True)
+
+    # checkpoint save
+    parser_chk_save = checkpoint_subparsers.add_parser("save", help="Save current changes to a named checkpoint")
+    parser_chk_save.add_argument("name", help="Name of the checkpoint")
+    parser_chk_save.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # checkpoint load
+    parser_chk_load = checkpoint_subparsers.add_parser("load", help="Load/restore changes from a named checkpoint")
+    parser_chk_load.add_argument("name", help="Name of the checkpoint")
+    parser_chk_load.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # checkpoint restore
+    parser_chk_restore = checkpoint_subparsers.add_parser("restore", help="Reset/restore changes to match a named checkpoint")
+    parser_chk_restore.add_argument("name", help="Name of the checkpoint")
+    parser_chk_restore.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # checkpoint diff
+    parser_chk_diff = checkpoint_subparsers.add_parser("diff", help="Show differences between current changes and a named checkpoint")
+    parser_chk_diff.add_argument("name", help="Name of the checkpoint")
+    parser_chk_diff.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -590,6 +1066,12 @@ def main() -> int:
         "add-relation": cmd_add_relation,
         "nlm": cmd_nlm,
         "resolve-unknowns": cmd_resolve_unknowns,
+        "canon": cmd_canon,
+        "validate": cmd_validate,
+        "apply": cmd_apply,
+        "migrate": cmd_migrate,
+        "memory": cmd_memory,
+        "checkpoint": cmd_checkpoint,
     }
 
     try:
@@ -603,3 +1085,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
