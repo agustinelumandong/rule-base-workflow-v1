@@ -504,6 +504,36 @@ Text.
             failures,
         )
 
+    def test_direct_rulebook_edit_deprecated(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "phase-0.md").write_text("# Outline\n**Chapter 1**\nText", encoding="utf-8")
+            (book_folder / "rulebook.md").write_text("# Series Continuity\n## Chapter Continuity Ledger\n### chapter-01\nText\n", encoding="utf-8")
+            
+            import subprocess
+            original_run = subprocess.run
+            
+            def mock_run(cmd, *args, **kwargs):
+                if len(cmd) > 2 and cmd[0] == "git" and cmd[1] == "status":
+                    class MockCompletedProcess:
+                        stdout = "M rulebook.md\n"
+                        stderr = ""
+                        returncode = 0
+                    return MockCompletedProcess()
+                return original_run(cmd, *args, **kwargs)
+                
+            subprocess.run = mock_run
+            try:
+                issues = validator.validate_required_book_file_issues(book_folder)
+                self.assertTrue(
+                    any(issue.rule_id == "VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED" for issue in issues),
+                    "Expected deprecation issue to be raised when rulebook.md is modified in git"
+                )
+            finally:
+                subprocess.run = original_run
+
+
 
 if __name__ == "__main__":
     unittest.main()
