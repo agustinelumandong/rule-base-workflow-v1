@@ -146,7 +146,7 @@ Always use the unified `bf` CLI command set. The legacy orchestrator scripts und
   - Use general names in fast action (e.g., "Tex fired twice").
   - Use specific model names for mood and introduction (e.g., ".45 Peacemaker", "Winchester '73", "top-break Schofield").
   - Avoid gun-catalog overload. Keep weapon details active and sensory (e.g., "the blue worn silver at the muzzle").
-  - All historical details and weapon names must be sourced from the resolved `books/tex-cade/research-pack.md` (or the global series research-pack) to maintain historical accuracy and prevent hallucination.
+  - All historical details and weapon names must be sourced from the resolved `research-pack.md` in the book folder (or the global series research-pack) to maintain historical accuracy and prevent hallucination.
   - When referencing twin weapons in action, avoid confusion by specifying left/right identifiers rather than a generic "the Colt" (e.g., "his right-hand Peacemaker", "the left Colt", "the revolver").
 
 ---
