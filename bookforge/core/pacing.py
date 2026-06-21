@@ -282,7 +282,7 @@ def main() -> int:
     import argparse
     import sys
     parser = argparse.ArgumentParser(description="Build a source-locked chapter pacing plan.")
-    parser.add_argument("book_folder", help="Book folder such as books/tex-cade.")
+    parser.add_argument("book_folder", help="Book folder such as books/book-example.")
     parser.add_argument(
         "--reference-analysis",
         default="references/timber/analysis/pacing-calibration.md",

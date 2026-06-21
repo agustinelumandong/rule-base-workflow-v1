@@ -404,7 +404,7 @@ def main_source_format() -> int:
     import argparse
     import sys
     parser = argparse.ArgumentParser(description="Scan a manuscript bible/outline source format.")
-    parser.add_argument("book_folder", help="Book folder such as books/tex-cade.")
+    parser.add_argument("book_folder", help="Book folder such as books/book-example.")
     parser.add_argument(
         "--target-words",
         type=int,

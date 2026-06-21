@@ -99,7 +99,7 @@ def main() -> int:
     parser.add_argument(
         "book_folder",
         nargs="?",
-        default="books/tex-cade",
+        default="books/book-example",
         help="Book folder containing phase-0.md and chapters/.",
     )
     parser.add_argument(

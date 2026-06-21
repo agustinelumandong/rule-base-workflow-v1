@@ -124,7 +124,7 @@ def main() -> int:
     import argparse
     import sys
     parser = argparse.ArgumentParser(description="Check recommended manuscript context loading.")
-    parser.add_argument("book_folder", help="Book folder such as books/tex-cade.")
+    parser.add_argument("book_folder", help="Book folder such as books/book-example.")
     parser.add_argument("--chapter", help="Chapter slug such as chapter-01 or epilogue.")
     parser.add_argument("--mode", required=True, choices=MODES, help="Prompt mode to budget for.")
     args = parser.parse_args()

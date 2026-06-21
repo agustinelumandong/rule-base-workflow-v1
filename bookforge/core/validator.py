@@ -1434,7 +1434,7 @@ def render_report(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate manuscript context and style rules.")
-    parser.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder.")
+    parser.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder.")
     parser.add_argument("--chapter", help="Limit checks to a single chapter slug (e.g. chapter-01).")
     parser.add_argument("--ai-prompt", action="store_true", help="Generate an AI semantic review prompt.")
     return parser.parse_args()

@@ -732,7 +732,7 @@ def main() -> int:
     parser.add_argument(
         "book_folder",
         nargs="?",
-        default="books/tex-cade",
+        default="books/book-example",
         help="Book folder containing chapter artifacts.",
     )
     args = parser.parse_args()

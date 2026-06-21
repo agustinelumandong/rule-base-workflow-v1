@@ -463,11 +463,11 @@ def main() -> int:
 
     # status
     parser_status = subparsers.add_parser("status", help="Show pipeline diagnostics and validations")
-    parser_status.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_status.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
     # run-loop
     parser_run = subparsers.add_parser("run-loop", help="Check loop state and print next action")
-    parser_run.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_run.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_run.add_argument("--target-min", type=int, help="Target minimum words")
     parser_run.add_argument("--target-max", type=int, help="Target maximum words")
     parser_run.add_argument("--repair-attempt", help="Comma-separated repair overrides (e.g. chapter-01:3)")
@@ -475,7 +475,7 @@ def main() -> int:
 
     # compile
     parser_compile = subparsers.add_parser("compile", help="Compile drafts into single manuscript")
-    parser_compile.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_compile.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_compile.add_argument("--output", help="Output Markdown path")
     parser_compile.add_argument("--no-title", action="store_true", help="Do not prepend book title")
 
@@ -484,11 +484,11 @@ def main() -> int:
 
     # analytics
     parser_analytics = subparsers.add_parser("analytics", help="Show file size metrics and cumulative token usage")
-    parser_analytics.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_analytics.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
     # log-run
     parser_log = subparsers.add_parser("log-run", help="Log token metrics for an LLM run manually or programmatically")
-    parser_log.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_log.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_log.add_argument("--model", required=True, help="LLM Model used (e.g. gpt-4o, claude-3-5-sonnet)")
     parser_log.add_argument("--input-tokens", type=int, required=True, help="Number of prompt/input tokens")
     parser_log.add_argument("--output-tokens", type=int, required=True, help="Number of completion/output tokens")
@@ -520,8 +520,8 @@ def main() -> int:
     parser_resolve.add_argument(
         "book_folder",
         nargs="?",
-        default="books/tex-cade",
-        help="Path to book folder (default: books/tex-cade)"
+        default="books/book-example",
+        help="Path to book folder (default: books/book-example)"
     )
 
     # add-relation
@@ -541,35 +541,40 @@ def main() -> int:
 
     # nlm status
     parser_nlm_status = nlm_subparsers.add_parser("status", help="Show NotebookLM integration status for a book")
-    parser_nlm_status.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_nlm_status.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
     # nlm link
     parser_nlm_link = nlm_subparsers.add_parser("link", help="Link a NotebookLM notebook to a book folder")
     parser_nlm_link.add_argument("notebook_id", help="Notebook UUID")
-    parser_nlm_link.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_nlm_link.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_nlm_link.add_argument("--title", help="Optional display title for the notebook")
 
     # nlm query
     parser_nlm_query = nlm_subparsers.add_parser("query", help="Query the linked NotebookLM notebook")
     parser_nlm_query.add_argument("query_text", help="Question to ask the notebook")
-    parser_nlm_query.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_nlm_query.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
     # nlm sync-research
     parser_nlm_sync_res = nlm_subparsers.add_parser("sync-research", help="Sync facts from NotebookLM to research-pack.md")
-    parser_nlm_sync_res.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_nlm_sync_res.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
     # nlm sync-sources
     parser_nlm_sync_src = nlm_subparsers.add_parser("sync-sources", help="Upload local rules and drafts to NotebookLM")
-    parser_nlm_sync_src.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_nlm_sync_src.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
     # nlm generate-outline
     parser_nlm_gen_out = nlm_subparsers.add_parser("generate-outline", help="Create a unique notebook, upload sources, and query to generate outline")
-    parser_nlm_gen_out.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
+    parser_nlm_gen_out.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
     args = parser.parse_args()
 
     if not args.command:
-        args.command = "tui"
+        # Default to `status` (cross-platform) instead of `tui`, which uses POSIX-only
+        # termios/tty and crashes on Windows. `bf tui` remains available as an explicit opt-in.
+        # When no subcommand was given, argparse parsed against the root parser, so the
+        # `status` subparser's `book_folder` default never applied — set it explicitly.
+        args.command = "status"
+        args.book_folder = "books/book-example"
 
     commands = {
         "init": cmd_init,

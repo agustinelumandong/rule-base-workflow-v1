@@ -444,7 +444,7 @@ def main() -> int:
     parser.add_argument(
         "book_folder",
         nargs="?",
-        default="books/tex-cade",
+        default="books/book-example",
         help="Book folder containing chapters/ and outline source.",
     )
     parser.add_argument("--target-min", type=int, help="Override target minimum words.")
