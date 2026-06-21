@@ -404,7 +404,7 @@ the canon files.
 ## 9. Milestones (re-phased; M2.5 is NEW for the memory tier)
 
 > **Status legend:** `- [x]` done · `- [ ]` not started · `- [~]` deferred · `⚠️` blocked.
-> Last updated post-M1 partial (commits `3ee86ba`, `f56c27f`, `47c6990`).
+> Last updated post-fix audit (2026-06-22): 138/138 tests pass; M3 facade-decompose and M5 shim-removal re-marked `[~]` to reflect actual repo state.
 
 ### M0 — Foundation & Hygiene (~3 days, zero-risk) — ✅ COMPLETE
 - [x] Remove root scratch files (`compile_helper.py`, `scratch_*.py`)
@@ -413,7 +413,7 @@ the canon files.
 - [x] `bf` no-arg → `status` (Windows-safe; demote TUI to `bf tui`)
 - [x] Capture golden-file tests for current loop/validator output (regression net) — `tests/golden/`
 - [x] **Bonus:** installed `pytest` + `pyyaml` (3 tests were failing on missing `yaml` import)
-- **Shippable:** cleaner repo, works on Windows, tests tracked. **Verified:** 109/109 tests pass; golden output identical post-M1.
+- **Shippable:** cleaner repo, works on Windows, tests tracked. **Verified:** 138/138 tests pass (post-fix audit); golden output identical post-M1.
 
 ### M1 — Decouple from Agents + Model Routing Skeleton (~5 days, parallel with M2) — ✅ COMPLETE
 - [x] Strip Codex/Antigravity/Gemini names from `AGENTS.md`, `docs/workflow-v5.md`, all
@@ -474,9 +474,18 @@ the canon files.
 - [x] Fix the 45 bare `except Exception` sites (specific exceptions + logging) — correctness-critical
 - [x] Fix `FORBIDDEN_LENGTH_LANGUAGE` `"words"` false-positive (restrict to planning artifacts)
 - [x] Finish `ManuscriptIssue` type migration in `loop.classify` (remove `list[object]` duck-typing)
-- [x] Decompose `validator.py` (1,505 lines) into focused submodules behind a facade
-- [x] Shim removal (carried from M1.6): delete the 13 `.agents/skills/.../scripts/*.py` shims
-      once `AGENTS.md`/`README.md` are migrated to `bf` CLI as primary
+- [~] Decompose `validator.py` (1,505 lines) into focused submodules behind a facade
+      **Partial.** The new `bookforge/core/validators/{format,style,continuity}.py` package exists
+      and is re-exported via `validators/__init__.py`, but `validator.py` was NOT converted to a
+      thin facade — it still holds duplicate implementations and is what `cli.py`/shims actually
+      import. Symbols only in the old facade (`validate_chapter`, `build_ai_prompt`,
+      `render_report`, `overall_status`, `ChapterReport`, …) must be migrated before the old file
+      can become a pure re-export. Until then, edits must be mirrored in both places.
+- [~] Shim removal (carried from M1.6): delete the 13 `.agents/skills/.../scripts/*.py` shims
+      once `AGENTS.md`/`README.md` are migrated to `bf` CLI as primary. **Deferred.** 15 shim
+      scripts still ship under `.agents/skills/manuscript-workflow-orchestrator/scripts/`; they
+      delegate via `from bookforge.core.validator import *`. Safe to keep until docs fully
+      migrate to `bf` as the primary entry surface.
 - **Shippable:** clean CLI, multi-vocabulary, adapter-pluggable, trustworthy validation.
 
 ### M4 — Full Change Workflow — ✅ COMPLETE
