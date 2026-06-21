@@ -1,0 +1,108 @@
+western_subgenres:
+  classic:
+    tone:
+      - direct
+      - heroic
+      - morally legible
+    common_conflicts:
+      - law_vs_outlaw
+      - frontier_justice
+      - protecting_a_town
+      - taming_the_wilderness
+    protagonist_pattern:
+      - stoic_lawman
+      - honorable_cowboy
+      - determined_pioneer
+    validation_emphasis:
+      - moral_clarity
+      - iconic_western_elements
+      - frontier_order
+
+  historical:
+    tone:
+      - grounded
+      - restrained
+      - evidence_led
+    common_conflicts:
+      - documented_events
+      - social_survival
+      - personal_struggle_inside_history
+    protagonist_pattern:
+      - real_or_realistic_historical_actor
+      - ordinary_person_under_historical_pressure
+    validation_emphasis:
+      - historical_accuracy
+      - cultural_context
+      - period_material_detail
+
+  frontier_romance:
+    tone:
+      - intimate
+      - resilient
+      - hardship_shaped
+    common_conflicts:
+      - love_vs_hardship
+      - duty_vs_desire
+      - social_obstacle_vs_commitment
+    protagonist_pattern:
+      - resilient_frontier_woman
+      - rancher_cowboy_homesteader_or_traveler
+    validation_emphasis:
+      - relationship_development
+      - frontier_cost
+      - emotional_consequence
+
+  revisionist:
+    tone:
+      - darker
+      - morally_complex
+      - consequence_heavy
+    common_conflicts:
+      - broken_myths
+      - violence_consequence
+      - systemic_injustice
+      - survival_without_clean_heroism
+    protagonist_pattern:
+      - flawed_antihero
+      - disillusioned_survivor
+      - morally_compromised_actor
+    validation_emphasis:
+      - moral_ambiguity
+      - violence_cost
+      - stereotype_avoidance
+      - myth_deconstruction
+
+  outlaw:
+    tone:
+      - rebellious
+      - antiheroic
+      - code_driven
+    common_conflicts:
+      - law_vs_personal_code
+      - loyalty_vs_survival
+      - freedom_vs_pursuit
+    protagonist_pattern:
+      - outlaw
+      - fugitive
+      - criminal_with_a_code
+    validation_emphasis:
+      - motive_clarity
+      - consequence
+      - law_pressure
+
+  weird_west:
+    tone:
+      - strange
+      - speculative
+      - frontier_grounded
+    common_conflicts:
+      - supernatural_frontier
+      - frontier_vs_unknown
+      - strange_technology_or_magic
+    protagonist_pattern:
+      - cowboy_or_frontier_actor_facing_the_unnatural
+      - investigator_traveler_or_survivor
+    validation_emphasis:
+      - speculative_rule_consistency
+      - frontier_texture
+      - genre_blend_control

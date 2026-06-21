@@ -8,10 +8,6 @@
 # Python cache & testing
 __pycache__/
 .pytest_cache/
-tests/
-
-# Documentation & drafts
-docs/
 
 # Explicit tracking overrides
 !bookforge/genre_packs/western/
