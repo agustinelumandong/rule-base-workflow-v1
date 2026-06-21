@@ -1,4 +1,4 @@
-# BookForge v2 — Final Merged Architecture
+# BookForge v2 — Merged Architecture (draft — not frozen)
 
 > **One line:** Event-sourced canon, gated by validate-before-apply, fed by a swappable
 > persistent-memory tier (Headroom as reference), driven through an agent-agnostic `bf` CLI,
@@ -9,6 +9,11 @@ This supersedes both prior drafts (`REPO_FIX_PLAN.md` folds into M0 + M3). Two l
 missing in earlier drafts and are now first-class: the **Persistent Memory Tier** (Headroom
 et al.) and the **Harness / Model-Routing Layer** (OpenCode et al.). Model routing is encoded
 in the repo, not assumed.
+
+> **Status — not frozen.** This is the current merged draft, not a frozen architecture. The
+> command-surface fixes from review (canon/memory split, proposal-based learning) are applied
+> below. The load-bearing unknown is **fold-engine feasibility for narrative state** (see §13)
+> — prototype that on a real book's `continuity-out.md` chain before treating this as final.
 
 ---
 
@@ -103,6 +108,23 @@ personas:
   definition; `bf init --agents codex` emits a task-type hint file.
 - `bf check-persona --persona writer` (already in `persona.py`) enforces this registry.
 
+**Layer 5 is optional.** The model-routing tier is a cost optimization, not a requirement.
+BookForge fully works without OpenCode or any routing-capable harness. Any agent that can read
+files and run shell commands — Codex CLI, Claude Code, Gemini CLI, Cursor, Copilot CLI, ZCode,
+Zed, or equivalent — can drive the full cycle by reading `AGENTS.md` and calling `bf`.
+
+Without a routing harness, the workflow still functions, but one model handles all
+model-assisted tasks. The only lost optimization is automatic task routing: extraction, alias
+resolution, and summaries no longer go to a cheap model automatically, while prose no longer
+routes separately to a stronger model. The architecture remains valid because `bf` is the
+contract; model routing is only an efficiency layer.
+
+```
+Minimum viable agent layer:   Any shell-capable agent + AGENTS.md + bf
+Optimized agent layer:        OpenCode or equivalent harness + model routing
+Core product:                 BookForge CLI + canon + validation + memory
+```
+
 ---
 
 ## 4. Canon Model (Layer 1 — event-sourced)
@@ -183,12 +205,16 @@ bf apply change <book> <chapter-id>          # append event + re-fold, only if v
 # Writer verbs (Layer 4 aliases over the gate)
 bf checkpoint save|load|diff|restore
 
-# Persistent memory (Layer 3)
-bf memory build <book>                       # re-fold snapshot + index; optionally delegate
-                                             #   extraction to harness small_model
+# Canon fold (Layer 1 — deterministic state; never touches the memory tier)
+bf canon build <book>                        # re-fold entities + events into canon/state/snapshot.yml
+bf canon validate <book>                     # validate entities, events, snapshot coherence
+
+# Persistent memory (Layer 3 — semantic/retrieval; NEVER is canon)
+bf memory build <book>                       # build/refresh semantic index over canon + drafts + history
 bf memory search <book> "<query>"            # semantic retrieval (Headroom retrieve / local embedding)
 bf memory resolve <book> "<name>"            # alias -> canonical entity
-bf memory learn <book> <failed-session>      # feed a failed run; writes corrective rules to AGENTS.md
+bf memory learn <book> <failed-session>      # produce a learning PROPOSAL; does NOT mutate AGENTS.md
+bf memory apply-learning <book> <proposal-id>  # validate + promote approved rule into AGENTS.md / spec/
 bf memory serve --mcp [--transport stdio|http]  # expose active backend as MCP tools (opt-in)
 bf memory stats [<book>]
 
@@ -297,8 +323,8 @@ the canon files.
 ### M2 — Event-Sourced Canon Core (Layers 1+2, ~6-8 days, parallel with M2.5/M3)
 - Define `canon/entities/*.yml` schemas (characters, aliases, locations, objects) + validation
 - Define `canon/events/chapter-NN.event.yml` schema (structured continuity-out → event)
-- Build the **fold engine**: `bf memory build` re-derives `state/snapshot.yml` from
-  entities + events
+- Build the **fold engine**: `bf canon build` re-derives `canon/state/snapshot.yml` from
+  entities + events (canon fold is Layer 1, NOT the memory tier)
 - Build canon validators: alias resolution, timeline ordering, cross-event consistency (the
   "no dead character acting" check), entity-vs-event coherence
 - Build `bf migrate` (old rulebook/world-state/relationships/continuity-out → entities +
@@ -315,7 +341,8 @@ the canon files.
 - `HeadroomMemoryBackend`: wraps `headroom.compress`/`retrieve`/`stats` + `headroom learn` +
   `SharedContext`; usable as library via `bf memory *`
 - `LocalEmbeddingBackend`: zero-dep fallback (TF-IDF / keyword index over canon+drafts+history)
-- `bf memory build/search/resolve/learn/stats`
+- `bf memory build/search/resolve/learn/apply-learning/stats`, where `learn` creates a
+  proposal and `apply-learning` validates + promotes approved rules into `AGENTS.md` / `spec/`
 - `bf memory serve --mcp`: expose the active backend as MCP tools (headroom_compress/
   retrieve/stats) for agents that prefer agent-driven calls — **opt-in, not required**
 - `bf memory learn` writes corrective rules into `AGENTS.md` (the headroom-learn loop)
@@ -388,15 +415,18 @@ Week 4:   M5 (polish/docs/deprecation)
 
 ## 11. Acceptance Criteria — "v2 done" means
 
-- [ ] Any harness/agent (OpenCode, Claude Code, Codex, Cursor, Copilot, Zed) drives a full
-      book cycle reading only `AGENTS.md` + calling `bf`
-- [ ] Model routing declared in `spec/model-routing.yml`; `bf init --agents opencode` wires
-      `small_model` → extractor, strong model → writer
+- [ ] Any agentic single-model agent — Codex CLI, Claude Code, Gemini CLI, Cursor, Copilot
+      CLI, ZCode, Zed, or equivalent — can drive a full book cycle by reading only `AGENTS.md`
+      and calling `bf`; **no routing harness is required.**
+- [ ] *Optional optimization:* with OpenCode or any `small_model`-capable harness,
+      `bf init --agents opencode` wires extraction, alias resolution, summaries, and continuity
+      scanning to a cheap model while prose tasks route to a stronger model.
 - [ ] Persistent memory tier exists: `bf memory search` returns semantic hits across canon +
       drafts + history; `bf memory serve --mcp` exposes it as MCP tools (opt-in)
 - [ ] Headroom is the reference memory backend but swappable via `bf config` with zero
       engine-code changes
-- [ ] `bf memory learn` feeds failed sessions back into `AGENTS.md`
+- [ ] `bf memory learn` produces proposals only; only `bf memory apply-learning` (after
+      validation) mutates `AGENTS.md` — `learn` never writes the contract directly
 - [ ] Canon is event-sourced: snapshot = fold of validated events; delete + rebuild losslessly
 - [ ] `bf apply` is the only canon mutation path; `bf validate` is the non-negotiable gate
 - [ ] `bf checkpoint save/load/diff` give writer-native verbs over the same engine
@@ -422,6 +452,18 @@ Week 4:   M5 (polish/docs/deprecation)
 ---
 
 ## 13. Open Questions (resolve before the relevant milestone)
+
+**Load-bearing — blocks architecture freeze:**
+
+- **Fold-engine feasibility for narrative state.** The fold model assumes events compose
+  cleanly. Fiction state is fuzzier: "Mara is injured" — how injured, when does it heal, does
+  it still hold in chapter 9? Software events are discrete; story state is graded and decays.
+  Before freezing, prototype the fold on a real book's `continuity-out.md` chain and confirm
+  narrative mutations compose without contradiction. If they don't, the fold model needs an
+  explicit reconciliation/conflict-resolution step, not just append+reduce. This is the one
+  question the command-surface fixes do NOT answer.
+
+**Other — resolvable per-milestone:**
 
 1. **Sample book name:** keep `book-example`, or restore `tex-cade` as the real sample?
 2. **Event granularity:** one event per chapter (coarse, matches `continuity-out.md`), or
