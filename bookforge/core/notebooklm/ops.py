@@ -1,111 +1,14 @@
-"""BookForge NotebookLM Integration Core Module."""
+"""BookForge NotebookLM Integration Operations."""
 
 from __future__ import annotations
 
 import json
 import re
-import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-
-def is_nlm_available() -> bool:
-    """Verifies that the `nlm` CLI executable is installed and available in PATH."""
-    return shutil.which("nlm") is not None
-
-
-def get_auth_status() -> dict[str, str | bool]:
-    """Checks the auth status of `nlm` by running `nlm login --check` and parsing output."""
-    if not is_nlm_available():
-        return {"authenticated": False, "email": "", "error": "nlm CLI not installed"}
-
-    try:
-        res = subprocess.run(
-            ["nlm", "login", "--check"],
-            capture_output=True,
-            text=True,
-            check=False
-        )
-        output = res.stdout + "\n" + res.stderr
-        
-        # Look for typical email patterns or confirmation text
-        # Example output: "Session active for user@gmail.com" or "Logged in as user@gmail.com"
-        email_match = re.search(r"([\w\.-]+@[\w\.-]+\.\w+)", output)
-        if email_match and res.returncode == 0:
-            return {
-                "authenticated": True,
-                "email": email_match.group(1),
-                "error": ""
-            }
-        
-        # Check if output contains a known success indicator
-        if "configured" in output.lower() or "active" in output.lower():
-            return {
-                "authenticated": True,
-                "email": email_match.group(1) if email_match else "unknown",
-                "error": ""
-            }
-
-        return {
-            "authenticated": False,
-            "email": "",
-            "error": "Not authenticated. Run 'nlm login' to sign in."
-        }
-    except (subprocess.SubprocessError, OSError) as e:
-        return {
-            "authenticated": False,
-            "email": "",
-            "error": f"Error checking auth: {str(e)}"
-        }
-
-
-def list_notebooks() -> list[dict[str, str]]:
-    """Runs `nlm notebook list --json` and returns parsed notebooks."""
-    if not is_nlm_available():
-        return []
-
-    try:
-        res = subprocess.run(
-            ["nlm", "notebook", "list", "--json"],
-            capture_output=True,
-            text=True,
-            check=False
-        )
-        if res.returncode == 0 and res.stdout.strip():
-            try:
-                data = json.loads(res.stdout)
-                if isinstance(data, list):
-                    return [
-                        {
-                            "id": str(nb.get("id", nb.get("notebook_id", ""))),
-                            "title": str(nb.get("title", nb.get("name", "Untitled Notebook"))),
-                            "sources": str(nb.get("source_count", nb.get("sources", "0")))
-                        }
-                        for nb in data
-                    ]
-            except json.JSONDecodeError:
-                pass
-
-        # Fallback to parsing text output line by line if JSON fails or is not returned
-        # Typical text output: "  * UUID - Title (X sources)"
-        notebooks = []
-        for line in res.stdout.splitlines():
-            # Match UUID (8-4-4-4-12) and titles
-            match = re.search(
-                r"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\s*-\s*([^(]+)(?:\((\d+)\s+sources?\))?",
-                line,
-                re.IGNORECASE
-            )
-            if match:
-                notebooks.append({
-                    "id": match.group(1),
-                    "title": match.group(2).strip(),
-                    "sources": match.group(3) or "0"
-                })
-        return notebooks
-    except (subprocess.SubprocessError, OSError, ValueError, AttributeError):
-        return []
+from bookforge.core import notebooklm
 
 
 def get_associated_notebook(book_folder: Path) -> dict[str, str] | None:
@@ -157,14 +60,6 @@ def set_associated_notebook(book_folder: Path, notebook_id: str, title: str) -> 
     state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-
-def query_notebook(notebook_id: str, query: str) -> str:
-    """Queries the given notebook with a specific question using `nlm notebook query`."""
-    from bookforge.core.adapters.research import NotebookLMBackend
-    backend = NotebookLMBackend(Path("."), notebook_id=notebook_id)
-    return backend.query(query)
-
-
 def sync_research_to_pack(book_folder: Path, notebook_id: str) -> bool:
     """Queries NotebookLM for key context and writes/syncs it to the local `research-pack.md` file."""
     prompt = (
@@ -172,7 +67,7 @@ def sync_research_to_pack(book_folder: Path, notebook_id: str) -> bool:
         "present in the sources into a structured reference guide. Format this response in markdown "
         "using clean headers and bullet points. Do not invent any outside info."
     )
-    result = query_notebook(notebook_id, prompt)
+    result = notebooklm.query_notebook(notebook_id, prompt)
     if result.startswith("Error") or "Query failed" in result:
         return False
 
@@ -229,7 +124,7 @@ def upload_local_sources(book_folder: Path, notebook_id: str) -> list[str]:
     
     Returns a list of filenames that were successfully processed/uploaded.
     """
-    if not is_nlm_available():
+    if not notebooklm.is_nlm_available():
         return []
 
     files_to_upload: list[Path] = []
@@ -270,51 +165,12 @@ def upload_local_sources(book_folder: Path, notebook_id: str) -> list[str]:
     return uploaded
 
 
-def create_new_notebook(title: str) -> str | None:
-    """Creates a new notebook with the given title and returns its UUID."""
-    if not is_nlm_available():
-        return None
-
-    try:
-        res = subprocess.run(
-            ["nlm", "notebook", "create", title, "--json"],
-            capture_output=True,
-            text=True,
-            check=False
-        )
-        if res.returncode == 0 and res.stdout.strip():
-            try:
-                data = json.loads(res.stdout)
-                if isinstance(data, dict):
-                    # Check for different possible keys in the JSON response
-                    nb_id = data.get("id") or data.get("notebook_id") or data.get("notebook", {}).get("id")
-                    if nb_id:
-                        return str(nb_id)
-            except json.JSONDecodeError:
-                pass
-        
-        # Fallback to parsing text output if JSON option is not respected or fails
-        # Typical text output: "Created notebook: Title (UUID: aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee)"
-        output = res.stdout + "\n" + res.stderr
-        match = re.search(
-            r"([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})",
-            output,
-            re.IGNORECASE
-        )
-        if match:
-            return match.group(1)
-            
-    except (subprocess.SubprocessError, OSError):
-        pass
-    return None
-
-
 def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
     """Creates a unique notebook, uploads global research/rules, queries it for unique ideas, and generates a phase-0.md outline."""
-    if not is_nlm_available():
+    if not notebooklm.is_nlm_available():
         return False, "Error: nlm CLI not found in PATH."
 
-    auth = get_auth_status()
+    auth = notebooklm.get_auth_status()
     if not auth["authenticated"]:
         return False, f"Error: {auth['error']}"
 
@@ -332,7 +188,7 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
         series_name = series_info["name"] if series_info else "western"
         nb_title = f"{series_name}-{book_folder.name}".lower().replace(" ", "-")
         
-        notebook_id = create_new_notebook(nb_title)
+        notebook_id = notebooklm.create_new_notebook(nb_title)
         if not notebook_id:
             return False, "Error: Failed to create new NotebookLM notebook."
         set_associated_notebook(book_folder, notebook_id, nb_title)
@@ -451,7 +307,7 @@ def generate_research_outline(book_folder: Path) -> tuple[bool, str]:
         "and typical of late 1800s Western history. Do not invent details not present in the sources. "
         "List them clearly."
     )
-    research_response = query_notebook(notebook_id, research_query)
+    research_response = notebooklm.query_notebook(notebook_id, research_query)
     
     # Load dynamic name policy if settings.json exists
     banned_names = ["Voss"]
@@ -554,7 +410,7 @@ Provide exactly 12 chapters in the following format:
 """
 
 
-    outline_content = query_notebook(notebook_id, generator_prompt)
+    outline_content = notebooklm.query_notebook(notebook_id, generator_prompt)
     if outline_content.startswith("Error") or "Query failed" in outline_content:
         return False, f"Failed to generate outline: {outline_content}"
 
