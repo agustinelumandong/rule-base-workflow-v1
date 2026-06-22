@@ -36,7 +36,9 @@ from bookforge.core.validators.style import (
     check_em_dash_anchors,
     check_forbidden_conflicts,
     check_ing_openers,
+    check_plot_mode_risk,
     check_pronoun_loops,
+    check_repeated_sentence_duplicates,
     check_style_review_signals,
     contains_any,
     dialogue_tags,
@@ -273,6 +275,24 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
         issues.append(_make_issue(
             "VALIDATOR_UNPROFILED_PERIOD_TERM",
             warning,
+            chapter=chapter.slug,
+            file=chapter.draft,
+        ))
+
+    repeated_sentences = check_repeated_sentence_duplicates(text)
+    for finding in repeated_sentences:
+        issues.append(_make_issue(
+            "VALIDATOR_REPEATED_PROSE",
+            finding,
+            chapter=chapter.slug,
+            file=chapter.draft,
+        ))
+
+    plot_mode_risks = check_plot_mode_risk(text, book_folder)
+    for finding in plot_mode_risks:
+        issues.append(_make_issue(
+            "VALIDATOR_PLOT_MODE_RISK",
+            finding,
             chapter=chapter.slug,
             file=chapter.draft,
         ))
@@ -526,7 +546,7 @@ def render_report(
         "",
         f"- **Book Folder:** `{book_folder}`",
         f"- **Overall Status:** {overall_status(book_failures, reports)}",
-        "- **Length Status:** Run `bf status` or `bf status <book_folder>` to view rhythm and word limits.",
+        "- **Length Status:** Run `bf status <book_folder>` to view rhythm and word limits.",
         "",
         "## Book Files",
         "",
@@ -624,4 +644,3 @@ def main() -> int:
     reports = [validate_chapter(chapter, phase_sections) for chapter in chapters]
     print(render_report(book_folder, book_passes, book_failures, book_warnings, reports))
     return 1 if overall_status(book_failures, reports) == "FAIL" else 0
-

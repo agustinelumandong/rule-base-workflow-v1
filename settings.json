@@ -44,6 +44,68 @@
       "legalese"
     ]
   },
+  "historical_terms": {
+    "banned": [
+      "cost center"
+    ],
+    "warn": [
+      "signature page"
+    ],
+    "context_required": [
+      "appeal",
+      "civil judgment",
+      "cooperation will be recorded",
+      "custody",
+      "exhibit",
+      "foreclosure petition",
+      "mortgage lien",
+      "sequestration",
+      "writ"
+    ],
+    "review_only": [
+      "bank packet",
+      "bond",
+      "court",
+      "hearing",
+      "petition",
+      "warrant",
+      "witness list"
+    ]
+  },
+  "plot_mode_review": {
+    "enabled": true,
+    "review_only": true,
+    "legal_procedure_threshold": 6,
+    "ban_markers": [
+      "no courtroom",
+      "no courtrooms",
+      "no trial",
+      "no trial scene",
+      "no legal-procedure",
+      "no legal procedure"
+    ],
+    "legal_procedure_terms": [
+      "appeal",
+      "bond",
+      "civil judgment",
+      "court",
+      "courtroom",
+      "custody",
+      "exhibit",
+      "foreclosure",
+      "hearing",
+      "judge",
+      "legal",
+      "lien",
+      "mortgage",
+      "petition",
+      "sequestration",
+      "trial",
+      "warrant",
+      "witness list",
+      "writ"
+    ]
+  },
   "narrative_quality": {
     "antagonists": {
       "vex": {

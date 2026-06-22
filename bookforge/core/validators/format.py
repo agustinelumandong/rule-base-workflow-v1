@@ -92,6 +92,11 @@ RULE_META: dict[str, RuleMeta] = {
     "VALIDATOR_SENTENCE_OPENER_ISSUE": RuleMeta("VALIDATOR_SENTENCE_OPENER_ISSUE", Severity.SOFT, IssueCategory.STYLE),
     "VALIDATOR_STYLE_REVIEW_SIGNAL": RuleMeta("VALIDATOR_STYLE_REVIEW_SIGNAL", Severity.SOFT, IssueCategory.STYLE),
     "VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED": RuleMeta("VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED", Severity.SOFT, IssueCategory.CONTEXT),
+    "VALIDATOR_REPEATED_PROSE": RuleMeta("VALIDATOR_REPEATED_PROSE", Severity.SOFT, IssueCategory.STYLE),
+    "VALIDATOR_PLOT_MODE_RISK": RuleMeta("VALIDATOR_PLOT_MODE_RISK", Severity.SOFT, IssueCategory.NARRATIVE),
+    "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION": RuleMeta(
+        "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION", Severity.SOFT, IssueCategory.CONTINUITY
+    ),
 }
 
 
@@ -290,6 +295,53 @@ def parse_phase_chapters(book_folder: Path) -> dict[str, str]:
     return sections
 
 
+KILLED_PERSON_RE = re.compile(
+    r"\b(?:one|a|the)\s+([a-z][a-z\s-]{2,60}?)\s+(?:is|was)\s+killed\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize_person_descriptor(value: str) -> str:
+    descriptor = re.sub(r"\b(?:same|exact|badly|seriously|wounded|injured|dead)\b", "", value.lower())
+    descriptor = re.sub(r"\s+", " ", descriptor).strip(" .,:;")
+    return descriptor
+
+
+def validate_outline_life_state_issues(book_folder: Path) -> tuple[ManuscriptIssue, ...]:
+    """Catch obvious outline cases where the same described person dies then acts later."""
+    from bookforge.core.scanner import source_path
+
+    src = source_path(book_folder)
+    if not src or not src.exists():
+        return ()
+
+    text = src.read_text(encoding="utf-8")
+    text_lower = text.lower()
+    issues: list[ManuscriptIssue] = []
+
+    for match in KILLED_PERSON_RE.finditer(text_lower):
+        descriptor = _normalize_person_descriptor(match.group(1))
+        if len(descriptor.split()) < 2:
+            continue
+        later_text = text_lower[match.end():]
+        escaped = re.escape(descriptor)
+        later_patterns = [
+            rf"\binjured\s+{escaped}\b",
+            rf"\btreats?\s+(?:the\s+)?(?:injured\s+)?{escaped}\b",
+            rf"\b{escaped}\b.{0,100}\b(?:names?|speaks?|confesses?|reveals?|testif(?:y|ies))\b",
+        ]
+        if any(re.search(pattern, later_text, re.DOTALL) for pattern in later_patterns):
+            issues.append(_make_issue(
+                "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION",
+                f"Outline may treat the same described person as killed and later active: `{descriptor}`.",
+                file=src,
+                span=descriptor,
+            ))
+            break
+
+    return tuple(issues)
+
+
 def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIssue, ...]:
     from bookforge.core.validators.continuity import _extract_rulebook_section, _extract_unknown_markers, _ledger_has_chapter_entry
     issues: list[ManuscriptIssue] = []
@@ -302,6 +354,8 @@ def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIss
             "Missing or empty outline source file (e.g. phase-0.md or phase-0/*.md).",
             file=src,
         ))
+    else:
+        issues.extend(validate_outline_life_state_issues(book_folder))
 
     for relative_path in REQUIRED_BOOK_FILES:
         path = book_folder / relative_path

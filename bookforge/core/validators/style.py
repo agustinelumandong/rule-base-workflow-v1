@@ -52,6 +52,67 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "legalese",
         ],
     },
+    "historical_terms": {
+        "banned": [
+            "cost center",
+        ],
+        "warn": [],
+        "context_required": [
+            "appeal",
+            "civil judgment",
+            "cooperation will be recorded",
+            "custody",
+            "exhibit",
+            "foreclosure petition",
+            "mortgage lien",
+            "sequestration",
+            "writ",
+        ],
+        "review_only": [
+            "bank packet",
+            "bond",
+            "court",
+            "hearing",
+            "petition",
+            "signature page",
+            "warrant",
+            "witness list",
+        ],
+    },
+    "plot_mode_review": {
+        "enabled": True,
+        "review_only": True,
+        "legal_procedure_threshold": 6,
+        "ban_markers": [
+            "no courtroom",
+            "no courtrooms",
+            "no trial",
+            "no trial scene",
+            "no legal-procedure",
+            "no legal procedure",
+        ],
+        "legal_procedure_terms": [
+            "appeal",
+            "bond",
+            "civil judgment",
+            "court",
+            "courtroom",
+            "custody",
+            "exhibit",
+            "foreclosure",
+            "hearing",
+            "judge",
+            "legal",
+            "lien",
+            "mortgage",
+            "petition",
+            "sequestration",
+            "trial",
+            "warrant",
+            "witness list",
+            "writ",
+        ],
+    },
 }
 
 BANNED_AI_ECHO_WORDS = [
@@ -219,6 +280,29 @@ def check_em_dash_anchors(text: str) -> list[str]:
     return warnings
 
 
+def _normalize_sentence(sentence: str) -> str:
+    words = re.findall(r"\b[A-Za-z']+\b", sentence.lower())
+    return " ".join(words)
+
+
+def check_repeated_sentence_duplicates(text: str) -> list[str]:
+    """Find likely copy-paste sentence duplicates without flagging tiny refrains."""
+    findings: list[str] = []
+    seen: dict[str, str] = {}
+    for sentence in SENTENCE_SPLIT_RE.split(text.strip()):
+        clean = sentence.strip()
+        normalized = _normalize_sentence(clean)
+        if len(normalized.split()) < 5:
+            continue
+        if normalized in seen:
+            findings.append(f"Repeated sentence likely copy-paste: {seen[normalized][:120]}")
+            if len(findings) >= 5:
+                break
+            continue
+        seen[normalized] = clean
+    return findings
+
+
 def forbidden_length_language(text: str) -> list[str]:
     findings: list[str] = []
     patterns = {
@@ -282,6 +366,50 @@ def _as_string_list(value: Any) -> list[str]:
     return [str(item).strip().lower() for item in value if str(item).strip()]
 
 
+def _term_hits(text_lower: str, terms: list[str]) -> list[str]:
+    hits: list[str] = []
+    for term in terms:
+        pattern = rf"\b{re.escape(term)}\b" if re.search(r"\w", term) else re.escape(term)
+        if re.search(pattern, text_lower):
+            hits.append(term)
+    return sorted(set(hits))
+
+
+def check_plot_mode_risk(text: str, book_folder: Path | None = None) -> list[str]:
+    """Warn when a banned plot mode appears to dominate the draft."""
+    from bookforge.core.validators.format import load_project_settings
+
+    settings = load_project_settings(book_folder)
+    review_settings = settings.get("plot_mode_review", {})
+    if not isinstance(review_settings, dict) or not review_settings.get("enabled", True):
+        return []
+
+    if book_folder is None:
+        return []
+    rulebook_path = Path(book_folder) / "rulebook.md"
+    if not rulebook_path.exists():
+        return []
+
+    rulebook_text = rulebook_path.read_text(encoding="utf-8").lower()
+    ban_markers = _as_string_list(review_settings.get("ban_markers"))
+    if not any(marker in rulebook_text for marker in ban_markers):
+        return []
+
+    terms = _as_string_list(review_settings.get("legal_procedure_terms"))
+    text_lower = text.lower()
+    hits = _term_hits(text_lower, terms)
+    threshold = review_settings.get("legal_procedure_threshold", 6)
+    if not isinstance(threshold, int) or threshold < 1:
+        threshold = 6
+    if len(hits) < threshold:
+        return []
+
+    return [
+        "Draft appears to lean into legal-procedure plot mode despite rulebook guardrails; "
+        f"review before rewriting. Terms: {', '.join(hits[:10])}."
+    ]
+
+
 def check_style_review_signals(text: str, settings_start: Path | None = None) -> list[str]:
     from bookforge.core.validators.format import load_project_settings
     settings = load_project_settings(settings_start)
@@ -341,6 +469,19 @@ def check_style_review_signals(text: str, settings_start: Path | None = None) ->
             + ", ".join(sorted(set(banned_terms))[:8])
             + "."
         )
+
+    historical_terms = settings.get("historical_terms", {})
+    if isinstance(historical_terms, dict):
+        severity_labels = (
+            ("banned", "Banned historical/style terms"),
+            ("warn", "Warn historical/style terms"),
+            ("context_required", "Context-required historical/style terms"),
+            ("review_only", "Review-only historical/style terms"),
+        )
+        for key, label in severity_labels:
+            hits = _term_hits(text_lower, _as_string_list(historical_terms.get(key)))
+            if hits:
+                findings.append(f"{label} found; verify timeline and genre fit: {', '.join(hits[:8])}.")
 
     if style_settings.get("warn_short_sentence_runs", False):
         sentences = SENTENCE_SPLIT_RE.split(text)

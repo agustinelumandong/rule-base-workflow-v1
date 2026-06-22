@@ -332,6 +332,153 @@ Write the scene.
         self.assertTrue(any("Forbidden modern" in finding for finding in findings))
         self.assertTrue(any("Consecutive short sentence fragments" in finding for finding in findings))
 
+    def test_historical_terms_support_severity_buckets(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory(dir=".") as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {"enabled": True},
+                        "historical_terms": {
+                            "banned": ["cost center"],
+                            "warn": ["signature page"],
+                            "context_required": ["mortgage lien"],
+                            "review_only": ["custody"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            findings = validator.check_style_review_signals(
+                "That cost center hid the mortgage lien. The signature page put him in custody.",
+                root,
+            )
+
+        self.assertTrue(any("Banned historical/style terms" in finding for finding in findings), findings)
+        self.assertTrue(any("Warn historical/style terms" in finding for finding in findings), findings)
+        self.assertTrue(any("Context-required historical/style terms" in finding for finding in findings), findings)
+        self.assertTrue(any("Review-only historical/style terms" in finding for finding in findings), findings)
+
+    def test_repeated_sentence_copy_paste_detected(self):
+        validator = load_validator()
+        text = (
+            "Draven backed his horse away from the fire. "
+            "The riders held the ridge. "
+            "Draven backed his horse away from the fire."
+        )
+
+        findings = validator.check_repeated_sentence_duplicates(text)
+
+        self.assertEqual(len(findings), 1)
+        self.assertIn("Draven backed his horse away", findings[0])
+
+    def test_repeated_sentence_copy_paste_ignores_tiny_sentences(self):
+        validator = load_validator()
+        findings = validator.check_repeated_sentence_duplicates("No. No. No.")
+
+        self.assertEqual(findings, [])
+
+    def test_plot_mode_risk_requires_rulebook_ban_context(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory(dir=".") as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "plot_mode_review": {
+                            "enabled": True,
+                            "legal_procedure_threshold": 4,
+                            "legal_procedure_terms": ["court", "hearing", "writ", "mortgage"],
+                            "ban_markers": ["no courtroom"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text(
+                "## Hard Story Guardrails\n- No courtroom or trial sequence.\n",
+                encoding="utf-8",
+            )
+
+            findings = validator.check_plot_mode_risk(
+                "The court set a hearing after the writ named the mortgage.",
+                book_folder,
+            )
+
+        self.assertEqual(len(findings), 1)
+        self.assertIn("legal-procedure plot mode", findings[0])
+
+    def test_plot_mode_risk_does_not_warn_without_rulebook_ban(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory(dir=".") as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "plot_mode_review": {
+                            "enabled": True,
+                            "legal_procedure_threshold": 2,
+                            "legal_procedure_terms": ["court", "hearing"],
+                            "ban_markers": ["no courtroom"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text(
+                "## Hard Story Guardrails\n- Court pressure is source-approved.\n",
+                encoding="utf-8",
+            )
+
+            findings = validator.check_plot_mode_risk("The court set a hearing.", book_folder)
+
+        self.assertEqual(findings, [])
+
+    def test_validate_draft_emits_soft_copy_paste_and_plot_mode_warnings(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory(dir=".") as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {"enabled": False},
+                        "plot_mode_review": {
+                            "enabled": True,
+                            "legal_procedure_threshold": 3,
+                            "legal_procedure_terms": ["court", "hearing", "writ"],
+                            "ban_markers": ["no courtroom"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text("- No courtroom or trial sequence.", encoding="utf-8")
+            chapter_folder = book_folder / "chapters" / "chapter-01"
+            chapter_folder.mkdir(parents=True)
+            draft = chapter_folder / "chapter-01.md"
+            draft.write_text(
+                "The court set a hearing under the writ. "
+                "Draven backed his horse away from the fire. "
+                "Draven backed his horse away from the fire.",
+                encoding="utf-8",
+            )
+
+            issues = validator.validate_draft(
+                validator.ChapterFiles(
+                    slug="chapter-01",
+                    label="Chapter 01",
+                    folder=chapter_folder,
+                    draft=draft,
+                    scene_breakdown=chapter_folder / "scene-breakdown.md",
+                    drafting_plan=chapter_folder / "drafting-plan.md",
+                )
+            )
+
+        self.assertTrue(any(issue.rule_id == "VALIDATOR_REPEATED_PROSE" for issue in issues), issues)
+        self.assertTrue(any(issue.rule_id == "VALIDATOR_PLOT_MODE_RISK" for issue in issues), issues)
+
     # ------------------------------------------------------------------
     # Rulebook contract checks
     # ------------------------------------------------------------------
@@ -485,6 +632,56 @@ Text.
         self.assertTrue(
             any("epilogue" in item.lower() for item in failures),
             failures,
+        )
+
+    def test_outline_life_state_contradiction_warns_for_killed_then_treated_person(self):
+        with tempfile.TemporaryDirectory(dir=".") as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "phase-0.md").write_text(
+                """# Source
+
+Chapter 7: Night Guard
+One hired hand is killed under the herd.
+
+Chapter 9: Buyer Doubt
+Eleanor treats the injured hired hand from the stampede and hears him name Broken Brand Draw.
+""",
+                encoding="utf-8",
+            )
+            (book_folder / "mood-lock.md").write_text("## Mood", encoding="utf-8")
+            (book_folder / "chapter-summaries.md").write_text("## Summary", encoding="utf-8")
+            (book_folder / "rulebook.md").write_text(
+                """# Rulebook
+
+## Source Hierarchy
+- phase-0
+
+## Length Handling Rules
+- Book-level guidance only.
+
+## Do Not Invent
+- Keep source-locked.
+
+## Characters
+- Eleanor
+
+## Chapter Continuity Ledger
+### Chapter 7
+- Required Story Movement: Stampede.
+### Chapter 9
+- Required Story Movement: Buyer doubt.
+
+## Unknowns
+None.
+""",
+                encoding="utf-8",
+            )
+
+            issues = validator.validate_required_book_file_issues(book_folder)
+
+        self.assertTrue(
+            any(issue.rule_id == "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION" for issue in issues),
+            issues,
         )
 
     def test_direct_rulebook_edit_deprecated(self):
