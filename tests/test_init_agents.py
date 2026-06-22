@@ -4,6 +4,7 @@
 import unittest
 import shutil
 import subprocess
+import os
 from pathlib import Path
 from argparse import Namespace
 
@@ -13,20 +14,22 @@ from bookforge.cli import cmd_init
 class TestInitAgents(unittest.TestCase):
     def setUp(self):
         # Create a workspace-friendly temp directory for testing init
-        self.tmp_dir = Path("tests/temp_test_init")
+        self.original_cwd = Path.cwd()
+        self.tmp_dir = self.original_cwd / "tests/temp_test_init"
         if self.tmp_dir.exists():
             shutil.rmtree(self.tmp_dir)
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        os.chdir(self.tmp_dir)
 
         # Clean up any potential generated global agent files to avoid pollution
         self.agent_files = [
-            Path("CLAUDE.md"),
-            Path(".cursorrules"),
-            Path("copilot-instructions.md"),
-            Path("GEMINI.md"),
-            Path(".opencode.yml"),
-            Path("CODEX.md"),
-            Path("ZED.md"),
+            self.tmp_dir / "CLAUDE.md",
+            self.tmp_dir / ".cursorrules",
+            self.tmp_dir / "copilot-instructions.md",
+            self.tmp_dir / "GEMINI.md",
+            self.tmp_dir / ".opencode.yml",
+            self.tmp_dir / "CODEX.md",
+            self.tmp_dir / "ZED.md",
         ]
         self.backups = {}
         for f in self.agent_files:
@@ -35,6 +38,8 @@ class TestInitAgents(unittest.TestCase):
                 f.unlink()
 
     def tearDown(self):
+        os.chdir(self.original_cwd)
+
         # Clean up temp test directory
         if self.tmp_dir.exists():
             shutil.rmtree(self.tmp_dir)
@@ -53,7 +58,7 @@ class TestInitAgents(unittest.TestCase):
 
     def test_init_creates_spec_model_routing(self):
         args = Namespace(
-            book_folder=str(self.tmp_dir / "my-new-book"),
+            book_folder="my-new-book",
             carry_from=None,
             agents=None,
             git=False
@@ -62,13 +67,68 @@ class TestInitAgents(unittest.TestCase):
         self.assertEqual(code, 0)
         
         # Verify model-routing.yml was created in spec directory
-        spec_routing = self.tmp_dir / "my-new-book" / "spec" / "model-routing.yml"
+        spec_routing = Path("books/my-new-book/spec/model-routing.yml")
         self.assertTrue(spec_routing.exists())
         self.assertIn("personas:", spec_routing.read_text(encoding="utf-8"))
 
+    def test_init_normalizes_outside_path_into_books_folder(self):
+        args = Namespace(
+            book_folder="drafts/outside-book",
+            carry_from=None,
+            agents=None,
+            git=False
+        )
+        code = cmd_init(args)
+        self.assertEqual(code, 0)
+        self.assertTrue(Path("books/outside-book/spec/model-routing.yml").exists())
+        self.assertFalse(Path("drafts/outside-book").exists())
+
+    def test_init_preserves_absolute_path_inside_books_folder(self):
+        target = (Path.cwd() / "books" / "absolute-book").resolve()
+        args = Namespace(
+            book_folder=str(target),
+            carry_from=None,
+            agents=None,
+            git=False
+        )
+        code = cmd_init(args)
+        self.assertEqual(code, 0)
+        self.assertTrue(Path("books/absolute-book/spec/model-routing.yml").exists())
+
+    def test_init_allows_existing_compatible_book_folder(self):
+        existing = Path("books/existing-book")
+        existing.mkdir(parents=True)
+        (existing / "phase-0.md").write_text("# Existing Book\n", encoding="utf-8")
+
+        args = Namespace(
+            book_folder="books/existing-book",
+            carry_from=None,
+            agents=None,
+            git=False
+        )
+        code = cmd_init(args)
+        self.assertEqual(code, 0)
+        self.assertEqual("# Existing Book\n", (existing / "phase-0.md").read_text(encoding="utf-8"))
+        self.assertTrue((existing / "spec/model-routing.yml").exists())
+
+    def test_init_rejects_existing_incompatible_book_folder(self):
+        existing = Path("books/not-a-book")
+        existing.mkdir(parents=True)
+        (existing / "random.txt").write_text("not a manuscript folder\n", encoding="utf-8")
+
+        args = Namespace(
+            book_folder="books/not-a-book",
+            carry_from=None,
+            agents=None,
+            git=False
+        )
+        code = cmd_init(args)
+        self.assertEqual(code, 1)
+        self.assertFalse((existing / "spec/model-routing.yml").exists())
+
     def test_init_with_agents_creates_files(self):
         args = Namespace(
-            book_folder=str(self.tmp_dir / "my-agent-book"),
+            book_folder="my-agent-book",
             carry_from=None,
             agents="claude,cursor,opencode,gemini",
             git=False
@@ -89,7 +149,7 @@ class TestInitAgents(unittest.TestCase):
 
     def test_init_with_git(self):
         # Create a nested temp directory so git is initialized in a self-contained repo
-        repo_dir = self.tmp_dir / "test-git-repo"
+        repo_dir = Path("test-git-repo")
         repo_dir.mkdir(parents=True, exist_ok=True)
         
         # We must run it from within the repo_dir or specify path.
@@ -107,7 +167,7 @@ class TestInitAgents(unittest.TestCase):
         self.assertEqual(code, 0)
         
         # Check if book folder and spec were created
-        self.assertTrue((repo_dir / "book-folder" / "spec" / "model-routing.yml").exists())
+        self.assertTrue(Path("books/book-folder/spec/model-routing.yml").exists())
 
 
 if __name__ == "__main__":

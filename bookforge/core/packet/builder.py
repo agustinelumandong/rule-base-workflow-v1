@@ -37,6 +37,18 @@ def estimate_tokens(text: str) -> int:
     return len(text) // 4
 
 
+def review_focus_notes() -> str:
+    return "\n".join(
+        [
+            "- Carry forward source-supported experience, wound, debt, guilt, duty, or pressure when it should affect this chapter's choices.",
+            "- Dramatize planning, bonding, friction, proof, and moral-decision conversations when the reader needs to hear the exchange.",
+            "- Bridge major travel, route, message, or time movement with physical work: scouting, weather, fatigue, repairs, camp movement, sign reading, or terrain hazards.",
+            "- Check frontier mechanics for wagons, ferries, horses, firearms, wounds, tracking clues, legal papers, brands, ledgers, and terrain.",
+            "- If betrayal, confession, witness knowledge, planted proof, route timing, or a villain mistake lacks setup/payoff support, mark it `UNKNOWN` instead of inventing it.",
+        ]
+    )
+
+
 def build_context_packet(
     book_folder: Path,
     rulebook_text: str | None = None,
@@ -96,7 +108,7 @@ def render_packet(book_folder: Path, slug: str, task: str = "all") -> str:
             {
                 "name": "Header",
                 "heading": f"# Context Packet: {slug}",
-                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- **Draft File:** `{draft_path}`\n- **Task:** `draft-prose`\n- **Purpose:** Context packet optimized for drafting chapter prose.\n",
+                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- **Draft File:** `{draft_path}`\n- Task: `draft-prose`\n- **Purpose:** Context packet optimized for drafting chapter prose.\n",
                 "limit": 0,
                 "critical": True
             },
@@ -108,6 +120,7 @@ def render_packet(book_folder: Path, slug: str, task: str = "all") -> str:
             {"name": "Mood And Tone Summary", "heading": "## Mood And Tone Summary", "body": compress_text(mood_lock), "limit": 450, "critical": False},
             {"name": "Pacing Guidance", "heading": "## Pacing Guidance", "body": compress_text(pacing_guidance), "limit": 300, "critical": False},
             {"name": "Prior Continuity Out", "heading": "## Prior Continuity Out", "body": compress_text(prior_cont), "limit": 450, "critical": False},
+            {"name": "Review Focus", "heading": "## Review Focus", "body": review_focus_notes(), "limit": 0, "critical": True},
             {"name": "Scene Breakdown", "heading": "## Scene Breakdown", "body": compress_text(scene_breakdown or f"MISSING: {scene_breakdown_file.name}"), "limit": 2200, "critical": True},
         ]
         
@@ -126,7 +139,7 @@ def render_packet(book_folder: Path, slug: str, task: str = "all") -> str:
             {
                 "name": "Header",
                 "heading": f"# Context Packet: {slug}",
-                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- **Task:** `continuity-check`\n- **Purpose:** Context packet optimized for checking continuity and tracking state shifts.\n",
+                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- Task: `continuity-check`\n- **Purpose:** Context packet optimized for checking continuity and tracking state shifts.\n",
                 "limit": 0,
                 "critical": True
             },
@@ -163,7 +176,7 @@ next_chapter_needs:
             {
                 "name": "Header",
                 "heading": f"# Context Packet: {slug}",
-                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- **Task:** `extract-memory`\n- **Purpose:** Context packet optimized for extracting canon mutations and state updates.\n",
+                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- Task: `extract-memory`\n- **Purpose:** Context packet optimized for extracting canon mutations and state updates.\n",
                 "limit": 0,
                 "critical": True
             },
@@ -182,7 +195,7 @@ next_chapter_needs:
             {
                 "name": "Header",
                 "heading": f"# Context Packet: {slug}",
-                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- **Task:** `revise-style`\n- **Purpose:** Context packet optimized for revising style-lock compliance.\n",
+                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- Task: `revise-style`\n- **Purpose:** Context packet optimized for revising style-lock compliance.\n",
                 "limit": 0,
                 "critical": True
             },
@@ -194,12 +207,23 @@ next_chapter_needs:
         validation_report = ""
         try:
             from bookforge.core import validators as context_validator
+            from bookforge.core.issue import Severity
             chapters = context_validator.discover_chapters(book_folder)
             target_ch = [c for c in chapters if c.slug == slug]
             if target_ch:
+                book_issues = context_validator.validate_required_book_file_issues(book_folder)
+                book_passes = [i.message for i in book_issues if i.severity == Severity.INFO]
+                book_failures = [i.message for i in book_issues if i.severity == Severity.HARD]
+                book_warnings = [i.message for i in book_issues if i.severity == Severity.SOFT]
                 phase_sections = context_validator.parse_phase_chapters(book_folder)
                 report = context_validator.validate_chapter(target_ch[0], phase_sections)
-                validation_report = context_validator.render_report([report])
+                validation_report = context_validator.render_report(
+                    book_folder,
+                    book_passes,
+                    book_failures,
+                    book_warnings,
+                    [report],
+                )
             else:
                 validation_report = f"No chapter folders or draft found for {slug}."
         except Exception as e:
@@ -212,7 +236,7 @@ next_chapter_needs:
             {
                 "name": "Header",
                 "heading": f"# Context Packet: {slug}",
-                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- **Task:** `validate-change`\n- **Purpose:** Context packet optimized for reviewing validator outputs.\n",
+                "body": f"- **Book Folder:** `{book_folder}`\n- **Chapter Folder:** `{folder}`\n- Task: `validate-change`\n- **Purpose:** Context packet optimized for reviewing validator outputs.\n",
                 "limit": 0,
                 "critical": True
             },
@@ -247,6 +271,7 @@ next_chapter_needs:
             {"name": "Pacing Guidance", "heading": "## Pacing Guidance", "body": compress_text(pacing_guidance), "limit": 300, "critical": False},
             {"name": "Prior Continuity Out", "heading": "## Prior Continuity Out", "body": compress_text(prior_cont), "limit": 450, "critical": False},
             {"name": "Next Continuity Need", "heading": "## Next Continuity Need", "body": compress_text(next_cont), "limit": 350, "critical": False},
+            {"name": "Review Focus", "heading": "## Review Focus", "body": review_focus_notes(), "limit": 0, "critical": True},
             {"name": "Scene Breakdown", "heading": "## Scene Breakdown", "body": compress_text(scene_breakdown or f"MISSING: {scene_breakdown_file.name}"), "limit": 2200, "critical": True},
             {
                 "name": "Agent Checkpoint",
@@ -303,8 +328,7 @@ next_chapter_needs:
 
         current_text = current_text.rstrip() + f"\n\n<!-- BUDGET_WARNING: Task packet was trimmed to fit {budget} tokens budget. -->\n"
 
-    compressed_text = compress_text(current_text)
-    return compressed_text.rstrip() + "\n"
+    return current_text.rstrip() + "\n"
 
 
 def main() -> int:

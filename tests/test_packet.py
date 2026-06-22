@@ -110,6 +110,7 @@ Darin Mayweather is a sheriff's deputy.
         self.assertIn("## Source Chapter Anchor", pkt)
         self.assertIn("## Chapter Summary", pkt)
         self.assertIn("## Relevant Rulebook Facts", pkt)
+        self.assertIn("## Review Focus", pkt)
         self.assertIn("## Mood And Tone Summary", pkt)
         self.assertIn("## Scene Breakdown", pkt)
 
@@ -120,6 +121,7 @@ Darin Mayweather is a sheriff's deputy.
         self.assertIn("Task: `draft-prose`", pkt)
         self.assertIn("## Compressed Style Lock", pkt)
         self.assertIn("## Relevant Rulebook Facts", pkt)
+        self.assertIn("## Review Focus", pkt)
         self.assertIn("## Scene Breakdown", pkt)
         self.assertNotIn("## Canon Snapshot", pkt)
 

@@ -162,8 +162,8 @@ def classify(
     elif length_state.total_words > length_state.target_max:
         soft_warnings.append("Manuscript is within soft tolerance above target maximum.")
     soft_warnings.extend(report.warnings[0] for report in reports if report.warnings)
-    soft_warnings.extend(_message_of(issue) for issue in rhythm_issues if _severity_of(issue) != Severity.HARD)
-    soft_warnings.extend(_message_of(issue) for issue in narrative_issues if _severity_of(issue) != Severity.HARD)
+    soft_warnings.extend(_message_of(issue) for issue in rhythm_issues if _severity_of(issue) == Severity.SOFT)
+    soft_warnings.extend(_message_of(issue) for issue in narrative_issues if _severity_of(issue) == Severity.SOFT)
 
     hard_rhythm = [issue for issue in rhythm_issues if _severity_of(issue) == Severity.HARD]
     hard_narrative = [issue for issue in narrative_issues if _severity_of(issue) == Severity.HARD]

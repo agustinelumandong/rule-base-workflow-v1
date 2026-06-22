@@ -23,7 +23,7 @@ RHYTHM_RULE_META = {
     "RHYTHM_TOO_FEW_LEAN": (Severity.SOFT, "Too few lean chapters; expected at least {expected} lean chapters."),
     "RHYTHM_TOO_MANY_LONG": (Severity.SOFT, "Too many chapters are over 2400 words; too many carry long treatment."),
     "RHYTHM_PACING_MISMATCH": (Severity.SOFT, "{label} is `{pacing_class}` in pacing plan but has {words} words."),
-    "RHYTHM_EXPANDED_OVERSIZED": (Severity.INFO, "{label} is `expanded` but has {words} words; consider trimming unless source demands it."),
+    "RHYTHM_EXPANDED_OVERSIZED": (Severity.INFO, "{label} is `expanded` and has {words} words; verify the extra length is source-supported."),
     "RHYTHM_EPILOGUE_OVERSIZED": (Severity.INFO, "{label} is `epilogue/teaser` but has {words} words."),
 }
 
@@ -64,7 +64,8 @@ class RhythmReport:
     @property
     def status(self) -> str:
         hard_issues = [i for i in self.issues if i.severity == Severity.HARD]
-        return "FAIL" if hard_issues else ("WARN" if self.issues else "PASS")
+        soft_issues = [i for i in self.issues if i.severity == Severity.SOFT]
+        return "FAIL" if hard_issues else ("WARN" if soft_issues else "PASS")
 
 
 def slug_for_label(label: str) -> str:
@@ -290,4 +291,3 @@ def main() -> int:
         return 2
     print(render_report(report))
     return 0
-

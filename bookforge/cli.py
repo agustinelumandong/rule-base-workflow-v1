@@ -26,10 +26,80 @@ from bookforge.core import packet as packet_module
 from bookforge import config
 
 
+BOOKS_ROOT = Path("books")
+BOOK_COMPATIBILITY_MARKERS = {
+    "phase-0.md",
+    "phase-00.md",
+    "outline.md",
+    "chapter-outline.md",
+    "source-format-scan.md",
+    "rulebook.md",
+    "mood-lock.md",
+    "chapter-summaries.md",
+    "manuscript.md",
+    "compiled-manuscript.md",
+    "loop-state.json",
+    "world-state.json",
+    "chapters",
+    "spec",
+    "canon",
+}
+
+
+def _normalize_init_book_folder(raw_book_folder: str) -> Path:
+    requested = Path(raw_book_folder)
+    if requested.is_absolute():
+        try:
+            return BOOKS_ROOT / requested.relative_to((Path.cwd() / BOOKS_ROOT).resolve())
+        except ValueError:
+            return BOOKS_ROOT / requested.name
+    if requested.parts and requested.parts[0] == BOOKS_ROOT.name:
+        return requested
+    return BOOKS_ROOT / requested.name
+
+
+def _is_compatible_book_folder(book_folder: Path) -> bool:
+    if not book_folder.exists() or not any(book_folder.iterdir()):
+        return True
+    return any((book_folder / marker).exists() for marker in BOOK_COMPATIBILITY_MARKERS)
+
+
+def _has_book_marker(book_folder: Path) -> bool:
+    return any((book_folder / marker).exists() for marker in BOOK_COMPATIBILITY_MARKERS)
+
+
+def _child_book_folders(book_folder: Path) -> list[Path]:
+    if not book_folder.exists():
+        return []
+    return sorted(
+        child
+        for child in book_folder.iterdir()
+        if child.is_dir() and _has_book_marker(child)
+    )
+
+
+def _normalize_books_folder_arg(raw_book_folder: str) -> Path:
+    requested = Path(raw_book_folder)
+    if requested.is_absolute():
+        return requested
+    if requested.parts and requested.parts[0] == BOOKS_ROOT.name:
+        return requested
+    return BOOKS_ROOT / requested
+
+
+def _available_book_names() -> list[str]:
+    if not BOOKS_ROOT.exists():
+        return []
+    return sorted(path.name for path in BOOKS_ROOT.iterdir() if path.is_dir())
+
+
 def cmd_init(args: argparse.Namespace) -> int:
-    book_folder = Path(args.book_folder)
-    if book_folder.exists() and any(book_folder.iterdir()):
-        print(f"Error: Directory '{book_folder}' already exists and is not empty.", file=sys.stderr)
+    book_folder = _normalize_init_book_folder(args.book_folder)
+    if not _is_compatible_book_folder(book_folder):
+        print(
+            f"Error: Directory '{book_folder}' already exists but does not look like a BookForge book folder.",
+            file=sys.stderr,
+        )
         return 1
 
     book_folder.mkdir(parents=True, exist_ok=True)
@@ -201,10 +271,33 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 
 def cmd_status(args: argparse.Namespace) -> int:
-    book_folder = Path(args.book_folder)
+    if not getattr(args, "book_folder", None):
+        print("Error: status requires a book name or folder.", file=sys.stderr)
+        print("Usage: bf status <book-name>")
+        books = _available_book_names()
+        if books:
+            print("\nAvailable books:")
+            for book in books:
+                print(f"  - {book}")
+        else:
+            print("\nNo books found in books/.")
+        return 2
+
+    book_folder = _normalize_books_folder_arg(args.book_folder)
     if not book_folder.exists():
         print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
         return 2
+    child_books = _child_book_folders(book_folder)
+    if child_books and not _has_book_marker(book_folder):
+        print(f"Available books in {book_folder.name}:")
+        for child in child_books:
+            try:
+                display_path = child.relative_to(BOOKS_ROOT)
+            except ValueError:
+                display_path = child
+            print(f"  - {display_path}")
+        print(f"\nRun 'bf status <book-name>/<book-folder>' for a specific book.")
+        return 0
 
     print(f"=== BookForge Status for {book_folder.name} ===")
     from bookforge.core.headroom import HAS_OFFICIAL_HEADROOM
@@ -246,13 +339,13 @@ def cmd_status(args: argparse.Namespace) -> int:
         print("\nChapter Rhythm:")
         if rhythm_report.issues:
             for issue in rhythm_report.issues:
-                print(f"  [{issue.level}] {issue.message}")
+                print(f"  [{issue.severity.name}] {issue.message}")
         else:
             print("  [PASS] Chapter rhythm variance is healthy.")
     except (OSError, UnicodeDecodeError, ZeroDivisionError, ValueError, KeyError, AttributeError) as e:
         print(f"\nChapter Rhythm: [WARN] Could not analyze rhythm ({e})")
 
-    print("\nRun 'bf run-loop <book_folder>' to see the next workflow action.")
+    print(f"\nRun 'bf run-loop {book_folder}' to see the next workflow action.")
     return 0
 
 
@@ -935,7 +1028,7 @@ def main() -> int:
 
     # status
     parser_status = subparsers.add_parser("status", help="Show pipeline diagnostics and validations")
-    parser_status.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_status.add_argument("book_folder", nargs="?", help="Book name or path under books/")
 
     # run-loop
     parser_run = subparsers.add_parser("run-loop", help="Check loop state and print next action")
@@ -1145,12 +1238,10 @@ def main() -> int:
     args = parser.parse_args()
 
     if not args.command:
-        # Default to `status` (cross-platform) instead of `tui`, which uses POSIX-only
-        # termios/tty and crashes on Windows. `bf tui` remains available as an explicit opt-in.
-        # When no subcommand was given, argparse parsed against the root parser, so the
-        # `status` subparser's `book_folder` default never applied — set it explicitly.
+        # Default to the status command's book-selection prompt instead of the
+        # POSIX-only TUI, which crashes on Windows.
         args.command = "status"
-        args.book_folder = "books/book-example"
+        args.book_folder = None
 
     commands = {
         "init": cmd_init,
@@ -1189,4 +1280,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
