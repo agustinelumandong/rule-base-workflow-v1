@@ -2,7 +2,7 @@
 
 - **Book Folder:** `books\book-example`
 - **Overall Status:** FAIL
-- **Length Status:** Run `bf status` or `bf status <book_folder>` to view rhythm and word limits.
+- **Length Status:** Run `bf status <book_folder>` to view rhythm and word limits.
 
 ## Book Files
 
@@ -15,4 +15,3 @@
 
 | Chapter | Status | Failures | Warnings |
 | --- | --- | ---: | ---: |
-
