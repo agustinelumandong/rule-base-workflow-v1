@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from bookforge.core import compiler
@@ -26,6 +27,19 @@ class CompileManuscriptTests(unittest.TestCase):
             book_folder = Path(tmp)
             title = compiler.read_title(book_folder)
             self.assertIsNone(title)
+
+    def test_default_output_path_for_formatted_doc(self):
+        compiler = load_compiler()
+        book_folder = Path("books/example")
+
+        self.assertEqual(
+            compiler.default_output_path(book_folder),
+            book_folder / "compiled-manuscript.md",
+        )
+        self.assertEqual(
+            compiler.default_output_path(book_folder, formatted_doc=True),
+            book_folder / "docs" / "formatted-manuscript.docx",
+        )
 
     def test_discover_drafts_and_compile(self):
         compiler = load_compiler()
@@ -82,6 +96,59 @@ class CompileManuscriptTests(unittest.TestCase):
             output_file = book_folder / "output.md"
             with self.assertRaises(RuntimeError):
                 compiler.compile_manuscript(book_folder, output_file, include_title=False)
+
+    def test_format_manuscript_docx(self):
+        compiler = load_compiler()
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "phase-0.md").write_text("# Test Title", encoding="utf-8")
+
+            chapters_dir = book_folder / "chapters"
+            ch1_dir = chapters_dir / "chapter-01"
+            ch1_dir.mkdir(parents=True)
+            (ch1_dir / "chapter-01.md").write_text(
+                "# Chapter 1: Dust\n\nChapter one draft prose.",
+                encoding="utf-8",
+            )
+
+            epi_dir = chapters_dir / "epilogue"
+            epi_dir.mkdir(parents=True)
+            (epi_dir / "epilogue.md").write_text(
+                "# Epilogue: Road\n\nEpilogue draft prose.",
+                encoding="utf-8",
+            )
+
+            output_file = book_folder / "formatted.docx"
+            draft_count, word_count = compiler.format_manuscript_docx(
+                book_folder,
+                output_file,
+                include_title=True,
+            )
+
+            self.assertEqual(draft_count, 2)
+            self.assertGreater(word_count, 0)
+            self.assertTrue(zipfile.is_zipfile(output_file))
+
+            with zipfile.ZipFile(output_file) as archive:
+                names = set(archive.namelist())
+                self.assertIn("[Content_Types].xml", names)
+                self.assertIn("_rels/.rels", names)
+                self.assertIn("word/document.xml", names)
+                self.assertIn("word/styles.xml", names)
+                document_xml = archive.read("word/document.xml").decode("utf-8")
+
+            self.assertIn("Test Title", document_xml)
+            self.assertIn("Contents", document_xml)
+            self.assertIn("Chapter 1: Dust", document_xml)
+            self.assertIn("Epilogue: Road", document_xml)
+            self.assertIn("Chapter one draft prose.", document_xml)
+            self.assertIn("Epilogue draft prose.", document_xml)
+            self.assertIn('<w:br w:type="page"/>', document_xml)
+            self.assertIn('<w:pStyle w:val="ChapterTitle"/>', document_xml)
+            self.assertNotIn("Formatted Manuscript", document_xml)
+            self.assertNotIn("Book Folder:", document_xml)
+            self.assertNotIn("Draft Files:", document_xml)
+            self.assertNotIn("Manuscript Words:", document_xml)
 
 
 if __name__ == "__main__":

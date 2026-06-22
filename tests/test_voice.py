@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Unit tests for BookForge Advanced Style and Voice Gating."""
 
+import json
+import tempfile
+from pathlib import Path
 import unittest
 from bookforge.core import voice
 
@@ -20,6 +23,74 @@ class TestVoiceGating(unittest.TestCase):
         failures, warnings = voice.validate_dialogue_style(draft)
         self.assertTrue(len(warnings) >= 2)  # howdy, partner, muttered
         self.assertTrue(any("Texas slang" in w for w in warnings))
+
+    def test_validate_dialogue_style_frontier_profile_slang_warning(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_profiles": {
+                            "fallback_profile": "frontier_1880s",
+                            "year_buckets": [
+                                {
+                                    "name": "frontier_1880s",
+                                    "start": 1880,
+                                    "end": 1899,
+                                }
+                            ],
+                            "profiles": {
+                                "frontier_1880s": {
+                                    "voice": {
+                                        "banned_slang": ["partner"],
+                                    }
+                                }
+                            },
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "rulebook.md").write_text("**Time Period:** 1883\n", encoding="utf-8")
+
+            failures, warnings = voice.validate_dialogue_style('"All right, partner."', root)
+
+        self.assertEqual(len(failures), 0)
+        self.assertTrue(any("Texas slang" in warning for warning in warnings))
+
+    def test_validate_dialogue_style_transitional_profile_relaxes_slang(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_profiles": {
+                            "fallback_profile": "frontier_transition_1900s",
+                            "year_buckets": [
+                                {
+                                    "name": "frontier_transition_1900s",
+                                    "start": 1900,
+                                    "end": 1909,
+                                }
+                            ],
+                            "profiles": {
+                                "frontier_transition_1900s": {
+                                    "voice": {
+                                        "banned_slang": [],
+                                    }
+                                }
+                            },
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "rulebook.md").write_text("**Time Period:** 1903\n", encoding="utf-8")
+
+            failures, warnings = voice.validate_dialogue_style('"Howdy, partner."', root)
+
+        self.assertEqual(len(failures), 0)
+        self.assertEqual(warnings, [])
 
     def test_validate_dialogue_em_dash_spacing(self):
         # Spaced em dash action anchor -> valid

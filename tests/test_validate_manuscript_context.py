@@ -332,6 +332,113 @@ Write the scene.
         self.assertTrue(any("Forbidden modern" in finding for finding in findings))
         self.assertTrue(any("Consecutive short sentence fragments" in finding for finding in findings))
 
+    def test_style_review_signals_resolves_frontier_profile_from_rulebook(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {
+                            "enabled": True,
+                            "banned_terms": [],
+                        },
+                        "style_profiles": {
+                            "fallback_profile": "default",
+                            "year_buckets": [
+                                {
+                                    "name": "frontier_1880s",
+                                    "start": 1880,
+                                    "end": 1899,
+                                }
+                            ],
+                            "profiles": {
+                                "frontier_1880s": {
+                                    "style_review": {"banned_terms": ["reckon"]},
+                                },
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "rulebook.md").write_text(
+                "**Time Period:** Hard Winter of 1880-1881\n",
+                encoding="utf-8",
+            )
+            findings = validator.check_style_review_signals(
+                "He reckon this was the only way through.",
+                root,
+            )
+
+        self.assertTrue(any("Forbidden modern" in finding for finding in findings), findings)
+
+    def test_style_review_signals_falls_back_to_default_without_matching_year(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {
+                            "enabled": True,
+                            "banned_terms": ["tactical position"],
+                        },
+                        "style_profiles": {
+                            "fallback_profile": "default",
+                            "year_buckets": [
+                                {
+                                    "name": "frontier_1880s",
+                                    "start": 1880,
+                                    "end": 1899,
+                                }
+                            ],
+                            "profiles": {
+                                "default": {},
+                                "frontier_1880s": {
+                                    "style_review": {"banned_terms": ["reckon"]},
+                                },
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            findings = validator.check_style_review_signals(
+                "He was moved by tactical position and grit.",
+                root,
+            )
+
+        self.assertTrue(any("Forbidden modern" in finding for finding in findings), findings)
+        self.assertFalse(any("reckon" in finding.lower() for finding in findings), findings)
+
+    def test_style_review_signals_malformed_profile_config_falls_back(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {
+                            "enabled": True,
+                            "banned_terms": ["move fast"],
+                        },
+                        "style_profiles": {
+                            "fallback_profile": "default",
+                            "year_buckets": "bad",
+                            "profiles": "broken",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            findings = validator.check_style_review_signals(
+                "Move fast and leave no trail.",
+                root,
+            )
+
+        self.assertTrue(any("Forbidden modern" in finding for finding in findings), findings)
+
     def test_historical_terms_support_severity_buckets(self):
         validator = load_validator()
         with tempfile.TemporaryDirectory(dir=".") as tmp:
