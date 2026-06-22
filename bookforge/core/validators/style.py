@@ -79,6 +79,38 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "witness list",
         ],
     },
+    "style_profiles": {
+        "fallback_profile": "default",
+        "year_buckets": [
+            {
+                "name": "frontier_1880s",
+                "start": 1880,
+                "end": 1899,
+            },
+            {
+                "name": "frontier_transition_1900s",
+                "start": 1900,
+                "end": 1912,
+            },
+        ],
+        "profiles": {
+            "default": {
+                "voice": {
+                    "banned_slang": ["y'all", "howdy", "partner", "reckon", "drawl"],
+                },
+            },
+            "frontier_1880s": {
+                "voice": {
+                    "banned_slang": ["y'all", "howdy", "partner", "reckon", "drawl"],
+                },
+            },
+            "frontier_transition_1900s": {
+                "voice": {
+                    "banned_slang": ["y'all", "drawl", "reckon"],
+                },
+            },
+        },
+    },
     "plot_mode_review": {
         "enabled": True,
         "review_only": True,
@@ -186,6 +218,179 @@ STOPWORDS = {
     "those", "through", "too", "under", "until", "upon", "very", "was", "were", "what", "when",
     "where", "which", "while", "who", "whom", "why", "with", "would", "you", "your",
 }
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _read_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value.strip())
+        except ValueError:
+            return None
+    return None
+
+
+def _deep_merge_settings(base: dict[str, Any], override: Any) -> dict[str, Any]:
+    if not isinstance(base, dict):
+        return _as_dict(override)
+    override_map = _as_dict(override)
+    merged: dict[str, Any] = {}
+    for key, value in base.items():
+        if isinstance(value, dict):
+            merged[key] = _deep_merge_settings(value, override_map.get(key))
+        elif key in override_map:
+            merged[key] = override_map[key]
+        else:
+            merged[key] = value
+    for key, value in override_map.items():
+        if key not in merged:
+            merged[key] = value
+    return merged
+
+
+_TIME_PERIOD_FIELD_RE = re.compile(
+    r"(?im)^\s*(?:[-*]\s*)?(?:\*{0,2})?"
+    r"(time period|era|period)"
+    r"(?:\*{0,2})?\s*[:/\-]?\s*(.+)$"
+)
+_YEAR_RE = re.compile(r"\b(?:19[0-9]{2}|18[0-9]{2})\b")
+_DECADE_RE = re.compile(r"\b((?:18|19)\d)0s\b", re.IGNORECASE)
+
+
+def _extract_time_period_text(rulebook_text: str) -> str:
+    try:
+        match = re.search(r"\*\*(Time Period|Era|Period)[:/]?\*\*\s*(.+)", rulebook_text, re.IGNORECASE)
+        if match:
+            return match.group(2).split("\n")[0].strip()
+    except Exception:
+        pass
+
+    for line in rulebook_text.splitlines():
+        match = _TIME_PERIOD_FIELD_RE.match(line)
+        if match:
+            return match.group(2).split("\n")[0].strip()
+    return ""
+
+
+def _extract_year_from_text(value: str) -> int | None:
+    if not value:
+        return None
+
+    normalized = value.strip()
+    match = _YEAR_RE.search(normalized)
+    if match:
+        return _read_int(match.group(0))
+
+    decade_match = _DECADE_RE.search(normalized)
+    if decade_match:
+        return _read_int(f"{decade_match.group(1)}0")
+    return None
+
+
+def _extract_book_year_from_rulebook(rulebook_text: str) -> int | None:
+    return _extract_year_from_text(_extract_time_period_text(rulebook_text))
+
+
+def _extract_book_year_from_source_text(source_text: str) -> int | None:
+    match = re.search(r"(?i)Period:\s*.*?(\d{4})", source_text)
+    if match:
+        year = _read_int(match.group(1))
+        if year is not None:
+            return year
+    return _extract_year_from_text(source_text)
+
+
+def _extract_book_year_from_book_folder(project_root: Path) -> int | None:
+    try:
+        rulebook_path = project_root / "rulebook.md"
+        if rulebook_path.exists():
+            rulebook_text = rulebook_path.read_text(encoding="utf-8")
+            year = _extract_book_year_from_rulebook(rulebook_text)
+            if year is not None:
+                return year
+    except OSError:
+        pass
+
+    try:
+        from bookforge.core.scanner import source_path
+
+        source = source_path(project_root)
+        if source and source.exists():
+            source_text = source.read_text(encoding="utf-8")
+            year = _extract_book_year_from_source_text(source_text)
+            if year is not None:
+                return year
+    except Exception:
+        pass
+
+    return None
+
+
+def resolve_style_profile(
+    settings_start: Path | None = None,
+) -> tuple[str, dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Resolve era profile + merged style/historical/voice settings."""
+    from bookforge.core.validators.format import find_project_root, load_project_settings
+
+    settings = load_project_settings(settings_start)
+    project_root = find_project_root(settings_start)
+
+    style_profiles = _as_dict(settings.get("style_profiles"))
+    year_buckets = style_profiles.get("year_buckets")
+    if not isinstance(year_buckets, list):
+        year_buckets = []
+    profiles = _as_dict(style_profiles.get("profiles"))
+    fallback_profile = "default"
+    configured_fallback = style_profiles.get("fallback_profile")
+    if isinstance(configured_fallback, str) and configured_fallback.strip():
+        fallback_profile = configured_fallback.strip()
+    if fallback_profile not in profiles:
+        fallback_profile = "default"
+
+    book_year = _extract_book_year_from_book_folder(project_root)
+    profile_name = fallback_profile
+    if isinstance(book_year, int):
+        for bucket in year_buckets:
+            if not isinstance(bucket, dict):
+                continue
+            name = bucket.get("name")
+            if not isinstance(name, str) or not name.strip():
+                continue
+            start = _read_int(bucket.get("start"))
+            end = _read_int(bucket.get("end"))
+            if start is None:
+                continue
+            if end is None:
+                end = start
+            if start > end:
+                start, end = end, start
+            if start <= book_year <= end:
+                profile_name = name.strip()
+                break
+
+    if profile_name not in profiles:
+        profile_name = "default"
+
+    base_style = _as_dict(settings.get("style_review"))
+    base_historical = _as_dict(settings.get("historical_terms"))
+    profile_settings = _as_dict(profiles.get(profile_name))
+    resolved_style_review = _deep_merge_settings(base_style, profile_settings.get("style_review"))
+    resolved_historical_terms = _deep_merge_settings(base_historical, profile_settings.get("historical_terms"))
+    voice_settings = _as_dict(profile_settings.get("voice"))
+
+    return (
+        profile_name,
+        resolved_style_review,
+        resolved_historical_terms,
+        voice_settings,
+    )
 
 
 def contains_any(text: str, words: list[str], case_sensitive: bool = False) -> list[str]:
@@ -411,11 +616,20 @@ def check_plot_mode_risk(text: str, book_folder: Path | None = None) -> list[str
 
 
 def check_style_review_signals(text: str, settings_start: Path | None = None) -> list[str]:
-    from bookforge.core.validators.format import load_project_settings
-    settings = load_project_settings(settings_start)
-    style_settings = settings.get("style_review", {})
+    try:
+        _, style_settings, historical_terms, _ = resolve_style_profile(settings_start)
+    except Exception:
+        from bookforge.core.validators.format import load_project_settings
+        settings = load_project_settings(settings_start)
+        style_settings = settings.get("style_review", {})
+        historical_terms = _as_dict(settings.get("historical_terms"))
+
+    style_settings = _as_dict(style_settings)
     if not isinstance(style_settings, dict) or not style_settings.get("enabled", True):
         return []
+    if not isinstance(historical_terms, dict):
+        historical_terms = {}
+    historical_terms = _as_dict(historical_terms)
 
     findings: list[str] = []
     max_summary_words = style_settings.get("max_summary_words_without_dialogue", 120)
@@ -470,7 +684,6 @@ def check_style_review_signals(text: str, settings_start: Path | None = None) ->
             + "."
         )
 
-    historical_terms = settings.get("historical_terms", {})
     if isinstance(historical_terms, dict):
         severity_labels = (
             ("banned", "Banned historical/style terms"),

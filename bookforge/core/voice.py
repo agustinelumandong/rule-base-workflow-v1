@@ -6,6 +6,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from bookforge.core.validators.style import resolve_style_profile
+
 # Banned Texas Slang (unless explicitly requested)
 BANNED_TEXAS_SLANG = ["y'all", "howdy", "partner", "reckon", "drawl"]
 
@@ -13,16 +15,32 @@ BANNED_TEXAS_SLANG = ["y'all", "howdy", "partner", "reckon", "drawl"]
 DISCOURAGED_DIALOGUE_TAGS = ["said", "asked", "shouted", "replied", "whispered", "muttered", "cried", "exclaimed"]
 
 
-def validate_dialogue_style(draft_text: str) -> tuple[list[str], list[str]]:
+def validate_dialogue_style(
+    draft_text: str,
+    settings_start: Path | None = None,
+) -> tuple[list[str], list[str]]:
     """Validates dialogue rules: em dash spacing, dialogue tag avoidance, and slang.
     
     Returns (failures, warnings).
     """
     failures = []
     warnings = []
-    
+
+    try:
+        _, _, _, voice_settings = resolve_style_profile(settings_start)
+        if "banned_slang" in voice_settings:
+            raw_banned_slang = voice_settings.get("banned_slang")
+            if isinstance(raw_banned_slang, list):
+                banned_slang = [str(item).strip().lower() for item in raw_banned_slang if str(item).strip()]
+            else:
+                banned_slang = [s.lower() for s in BANNED_TEXAS_SLANG]
+        else:
+            banned_slang = [s.lower() for s in BANNED_TEXAS_SLANG]
+    except Exception:
+        banned_slang = [s.lower() for s in BANNED_TEXAS_SLANG]
+
     # 1. Check for Texas slang
-    for slang in BANNED_TEXAS_SLANG:
+    for slang in banned_slang:
         pattern = re.compile(rf"\b{re.escape(slang)}\b", re.IGNORECASE)
         if pattern.search(draft_text):
             warnings.append(f"Slang Warning: Found discouraged Texas slang '{slang}' in draft.")

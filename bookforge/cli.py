@@ -384,14 +384,25 @@ def cmd_compile(args: argparse.Namespace) -> int:
         print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
         return 2
 
-    output_path = Path(args.output) if args.output else book_folder / compiler_module.DEFAULT_OUTPUT_NAME
+    output_path = (
+        Path(args.output)
+        if args.output
+        else compiler_module.default_output_path(book_folder, args.formatted_doc)
+    )
 
     try:
-        draft_count, word_count = compiler_module.compile_manuscript(
-            book_folder=book_folder,
-            output_path=output_path,
-            include_title=not args.no_title,
-        )
+        if args.formatted_doc:
+            draft_count, word_count = compiler_module.format_manuscript_docx(
+                book_folder=book_folder,
+                output_path=output_path,
+                include_title=not args.no_title,
+            )
+        else:
+            draft_count, word_count = compiler_module.compile_manuscript(
+                book_folder=book_folder,
+                output_path=output_path,
+                include_title=not args.no_title,
+            )
     except RuntimeError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 2
@@ -400,6 +411,7 @@ def cmd_compile(args: argparse.Namespace) -> int:
     print("")
     print(f"- **Book Folder:** `{book_folder}`")
     print(f"- **Output:** `{output_path}`")
+    print(f"- **Format:** {'docx' if args.formatted_doc else 'compiled'}")
     print(f"- **Draft Files Compiled:** {draft_count}")
     print(f"- **Compiled Words:** {word_count}")
     return 0
@@ -1043,6 +1055,11 @@ def main() -> int:
     parser_compile.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_compile.add_argument("--output", help="Output Markdown path")
     parser_compile.add_argument("--no-title", action="store_true", help="Do not prepend book title")
+    parser_compile.add_argument(
+        "--formatted-doc",
+        action="store_true",
+        help="Generate a formatted Word .docx manuscript with title page and contents",
+    )
 
     # pacing
     parser_pacing = subparsers.add_parser("pacing", help="Generate a source-locked chapter pacing plan")

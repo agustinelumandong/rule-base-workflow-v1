@@ -325,7 +325,7 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
         except (json.JSONDecodeError, OSError, UnicodeDecodeError, KeyError):
             pass
 
-    v_failures, v_warnings = voice_module.validate_dialogue_style(text)
+    v_failures, v_warnings = voice_module.validate_dialogue_style(text, chapter.draft)
     for failure in v_failures:
         issues.append(_make_issue(
             "VALIDATOR_DIALOGUE_STYLE",
