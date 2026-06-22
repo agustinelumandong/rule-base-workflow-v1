@@ -12,6 +12,8 @@ Use this checklist during manual or model-assisted QA reviews to enforce Western
 - [ ] **No Clichés:** Avoid one-dimensional stock characters (the pristine schoolteacher, the mindless bloodthirsty outlaw).
 - [ ] **Nuanced Representation:** Strive for depth and historical reality when portraying women, Native Americans, and minority groups. Ensure they are active participants in the narrative rather than mere background props.
 - [ ] **Moral Ambiguity:** Verify that conflicts contain moral complexity and avoid simplistic good-versus-evil portrayals.
+- [ ] **Physical Sign Logic:** Confirm that tracks, boot marks, wounds, gear, blood, dust, and horse sign support only plausible conclusions; flag exact age, identity, motive, or timing guesses when the sign is too weak or later facts contradict them.
+- [ ] **Role-Appropriate Voice:** Check that children, hostages, wounded civilians, guides, lawmen, and outlaws sound distinct under pressure rather than sharing one stoic adult cadence.
 
 ## 3. Atmospheric and Sensory Integration
 - [ ] **Environment Interaction:** Ensure the setting actively impacts the scene's events (heat slowing a chase, wind scattering track prints).

@@ -72,6 +72,53 @@
       "witness list"
     ]
   },
+  "style_profiles": {
+    "fallback_profile": "default",
+    "year_buckets": [
+      {
+        "name": "frontier_1880s",
+        "start": 1880,
+        "end": 1899
+      },
+      {
+        "name": "frontier_transition_1900s",
+        "start": 1900,
+        "end": 1912
+      }
+    ],
+    "profiles": {
+      "default": {
+        "voice": {
+          "banned_slang": [
+            "y'all",
+            "howdy",
+            "partner",
+            "reckon",
+            "drawl"
+          ]
+        }
+      },
+      "frontier_1880s": {
+        "voice": {
+          "banned_slang": [
+            "y'all",
+            "howdy",
+            "partner",
+            "reckon",
+            "drawl"
+          ]
+        }
+      },
+      "frontier_transition_1900s": {
+        "voice": {
+          "banned_slang": [
+            "y'all",
+            "drawl"
+          ]
+        }
+      }
+    }
+  },
   "plot_mode_review": {
     "enabled": true,
     "review_only": true,

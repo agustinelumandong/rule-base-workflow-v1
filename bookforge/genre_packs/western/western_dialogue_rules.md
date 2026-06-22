@@ -10,6 +10,7 @@ This document outlines constraints and guidelines for character dialogue in West
 - **Period Accuracy:** Avoid modern idioms, clinical phrasing, or slang that originated in the 20th or 21st century.
 - **Avoid Caricature:** Do not write cartoonish or exaggerated cowboy dialogue ("Yeehaw!", "Darn tootin'"). Use authentic historical vocabulary sparingly to maintain readability.
 - **Distinct Accents and Cadences:** Give each character a distinct verbal rhythm. A formal Eastern speculator should sound fundamentally different from a veteran trail hand.
+- **Age and Pressure:** Children, hostages, and wounded civilians should sound scared, practical, and less controlled under pressure. Veteran lawmen can stay clipped; guides and old hands can carry more terrain-specific warnings without slipping into parody dialect.
 
 ## 3. Em Dash Action Anchors
 - **No Said-Bookisms:** Avoid weak speech tags ("said," "replied," "shouted"). Instead, anchor dialogue with objective physical actions using em dashes.

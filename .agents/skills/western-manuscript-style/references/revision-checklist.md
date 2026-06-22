@@ -12,6 +12,7 @@ Use this checklist after drafting or when the user asks for cleanup, continuity 
 - Timeline, time of day, weather, wounds, and travel distance are consistent.
 - Weapons, horses, clothing, gear, and injuries remain tracked.
 - Character knowledge matches what each character has actually seen or learned.
+- Physical clues such as tracks, boot marks, wounds, gear, dust, blood, or horse sign support only plausible POV conclusions; do not infer exact age, identity, motive, or timing from weak sign unless source-backed.
 - Geography and room/street positions stay coherent.
 
 ## POV
@@ -28,6 +29,7 @@ Use this checklist after drafting or when the user asks for cleanup, continuity 
 - Each character has distinct phrasing and rhythm.
 - Dialogue is short, direct, and not overexplaining the scene.
 - Dialect is restrained and readable.
+- Children, hostages, wounded civilians, and frightened people sound age- and pressure-appropriate rather than like another stoic adult.
 
 ## Style Cleanup
 

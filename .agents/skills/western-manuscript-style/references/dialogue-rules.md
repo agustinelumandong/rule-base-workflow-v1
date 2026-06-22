@@ -27,6 +27,8 @@ Before returning dialogue, check:
 - The lawman sounds controlled and direct.
 - The outlaw sounds dangerous without cartoon villain speeches.
 - The civilian sounds grounded in work, family, fear, duty, or survival.
+- Children and young hostages sound younger under pressure: shorter, scared, practical, and less controlled than veteran lawmen or trail hands.
+- Guides, scouts, and old hands may carry more terrain-specific phrasing or warning rhythm without drifting into caricature dialect.
 - The speaker's social position and experience show in phrasing.
 - No two major characters sound interchangeable.
 

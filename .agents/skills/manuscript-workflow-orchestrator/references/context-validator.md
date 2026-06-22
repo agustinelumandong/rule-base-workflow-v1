@@ -55,6 +55,8 @@ The AI must answer:
 - Does POV stay controlled?
 - Does Western style lock hold?
 - Does expansion deepen approved material instead of padding?
+- Do physical clues such as tracks, wounds, gear, horse sign, or drag marks support only plausible POV conclusions, without unsupported exact age or identity guesses?
+- Do major speakers have distinct, role-appropriate voices, especially children, hostages, wounded civilians, guides, and lawmen under pressure?
 
 If the AI reports failures, revise the chapter or scene breakdown before continuing.
 
