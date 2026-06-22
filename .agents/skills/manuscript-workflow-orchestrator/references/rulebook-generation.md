@@ -20,7 +20,7 @@ Create a durable series bible with these sections:
 - Continuity facts: timeline, prior wounds, alliances, grudges, dead characters, known secrets.
 - Series arc: recurring conflict, unresolved betrayal, future threat, romantic tension, next-book hook.
 - Current Book Locks: book-specific banned names, allowed exceptions, plot-mechanics constraints, and style priorities for the current target book by default. Do not use this section to bypass project-level bans such as globally banned names. Broader series/system cleanup must be explicit.
-- Plot Mechanics Guardrails: when the source uses a frame-up, counterfeit item, false evidence, altered brand, planted clue, hidden saboteur, or witness confession, state the practical mechanism and proof path. Name who can know the truth, why they know it, what physical evidence exists, and how the tactic preserves rather than destroys the evidence needed for discovery.
+- Plot Mechanics Guardrails: when the source uses a frame-up, counterfeit item, false evidence, altered brand, planted clue, hidden saboteur, or witness confession, state the practical mechanism and proof path. Name who can know the truth, why they know it, what physical evidence exists, how the tactic preserves rather than destroys the evidence needed for discovery, and what responsible action the protagonists take once they know the threat exists.
 - Ending State for Book N+1: bullet list of where each major character stands at the book's close — who is dead/alive/escaped/compromised, what secrets are destroyed or still hidden, what debts or obligations carry forward, any world-level change, and any named hook for the next book.
 - Unknowns: important missing facts marked as `UNKNOWN`.
 
@@ -69,6 +69,8 @@ When a book uses a setup such as altered cattle brands, counterfeit goods, plant
 - record why the evidence survives long enough to be discovered,
 - record who knows the antagonist's identity and why,
 - record any physical proof the protagonist can inspect,
+- record the setup/payoff reason for planted agents, witness turns, confessions, route arrivals, and villain mistakes,
+- record what the protagonists do to document, isolate, warn, or preserve evidence before moving on,
 - keep the villain's power personal, outlaw, coercive, or tactical rather than institutional, property-based, business-based, or political.
 
 ## Outline Quality Gate

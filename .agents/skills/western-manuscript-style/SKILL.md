@@ -34,7 +34,8 @@ Do not invent continuity facts when source material is missing. Mark assumptions
    - **Plot Consistency:** Check consistent names, roles, and locations. Verify no modern concepts, clinical words, or slang are used.
    - **Temporal Logic:** Check realistic travel durations, time of day tracking, and a believable recovery timeline for injuries.
 11. Run a dialogue/voice pass when characters speak. Keep each character's diction distinct and consistent with their role.
-12. For final polish, make targeted edits. Do not regenerate broad passages unless the user asks for a rewrite.
+12. Run a frontier mechanics pass when the scene uses wagons, ferries, horses, reins, firearms, wounds, tracking signs, terrain, written proof, brands, or ledgers. Flag implausible mechanics as review findings unless a narrow validator rule exists.
+13. For final polish, make targeted edits. Do not regenerate broad passages unless the user asks for a rewrite.
 
 ## References
 
@@ -47,6 +48,7 @@ Do not invent continuity facts when source material is missing. Mark assumptions
 - Keep prose literal, physical, and grounded.
 - Lock POV per scene.
 - Keep dialogue short and direct.
+- Dramatize important planning, bonding, friction, proof, and moral-decision conversations when the reader needs to hear the exchange; avoid replacing them with narrative summary.
 - Avoid generic AI filler, modern vocabulary drift, and overexplained psychology.
 - Avoid plots involving syndicates, water rights, land grabs, property disputes, and shady business schemes. Focus on classic Western adventure themes (manhunts, outlaws, robberies, betrayals, trail survival).
 - Preserve the user's plot intent and established tone.

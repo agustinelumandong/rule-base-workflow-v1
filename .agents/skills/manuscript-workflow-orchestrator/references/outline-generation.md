@@ -115,6 +115,32 @@ Before approving an outline, verify:
 - [ ] If the plot uses a frame-up, planted evidence, counterfeit goods, altered brands, or forged documents, the tactic has a practical delivery path and does not destroy the evidence the antagonist needs discovered.
 - [ ] If livestock branding is part of a frame-up, the outline distinguishes plausible brand alteration from simple double-branding. Use a running iron, old scar/new burn contrast, or another source-supported physical clue when the story relies on proving forgery.
 - [ ] The villain's power remains personal, outlaw, coercive, or tactical. Do not convert a frame-up into a land, property, business, or political-machine plot.
+- [ ] Major betrayals, planted agents, witness turns, and confessions have setup before they matter. A planted worker cannot appear by coincidence; a confession needs pressure such as abandonment, guilt, fear, mercy, or already-discovered evidence.
+- [ ] Expert villains fail through character flaw, overreach, opposing evidence, or pressure from another character, not through amateur mistakes that contradict their established skill.
+- [ ] Known threats receive responsible protagonist action before the party moves on: isolate suspect evidence, warn allies/law/buyers, document proof, or explain why immediate action is impossible.
+- [ ] Travel, route, and message timing is plausible. A character without the map should not arrive ahead of the map-holder unless the outline explains the shorter route, prior knowledge, relay, or interception.
+- [ ] No event depends on future knowledge. If a villain sets bait for survivors, the villain must already know the relevant fire, death, escape, or survival happened.
+- [ ] If the antagonist wants witnesses silenced, the outline explains why any exposed witness is left alive, protected, baited, delayed, or no longer useful to silence.
+
+## Outline Causality Audit
+
+Run this after the required section check and before approving the outline for rulebook generation.
+
+- For each major reveal, identify who knows it and how they know: direct participation, overheard proof, payment, prior work, physical evidence, or source-established memory.
+- For each betrayal, identify how the betrayer entered the story, what the antagonist could realistically predict, and what earlier behavior hints at the betrayal.
+- For each confession or witness turn, identify the pressure that makes speaking believable.
+- For each villain failure, identify whether the failure comes from flaw, impatience, pride, conflicting accomplices, physical evidence, or protagonist work.
+- For each travel or message beat, identify route, timing, and why the arriving party can find moving characters.
+- For fraud, frame-up, planted-proof, counterfeit, altered-brand, or forged-document plots, confirm the proof chain uses physical evidence, records, witness source, delivery path, and a character-driven mistake.
+- Keep this as review guidance unless a deterministic validator can check it with low false positives. Do not invent story facts to satisfy the audit; mark missing facts `UNKNOWN` or ask the user.
+
+## Positive Pattern: Cattle-Drive Reputation Fraud
+
+The feedback sequence in `check&feedback/bady/book-4-outline-3.md` is a useful abstract pattern, not a reusable plot. The safe lesson is:
+
+- A fraud plot should move through practical mechanics: what is stolen, what is planted, what looks clean, what looks ugly, and why each detail creates doubt.
+- Proof should accumulate through cattle behavior, physical marks, records, witnesses, timing, and a villain or accomplice mistake rooted in character.
+- Public clearing can be Western proof without becoming a courtroom scene: cattle, iron, scars, ledgers, witness courage, and visible conduct can carry the answer.
 
 ---
 

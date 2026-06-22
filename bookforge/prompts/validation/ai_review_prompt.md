@@ -27,6 +27,10 @@ Answer these questions:
 10. **Hallucination Check:** Does the chapter introduce any unauthorized character history, lore, or backstory not present in the outline/bible?
 11. **Plot and Character Consistency Check:** Are character names, roles, and locations consistent? Are all modern concepts, vocabulary, and slang avoided?
 12. **Temporal Logic Check:** Is the travel duration realistic? Is the time of day and chronological order of events clear? Is there a believable timeline for injury recovery, arrivals, and confrontations?
+13. **Dialogue and Summary Check:** Does important planning, bonding, friction, proof, or moral decision material happen in character voice when the reader needs the exchange, rather than only narrative summary?
+14. **Behavior Over-Analysis Check:** Does the narration explain psychology, symbolism, motives, or subtext where action, silence, work, or direct speech would be stronger?
+15. **Frontier Mechanics Check:** Are wagons, ferries, horses, reins, firearms, wounds, tracking clues, written proof, brands, ledgers, terrain, and weather physically plausible for the scene?
+16. **Causality Check:** If the chapter uses betrayal, confession, witness knowledge, planted proof, route timing, or a villain mistake, does the source context support how it happens?
 
 ## Output Format
 

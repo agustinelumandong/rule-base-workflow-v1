@@ -46,6 +46,7 @@ Use this to create chapter-folder drafting plans and guide Phase 1 through Phase
   2. **Plot Consistency:** Consistent character names, roles, and locations. No modern terminology.
   3. **Temporal Logic:** Travel duration, time of day, and chronological sequence of events (e.g. injury recovery) are realistic.
   4. **Conflict Variety:** No syndicates, land grabs, water rights fights, or shady business schemes. Focuses on classic Western adventures.
+- Before drafting a scene that depends on betrayal, confession, forged proof, planted evidence, route timing, or witness knowledge, check that the approved outline or context packet names the setup/payoff reason. If it does not, mark the missing link `UNKNOWN` instead of inventing it.
 - Use `.agents/skills/western-manuscript-style/` for Western prose, dialogue, action, and revision rules.
 - When drafting in-story notes, letters, telegrams, posted warnings, or written messages, do not use backticks or code blocks. Introduce the text with `The note read:` or `The message read:` so it cannot look like a prompt in compiled manuscript output.
 - After each scene, run targeted checks for continuity, dialogue voice, POV drift, and style drift.
@@ -95,6 +96,18 @@ Use this before final handoff:
 
 If either pass fails, run one targeted correction cycle before compile.
 
+## Post-Validation Prose Review
+
+Use this after deterministic validation passes and before final handoff. This is advisory review guidance unless the validator reports a configured hard rule.
+
+- Read representative samples from at least two chapters, or the current chapter if the task is chapter-scoped.
+- Check dialogue plainness: cowboys, lawmen, outlaws, ranch families, and frontier workers should sound direct and practical unless the source supports a more formal speaker.
+- Check whether planning, bonding, friction, and moral-decision conversations are dramatized when the reader needs to experience the exchange instead of receiving summary.
+- Check for AI over-analysis: motives, symbolism, psychology, and emotional explanation should usually become action, silence, work, or direct speech.
+- Check frontier mechanics: wagons, ferries, horses, reins, firearms, wounds, tracking signs, terrain, weather, travel time, records, and physical evidence must behave plausibly.
+- Check character development through source-supported experience: prior trauma, pressure, guilt, injury, family duty, or witnessed consequences should change choices without invented backstory.
+- If a phrase appears copied or repeated, run validation and repair the exact line rather than rewriting the whole chapter.
+
 ## Western Series Strength Rubric
 
 Use this after deterministic checks pass and before final handoff. This rubric is advisory review guidance only; it must not create new loop states, hard validation failures, or padding pressure.
@@ -116,6 +129,7 @@ Use this as human-facing review guidance, not a hard validator or loop blocker:
 - **Show Conversations:** Do not summarize planning, friction, bonding, or moral-decision conversations when the reader needs to experience the exchange.
 - **No Behavioral Over-Analysis:** Avoid explaining character psychology, motives, symbolism, or subtext in the narrative voice. Show choices through action, silence, work, and direct speech.
 - **Continuous Transitions:** Bridge major travel or time jumps with source-supported labor, scouting, weather, fatigue, repairs, camp movement, sign reading, or hazard.
+- **Frontier Mechanics:** Review ferries, wagons, horses, firearms, tracking clues, wounds, written proof, and terrain for practical plausibility. Keep this semantic unless a narrow deterministic check exists.
 
 These items may guide manual revision or an AI semantic review prompt. They must not become hard automated failures until a focused test suite proves the checks are reliable and low-noise.
 
