@@ -24,6 +24,7 @@ from bookforge.core import research as research_module
 from bookforge.core import pacing as pacing_module
 from bookforge.core import packet as packet_module
 from bookforge.core import characters as characters_module
+from bookforge.core import projectkit as projectkit_module
 from bookforge import config
 
 
@@ -459,6 +460,13 @@ def cmd_packet(args: argparse.Namespace) -> int:
         if not chapter:
             print("Error: --chapter must be specified or included in --scene value (e.g. chapter-08/scene-02).", file=sys.stderr)
             return 2
+
+        # Verify runnable
+        from bookforge.core.queue import verify_scene_runnable
+        scene_key = f"{chapter}/{sc}"
+        if not verify_scene_runnable(book_folder, scene_key, force=getattr(args, "force", False)):
+            print(f"Error: Scene '{scene_key}' is blocked by queue rules (dependencies not met or another scene is active). Use --force to override.", file=sys.stderr)
+            return 1
             
         try:
             markdown = build_scene_packet(book_folder, chapter, sc)
@@ -750,6 +758,118 @@ def cmd_nlm(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_research(args: argparse.Namespace) -> int:
+    from bookforge.core.research_cache import (
+        normalize_research_key,
+        lookup_research_cache,
+        query_with_cache,
+        mark_research_accepted,
+        write_research_cache_entry,
+        purge_error_entries,
+        ResearchCacheEntry
+    )
+    from bookforge.core.adapters.research import get_research_backend
+    import yaml
+
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: Book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    subcmd = args.research_command
+    if subcmd == "query":
+        backend = get_research_backend(book_folder)
+        entry = query_with_cache(
+            book_folder,
+            args.query_text,
+            backend,
+            category=args.category,
+            scene_key=args.scene
+        )
+        if entry.canon_status == "uncached":
+            print("No cache entry written: backend answer failed quality gate.", file=sys.stderr)
+        print(f"Key: {entry.key}")
+        print(f"Status: {entry.canon_status}")
+        print(f"Answer:\n{entry.answer}")
+        return 0
+
+    elif subcmd == "lookup":
+        key = normalize_research_key(args.query_text, args.category)
+        entry = lookup_research_cache(book_folder, key)
+        if entry:
+            print(yaml.safe_dump(entry.to_dict(), sort_keys=False))
+            return 0
+        else:
+            print(f"Cache miss for query: {args.query_text}", file=sys.stderr)
+            return 1
+
+    elif subcmd == "list":
+        cache_dir = book_folder / "research_cache"
+        if not cache_dir.exists():
+            print("No research cache found.")
+            return 0
+        
+        entries = []
+        for yml_file in sorted(cache_dir.rglob("*.yml")):
+            try:
+                data = yaml.safe_load(yml_file.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    entries.append(data)
+            except Exception:
+                pass
+        for yaml_file in sorted(cache_dir.rglob("*.yaml")):
+            try:
+                data = yaml.safe_load(yaml_file.read_text(encoding="utf-8"))
+                if isinstance(data, dict) and data.get("key") not in [e.get("key") for e in entries]:
+                    entries.append(data)
+            except Exception:
+                pass
+
+        if not entries:
+            print("No research cache entries found.")
+            return 0
+
+        print(f"{'Key':<45} | {'Status':<10} | {'Question'}")
+        print("-" * 90)
+        for entry in entries:
+            key = entry.get("key", "")
+            status = entry.get("canon_status", "pending")
+            q = entry.get("question", "")
+            if len(q) > 40:
+                q = q[:37] + "..."
+            print(f"{key:<45} | {status:<10} | {q}")
+        return 0
+
+    elif subcmd == "accept":
+        try:
+            mark_research_accepted(book_folder, args.key)
+            print(f"Research entry '{args.key}' marked as accepted.")
+            return 0
+        except FileNotFoundError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+
+    elif subcmd == "reject":
+        entry = lookup_research_cache(book_folder, args.key)
+        if not entry:
+            print(f"Error: Research entry '{args.key}' not found.", file=sys.stderr)
+            return 1
+        entry.canon_status = "rejected"
+        write_research_cache_entry(book_folder, entry)
+        print(f"Research entry '{args.key}' marked as rejected.")
+        return 0
+
+    elif subcmd == "clear":
+        removed = purge_error_entries(book_folder)
+        if removed:
+            print(f"Purged {removed} error entr{'y' if removed == 1 else 'ies'} from research cache.")
+        else:
+            print("No error entries found in research cache.")
+        return 0
+
+    return 2
+
+
 def cmd_canon(args: argparse.Namespace) -> int:
     from bookforge.core import canon
     book_folder = Path(args.book_folder)
@@ -796,6 +916,13 @@ def cmd_validate(args: argparse.Namespace) -> int:
         if not chapter_slug:
             print("Error: --chapter must be specified or included in --scene value (e.g. chapter-08/scene-02).", file=sys.stderr)
             return 2
+
+        # Verify runnable
+        from bookforge.core.queue import verify_scene_runnable
+        scene_key = f"{chapter_slug}/{sc}"
+        if not verify_scene_runnable(book_folder, scene_key, force=getattr(args, "force", False)):
+            print(f"Error: Scene '{scene_key}' is blocked by queue rules (dependencies not met or another scene is active). Use --force to override.", file=sys.stderr)
+            return 1
             
         s_folder = scene_folder(book_folder, chapter_slug, sc)
         m_path = manifest_path(s_folder.parent.parent, sc)
@@ -809,8 +936,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
         manifest = load_scene_manifest(m_path, book_folder)
         issues = validate_scene(manifest)
         
-        failures = [i.message for i in issues if i.severity == Severity.HARD]
-        warnings = [i.message for i in issues if i.severity == Severity.SOFT]
+        failures = list(dict.fromkeys([i.message for i in issues if i.severity == Severity.HARD]))
+        warnings = list(dict.fromkeys([i.message for i in issues if i.severity == Severity.SOFT]))
         passes = [] if failures or warnings else ["Scene draft is clean and meets all rules."]
         
         print(f"=== Scene Validation Report: {chapter_slug}/{sc} ===")
@@ -864,9 +991,9 @@ def cmd_validate(args: argparse.Namespace) -> int:
     canon_issues = canon.validate_canon(book_folder)
     book_issues.extend(canon_issues)
 
-    book_passes = [i.message for i in book_issues if i.severity == Severity.INFO]
-    book_failures = [i.message for i in book_issues if i.severity == Severity.HARD]
-    book_warnings = [i.message for i in book_issues if i.severity == Severity.SOFT]
+    book_passes = list(dict.fromkeys([i.message for i in book_issues if i.severity == Severity.INFO]))
+    book_failures = list(dict.fromkeys([i.message for i in book_issues if i.severity == Severity.HARD]))
+    book_warnings = list(dict.fromkeys([i.message for i in book_issues if i.severity == Severity.SOFT]))
 
     phase_sections = context_validator.parse_phase_chapters(book_folder)
     reports = [context_validator.validate_chapter(chapter, phase_sections) for chapter in chapters]
@@ -933,13 +1060,14 @@ def cmd_apply(args: argparse.Namespace) -> int:
             dest_draft_name = "epilogue.md" if chapter_id == "epilogue" else f"{chapter_id}.md"
             
             # Copy active authoring files to canonical names
-            if ch_files.draft.exists():
+            if ch_files.draft.exists() and ch_files.draft.resolve() != (dest_dir / dest_draft_name).resolve():
                 shutil.copy2(ch_files.draft, dest_dir / dest_draft_name)
-            if ch_files.scene_breakdown.exists():
+            if ch_files.scene_breakdown.exists() and ch_files.scene_breakdown.resolve() != (dest_dir / "scene-breakdown.md").resolve():
                 shutil.copy2(ch_files.scene_breakdown, dest_dir / "scene-breakdown.md")
-            if ch_files.drafting_plan.exists():
+            if ch_files.drafting_plan.exists() and ch_files.drafting_plan.resolve() != (dest_dir / "drafting-plan.md").resolve():
                 shutil.copy2(ch_files.drafting_plan, dest_dir / "drafting-plan.md")
-            shutil.copy2(continuity_path, dest_dir / "continuity-out.md")
+            if continuity_path.resolve() != (dest_dir / "continuity-out.md").resolve():
+                shutil.copy2(continuity_path, dest_dir / "continuity-out.md")
             
             print(f"Compiled draft files into {dest_dir}")
 
@@ -1078,6 +1206,13 @@ def cmd_scene(args: argparse.Namespace) -> int:
             print("Error: --chapter must be specified or included in scene identifier (e.g. ch08_sc02).", file=sys.stderr)
             return 2
 
+        # Verify runnable
+        from bookforge.core.queue import verify_scene_runnable
+        scene_key = f"{chapter}/{sc}"
+        if not verify_scene_runnable(book_folder, scene_key, force=getattr(args, "force", False)):
+            print(f"Error: Scene '{scene_key}' is blocked by queue rules (dependencies not met or another scene is active). Use --force to override.", file=sys.stderr)
+            return 1
+
         from bookforge.core.packet.builder import build_scene_packet
         try:
             markdown = build_scene_packet(book_folder, chapter, sc)
@@ -1183,14 +1318,16 @@ def cmd_scene(args: argparse.Namespace) -> int:
         elif manifest.status == "clean":
             val_status = "passed"
             
-        # Attempts and provider from queue
+        # Attempts, provider and status from queue
         q_data = load_queue(book_folder)
         attempts_patch = 0
         provider = "manual-web"
+        canonical_status = manifest.status
         for s in q_data.get("scenes", []):
             if s["scene_key"] == f"{ch_slug}/{sc_id}":
                 attempts_patch = s["attempts"].get("patch", 0)
                 provider = s.get("provider", "manual-web")
+                canonical_status = s["status"]
                 if val_status == "unknown":
                     if s["status"] in ("clean", "validation_passed"):
                         val_status = "passed"
@@ -1220,7 +1357,7 @@ def cmd_scene(args: argparse.Namespace) -> int:
         print(f"Patch attempts: {attempts_patch}")
         print(f"Guard warnings: {guard_warnings}")
         print(f"Provider lane: {provider}")
-        print(f"Status: {manifest.status}")
+        print(f"Status: {canonical_status}")
         return 0
 
     else:
@@ -1252,6 +1389,13 @@ def cmd_patch(args: argparse.Namespace) -> int:
         if not chapter:
             print("Error: --chapter must be specified or included in scene identifier (e.g. ch08_sc02).", file=sys.stderr)
             return 2
+
+        # Verify runnable
+        from bookforge.core.queue import verify_scene_runnable
+        scene_key = f"{chapter}/{sc}"
+        if not verify_scene_runnable(book_folder, scene_key, force=getattr(args, "force", False)):
+            print(f"Error: Scene '{scene_key}' is blocked by queue rules (dependencies not met or another scene is active). Use --force to override.", file=sys.stderr)
+            return 1
 
         from bookforge.core.packet.helpers import scene_folder
         folder = scene_folder(book_folder, chapter, sc)
@@ -1311,6 +1455,13 @@ def cmd_patch(args: argparse.Namespace) -> int:
             print("Error: --chapter must be specified or included in scene identifier (e.g. ch08_sc02).", file=sys.stderr)
             return 2
 
+        # Verify runnable
+        from bookforge.core.queue import verify_scene_runnable
+        scene_key = f"{chapter}/{sc}"
+        if not verify_scene_runnable(book_folder, scene_key, force=getattr(args, "force", False)):
+            print(f"Error: Scene '{scene_key}' is blocked by queue rules (dependencies not met or another scene is active). Use --force to override.", file=sys.stderr)
+            return 1
+
         folder = scene_folder(book_folder, chapter, sc)
         draft_p = folder / "draft.md"
         repl_p = folder / "replacement.md"
@@ -1320,8 +1471,9 @@ def cmd_patch(args: argparse.Namespace) -> int:
             from_file_path = Path(from_file)
             if from_file_path.exists():
                 folder.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(from_file_path, repl_p)
-                print(f"Copied replacement from {from_file} to {repl_p}")
+                if from_file_path.resolve() != repl_p.resolve():
+                    shutil.copy2(from_file_path, repl_p)
+                    print(f"Copied replacement from {from_file} to {repl_p}")
             else:
                 print(f"Error: source file from --from-file does not exist: {from_file_path}", file=sys.stderr)
                 return 2
@@ -1397,7 +1549,7 @@ def cmd_queue(args: argparse.Namespace) -> int:
     """Handles queue subcommands (build, show, update)."""
     subcommand = getattr(args, "queue_command", None)
     if not subcommand:
-        print("Error: Invalid or missing queue subcommand. Use build, show, or update.", file=sys.stderr)
+        print("Error: Invalid or missing queue subcommand. Use build, show, update, or next.", file=sys.stderr)
         return 2
 
     book_folder = _normalize_books_folder_arg(args.book_folder)
@@ -1423,6 +1575,10 @@ def cmd_queue(args: argparse.Namespace) -> int:
             print("No scenes in queue. Run 'bf queue build' first.")
             return 0
             
+        # Create quick status map to evaluate dependencies
+        status_map = {s["scene_key"]: s["status"] for s in scenes}
+        completed_statuses = {"clean", "validation_passed", "committed"}
+
         for s in scenes:
             key = s["scene_key"]
             status = s["status"]
@@ -1431,11 +1587,20 @@ def cmd_queue(args: argparse.Namespace) -> int:
             pat_att = s["attempts"].get("patch", 0)
             deps = s["dependencies"]
             
-            if status in ("clean", "validation_passed"):
+            # A scene is blocked if any of its dependencies are not completed
+            deps_completed = True
+            for dep in deps:
+                if status_map.get(dep) not in completed_statuses:
+                    deps_completed = False
+                    break
+
+            if status in completed_statuses:
                 prefix = "[DONE]"
-            elif status in ("ready_for_patch", "patch_packet_ready", "validation_failed"):
+            elif not deps_completed:
+                prefix = "[PENDING]"
+            elif status in ("validation_failed", "ready_for_patch", "patch_packet_ready"):
                 prefix = "[REPAIR]"
-            elif status in ("ready_for_generation", "generation_packet_ready"):
+            elif status in ("ready_for_generation", "generation_packet_ready", "ready_for_validation"):
                 prefix = "[ACTIVE]"
             else:
                 prefix = "[PENDING]"
@@ -1473,6 +1638,113 @@ def cmd_queue(args: argparse.Namespace) -> int:
             print(f"Error: scene '{args.scene_key}' not found in queue.", file=sys.stderr)
             return 1
 
+    elif subcommand == "next":
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+        next_scene = queue_core.get_next_runnable_scene(book_folder)
+        if next_scene:
+            key = next_scene["scene_key"]
+            status = next_scene["status"]
+            desc, cmd = queue_core.get_next_command(next_scene)
+            print(f"Next runnable scene: {key}")
+            print(f"Current Status:      {status}")
+            print(f"Goal/Description:    {desc}")
+            print(f"Command to run:\n  {cmd}")
+        else:
+            print("No next runnable scene found in queue. All scenes may be completed or blocked.")
+        return 0
+
+    return 2
+
+
+def cmd_project_kit(args: argparse.Namespace) -> int:
+    """Handles project-kit subcommands (build, show, clean)."""
+    subcommand = getattr(args, "projectkit_command", None)
+    if not subcommand:
+        print("Error: Invalid or missing project-kit subcommand. Use build, show, or clean.", file=sys.stderr)
+        return 2
+
+    book_folder = _normalize_books_folder_arg(args.book_folder)
+    provider = getattr(args, "provider", "generic")
+
+    if subcommand == "build":
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+        if provider not in projectkit_module.PROVIDERS:
+            print(f"Error: unknown provider '{provider}'. Must be one of: {', '.join(projectkit_module.PROVIDERS)}", file=sys.stderr)
+            return 2
+        try:
+            kit_dir = projectkit_module.build_project_kit(book_folder, provider)
+        except Exception as error:
+            print(f"Error building project kit: {error}", file=sys.stderr)
+            return 2
+        print(f"Project kit built for provider '{provider}' at: {kit_dir}")
+        # List generated files
+        for f in sorted(kit_dir.iterdir()):
+            if f.is_file():
+                print(f"  {f.name}")
+        active_dir = kit_dir / "active"
+        if active_dir.exists():
+            for f in sorted(active_dir.iterdir()):
+                if f.is_file():
+                    print(f"  active/{f.name}")
+        archive_dir = kit_dir / "archive"
+        if archive_dir.exists():
+            for f in sorted(archive_dir.iterdir()):
+                if f.is_file():
+                    print(f"  archive/{f.name}")
+        return 0
+
+    elif subcommand == "show":
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+        kit_dir = projectkit_module.project_kit_folder(book_folder, provider)
+        if not kit_dir.exists():
+            print(f"No project kit found for provider '{provider}' at {kit_dir}", file=sys.stderr)
+            print(f"Run 'bf project-kit build {book_folder} --provider {provider}' first.")
+            return 1
+        print(f"Project kit for '{provider}' at: {kit_dir}")
+        print("=" * 60)
+        for f in sorted(kit_dir.iterdir()):
+            if f.is_file():
+                size = f.stat().st_size
+                print(f"  {f.name:<45} {size:>6} bytes")
+        active_dir = kit_dir / "active"
+        if active_dir.exists():
+            active_files = list(active_dir.iterdir())
+            if active_files:
+                print("\n  active/")
+                for f in sorted(active_files):
+                    if f.is_file():
+                        size = f.stat().st_size
+                        print(f"    {f.name:<41} {size:>6} bytes")
+        archive_dir = kit_dir / "archive"
+        if archive_dir.exists():
+            archive_files = list(archive_dir.iterdir())
+            if archive_files:
+                print("\n  archive/")
+                for f in sorted(archive_files):
+                    if f.is_file():
+                        size = f.stat().st_size
+                        print(f"    {f.name:<41} {size:>6} bytes")
+        return 0
+
+    elif subcommand == "clean":
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+        kit_dir = projectkit_module.project_kit_folder(book_folder, provider)
+        if not kit_dir.exists():
+            print(f"No project kit found for provider '{provider}' at {kit_dir}")
+            return 0
+        shutil.rmtree(kit_dir)
+        print(f"Cleaned project kit for provider '{provider}' at {kit_dir}")
+        return 0
+
+    print("Error: Invalid or missing project-kit subcommand. Use build, show, or clean.", file=sys.stderr)
     return 2
 
 
@@ -1595,6 +1867,7 @@ def main() -> int:
         description="BookForge: A Production-Ready Manuscript Workflow Pipeline",
         prog="bookforge"
     )
+    parser.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
     subparsers = parser.add_subparsers(dest="command", required=False)
 
     # init
@@ -1635,7 +1908,9 @@ def main() -> int:
     # packet
     parser_packet = subparsers.add_parser("packet", help="Render a context packet for a chapter")
     parser_packet.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
-    parser_packet.add_argument("--chapter", required=True, help="Chapter slug (e.g. chapter-01 or epilogue)")
+    parser_packet.add_argument("--chapter", required=False, help="Chapter slug (e.g. chapter-01 or epilogue)")
+    parser_packet.add_argument("--scene", help="Scene ID (e.g. scene-02 or chapter-08/scene-02)")
+    parser_packet.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
     parser_packet.add_argument(
         "--task",
         default="all",
@@ -1730,6 +2005,41 @@ def main() -> int:
     parser_nlm_gen_out = nlm_subparsers.add_parser("generate-outline", help="Create a unique notebook, upload sources, and query to generate outline")
     parser_nlm_gen_out.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
+    # research subparser
+    parser_research = subparsers.add_parser("research", help="Manage research cache and queries")
+    research_subparsers = parser_research.add_subparsers(dest="research_command", required=True)
+
+    # research query
+    parser_res_query = research_subparsers.add_parser("query", help="Query the research backend with caching")
+    parser_res_query.add_argument("book_folder", help="Path to book folder")
+    parser_res_query.add_argument("query_text", help="Question to ask")
+    parser_res_query.add_argument("--category", help="Category for this research topic (e.g. weapons, locations)")
+    parser_res_query.add_argument("--scene", help="Scene key to associate this research with (e.g. chapter-09/scene-01)")
+
+    # research cache lookup
+    parser_res_lookup = research_subparsers.add_parser("lookup", help="Lookup a query in the research cache")
+    parser_res_lookup.add_argument("book_folder", help="Path to book folder")
+    parser_res_lookup.add_argument("query_text", help="Question to lookup")
+    parser_res_lookup.add_argument("--category", help="Category for this research topic")
+
+    # research cache list
+    parser_res_list = research_subparsers.add_parser("list", help="List all entries in the research cache")
+    parser_res_list.add_argument("book_folder", help="Path to book folder")
+
+    # research cache accept
+    parser_res_accept = research_subparsers.add_parser("accept", help="Accept a cached research entry into canon")
+    parser_res_accept.add_argument("book_folder", help="Path to book folder")
+    parser_res_accept.add_argument("key", help="Key of the cache entry to accept (e.g. travel/river_bluff_horse_route)")
+
+    # research cache reject
+    parser_res_reject = research_subparsers.add_parser("reject", help="Reject a cached research entry")
+    parser_res_reject.add_argument("book_folder", help="Path to book folder")
+    parser_res_reject.add_argument("key", help="Key of the cache entry to reject")
+
+    # research cache clear (purge error entries)
+    parser_res_clear = research_subparsers.add_parser("clear", help="Purge error entries from the research cache")
+    parser_res_clear.add_argument("book_folder", help="Path to book folder")
+
     # canon
     parser_canon = subparsers.add_parser("canon", help="Event-sourced canon fold engine and checks")
     canon_subparsers = parser_canon.add_subparsers(dest="canon_command", required=True)
@@ -1746,6 +2056,8 @@ def main() -> int:
     parser_validate = subparsers.add_parser("validate", help="Run full deterministic, style, and canon validations")
     parser_validate.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_validate.add_argument("--chapter", help="Chapter ID to restrict checks (e.g. chapter-01)")
+    parser_validate.add_argument("--scene", help="Scene ID (e.g. scene-02 or chapter-08/scene-02)")
+    parser_validate.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
     parser_validate.add_argument("--review-prompt", action="store_true", help="Generate AI semantic review prompt")
 
     # apply
@@ -1758,6 +2070,25 @@ def main() -> int:
     # migrate
     parser_migrate = subparsers.add_parser("migrate", help="Migrate legacy book assets to event-sourced structures")
     parser_migrate.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # project-kit
+    parser_projectkit = subparsers.add_parser("project-kit", help="Build provider-ready context folders for ChatGPT/Claude/Gemini web")
+    projectkit_subparsers = parser_projectkit.add_subparsers(dest="projectkit_command", required=True)
+
+    # project-kit build
+    parser_pk_build = projectkit_subparsers.add_parser("build", help="Build project kit folder for a provider")
+    parser_pk_build.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_pk_build.add_argument("--provider", default="generic", choices=projectkit_module.PROVIDERS, help="Target provider (default: generic)")
+
+    # project-kit show
+    parser_pk_show = projectkit_subparsers.add_parser("show", help="Show contents of an existing project kit")
+    parser_pk_show.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_pk_show.add_argument("--provider", default="generic", choices=projectkit_module.PROVIDERS, help="Target provider (default: generic)")
+
+    # project-kit clean
+    parser_pk_clean = projectkit_subparsers.add_parser("clean", help="Remove an existing project kit")
+    parser_pk_clean.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_pk_clean.add_argument("--provider", default="generic", choices=projectkit_module.PROVIDERS, help="Target provider (default: generic)")
 
     # memory
     parser_memory = subparsers.add_parser("memory", help="Persistent Memory Tier (build, retrieve, resolve, learn, apply-learning, serve)")
@@ -1834,6 +2165,7 @@ def main() -> int:
     parser_scene_packet.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_scene_packet.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
     parser_scene_packet.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
+    parser_scene_packet.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
 
     # scene report
     parser_scene_report = scene_subparsers.add_parser("report", help="Generate scene metrics report")
@@ -1847,6 +2179,7 @@ def main() -> int:
     parser_patch.add_argument("--scene", help="Scene ID (e.g. scene-02)")
     parser_patch.add_argument("--chapter", help="Chapter ID")
     parser_patch.add_argument("--failed-rules", nargs="+", help="Failed rules for top-level patch build")
+    parser_patch.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
     patch_subparsers = parser_patch.add_subparsers(dest="patch_command", required=False)
 
     # patch build
@@ -1855,12 +2188,14 @@ def main() -> int:
     parser_patch_build.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
     parser_patch_build.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
     parser_patch_build.add_argument("--failed-rules", nargs="+", help="List of failed rules or issues to patch")
+    parser_patch_build.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
 
     # patch splice
     parser_patch_splice = patch_subparsers.add_parser("splice", help="Splice replacement prose into original draft")
     parser_patch_splice.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
     parser_patch_splice.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
     parser_patch_splice.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
+    parser_patch_splice.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
 
     # patch apply
     parser_patch_apply = patch_subparsers.add_parser("apply", help="Apply replacement patch (alias for splice)")
@@ -1868,6 +2203,7 @@ def main() -> int:
     parser_patch_apply.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
     parser_patch_apply.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
     parser_patch_apply.add_argument("--from-file", help="Path to replacement file")
+    parser_patch_apply.add_argument("--force", action="store_true", help="Force command execution regardless of queue invariants")
 
     # queue
     parser_queue = subparsers.add_parser("queue", help="Central scene execution queue commands")
@@ -1889,6 +2225,11 @@ def main() -> int:
     parser_queue_update.add_argument("--provider", help="New provider value")
     parser_queue_update.add_argument("--inc-generation", action="store_true", help="Increment generation attempts")
     parser_queue_update.add_argument("--inc-patch", action="store_true", help="Increment patch attempts")
+
+    # queue next
+    parser_queue_next = queue_subparsers.add_parser("next", help="Find the next runnable scene in the queue and suggest the next command")
+    parser_queue_next.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
 
     args = parser.parse_args()
 
@@ -1913,6 +2254,7 @@ def main() -> int:
         "repair": cmd_repair,
         "add-relation": cmd_add_relation,
         "nlm": cmd_nlm,
+        "research": cmd_research,
         "resolve-unknowns": cmd_resolve_unknowns,
         "canon": cmd_canon,
         "validate": cmd_validate,
@@ -1923,6 +2265,7 @@ def main() -> int:
         "scene": cmd_scene,
         "patch": cmd_patch,
         "queue": cmd_queue,
+        "project-kit": cmd_project_kit,
     }
 
     try:
