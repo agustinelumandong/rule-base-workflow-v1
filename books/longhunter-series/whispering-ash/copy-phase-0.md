@@ -1,4 +1,4 @@
-# Book One: Whispering Ash - outline 2
+# Book One: Whispering Ash - Outline
 
 ## Full Plot Summary
 

@@ -1,5 +1,13 @@
 # Chapter 1: The Raid - Scene Breakdown
 
+## Chapter Source Lock
+- **Source Anchor:** `phase-0.md`, Chapter 1: The Raid.
+- **Advisory Target:** 3,500 words. This is source guidance only, not permission to pad beyond approved beats.
+- **Core Goal:** Introduce Jake's normal life and shatter it violently.
+- **Required Beat Chain:** Family farm at dawn -> sudden war cries and Cherokee raid -> burning cabins and screams -> Jake kills one warrior with a farm axe -> Jake is overpowered, bound, and marched away -> last glimpse of family and burned home.
+- **Key Skills:** Basic farm strength and courage under pressure.
+- **Do Not Invent:** Do not add named relatives beyond family roles already stated.
+
 ## Scene 1: The Inciting Incident
 * Location: farm_cornfield
 * POV: Jake
@@ -7,10 +15,10 @@
 ## BEAT 1: Hoeing the Corn
 
 ### Source Context Lock
-- **Source Anchor:** phase-0: Chapter 1 Inciting incident - working in cornfield.
+- **Source Anchor:** phase-0: Chapter 1 - Morning on the family farm at dawn: Jake (14) working cornfield with mother and sisters while father and brothers are hunting. Simple joys of farm life.
 - **Continuity In:** Jake works at his family's isolated homestead in Virginia.
-- **Required Story Movement:** Jake works under the morning sun, hoeing weeds around the corn stalks.
-- **Continuity Out:** Cornfield location established.
+- **Required Story Movement:** Jake works under the dawn sun, hoeing weeds around the corn stalks while the family farm feels ordinary and intact.
+- **Continuity Out:** Cornfield, mother, sisters, and absent father and brothers are established before the raid begins.
 - **Do Not Invent:** Banned names like Silas.
 
 ### Beat Instructions
@@ -22,10 +30,10 @@
 ## BEAT 2: Smoke and Flame
 
 ### Source Context Lock
-- **Source Anchor:** phase-0: Chapter 1 Inciting incident - raid begins, family cabin fired.
-- **Continuity In:** Cornfield location established.
-- **Required Story Movement:** Jake spots smoke from the cabin and runs back.
-- **Continuity Out:** Jake arrives at the homestead clearing, cabin burning.
+- **Source Anchor:** phase-0: Chapter 1 - Sudden war cries at dawn: Cherokee raid. Chaos, burning cabins, screams.
+- **Continuity In:** Cornfield, mother, sisters, and absent father and brothers are established before the raid begins.
+- **Required Story Movement:** Jake hears war cries, sees smoke from the cabin, and runs back as the Cherokee raid shatters the farm.
+- **Continuity Out:** Jake arrives at the homestead clearing with cabins burning, screams carrying, and raiders in the yard.
 - **Do Not Invent:** Banned names like Silas.
 
 ### Beat Instructions
@@ -36,8 +44,8 @@
 ## BEAT 3: Axe and Blood
 
 ### Source Context Lock
-- **Source Anchor:** phase-0: Chapter 1 Inciting incident - Jake kills a warrior with a farm axe.
-- **Continuity In:** Jake arrives at the homestead clearing, cabin burning.
+- **Source Anchor:** phase-0: Chapter 1 - Jake grabs farm axe and kills one warrior in desperate fight.
+- **Continuity In:** Jake arrives at the homestead clearing with cabins burning, screams carrying, and raiders in the yard.
 - **Required Story Movement:** Jake grabs a heavy farm axe from the chopping block and fights a warrior.
 - **Continuity Out:** The warrior is killed; Jake is captured.
 - **Do Not Invent:** Banned names like Silas.
@@ -51,7 +59,7 @@
 ## BEAT 4: Taken
 
 ### Source Context Lock
-- **Source Anchor:** phase-0: Chapter 1 Inciting incident - Jake captured and dragged away.
+- **Source Anchor:** phase-0: Chapter 1 - Jake is overpowered, bound, and marched away as he watches his home burn. Last glimpse of family.
 - **Continuity In:** The warrior is killed; Jake is captured.
 - **Required Story Movement:** Jake is overpowered, bound, and marched into the forest.
 - **Continuity Out:** Jake is marched toward the mountains, leaving his burning home behind.

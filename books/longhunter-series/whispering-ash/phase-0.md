@@ -202,46 +202,35 @@ Book One ends on a note of hard-won independence and quiet resolve, setting up h
 ## Main Characters
 
 ### Jake Moses (Protagonist)
-* **Age:** 14 at capture (Book One spans ~8 years; ends at ~22).
-* **Appearance:** Sturdy farm build that becomes lean and wiry. Sun-browned skin, dark hair that he keeps long in Indian fashion, keen observant eyes. Wears practical buckskins and his signature ash-dyed camouflage cloak.
-* **Personality:** Stoic, practical, stubborn, quietly intelligent. Dry wit when he speaks. Fiercely independent but capable of loyalty.
-* **Arc in Book One:** From innocent farm boy -> broken captive -> determined student -> self-made Long Hunter. Struggles with identity between two worlds.
-* **Key Traits:** Observant tracker, relentless survivor, merit-based worldview.
-* **Voice:** Short, direct internal thoughts only when needed. Speaks little but meaningfully.
-* **NOTE:** Character Sheet (Identity): The note that Jake "struggles with identity between two worlds" is a thematic summary. On the page, show it through physical habits: wearing an ash-dyed cloak, holding a rifle with an old settler habit, or repairing moccasins using an old farm knot.
+* **Role:** Protagonist.
+* **Function:** Captive farm boy becomes an independent Long Hunter.
+* **Profile:** `characters/main/jake-moses.md`
 
 ### Thorn Blackroot (Mentor)
-* **Age:** Elderly (60s).
-* **Appearance:** Grizzled, weathered, with traditional Cherokee regalia and scars. Wise, piercing eyes.
-* **Personality:** Stern but fair. Patient teacher with a dry sense of humor. Values strength, skill, and honor.
-* **Role:** Recognizes Jake's potential and trains him. Represents the best of Cherokee ways.
-* **Arc:** From distant observer -> mentor -> reluctant father figure.
-* **Key Function:** Teaches skills and provides cultural context.
+* **Role:** Mentor.
+* **Function:** Elder hunter who recognizes Jake's potential and trains him through practical survival skill.
+* **Profile:** `characters/main/thorn-blackroot.md`
 
 ### Caleb Thorne (Ally)
-* **Age:** Mid-40s.
-* **Appearance:** Rugged, bearded, weathered scout. Worn buckskins, rifle always close.
-* **Personality:** Cynical, independent, gruff but reliable. Disillusioned with settlements.
-* **Role:** First white ally after escape. Shares practical woods knowledge.
-* **Arc:** Wary stranger -> cautious partner. Helps Jake bridge back to white world.
-* **Key Function:** Provides contrast and practical alliance.
+* **Role:** Ally.
+* **Function:** Reclusive scout and cautious partner after Jake's escape.
+* **Profile:** `characters/main/caleb-thorne.md`
 
 ---
 
 ## Supporting and Antagonist Characters
 
 ### War Chief Red Hollow (Recurring Antagonist)
-* **Age:** Prime warrior age (30s-40s).
-* **Personality:** Honorable but ruthless. Views Jake's escape as betrayal.
-* **Role:** Leader of the band. Personal stake in hunting Jake later.
-* **Book One Presence:** Limited but influential.
+* **Role:** Recurring antagonist.
+* **Function:** Band leader with a personal stake in hunting Jake after the escape.
+* **Profile:** `characters/antagonists/red-hollow.md`
 
 ### Winston McCrea (Rival: Introduced late Book One / major in Book Two)
-* **Personality:** Jealous, loud, opportunistic trapper.
-* **Role:** Early rival who resents Jake's skills.
+* **Role:** Rival.
+* **Function:** Opportunistic trapper who provokes Jake and establishes future friction.
+* **Profile:** `characters/antagonists/winston-mccrea.md`
 
 ### Anna Ray (Trading-Post Widow: Introduced late Book One)
-* **Age:** Mid-20s, widow.
-* **Personality:** Strong-willed, practical, no-nonsense. Runs a small river trading post.
-* **Role:** Brief human connection and pull toward white society, but no romance begins in Book One.
-* **Book One Presence:** Brief but important introduction near the end.
+* **Role:** Trading-post widow.
+* **Function:** Brief human connection and pull toward white society, but no romance begins in Book One.
+* **Profile:** `characters/supporting/anna-ray.md`

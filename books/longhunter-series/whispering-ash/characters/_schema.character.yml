@@ -1,0 +1,126 @@
+# Character profile schema for Whispering Ash.
+#
+# Writer-facing character files use YAML front matter plus Markdown notes.
+# Required fields should stay stable enough for future validation and packet
+# extraction. Optional fields can be omitted when the source has not approved
+# that detail yet.
+
+required:
+  - id
+  - canonical_name
+  - category
+  - story_role
+  - book_scope
+  - first_appears
+  - last_known_status
+  - pov
+  - appearance
+  - voice
+  - personality
+  - motive
+  - arc
+  - locks
+  - source_refs
+  - status
+
+fields:
+  id:
+    type: string
+    rule: lowercase-kebab-case stable character id
+  canonical_name:
+    type: string
+  aliases:
+    type: list[string]
+    optional: true
+  category:
+    type: enum
+    values:
+      - main
+      - supporting
+      - antagonist
+      - archetype
+  story_role:
+    type: string
+  book_scope:
+    type: string
+    example: book-1
+  first_appears:
+    type: string
+    example: chapter-01
+  last_known_status:
+    type: enum
+    values:
+      - alive
+      - dead
+      - unknown
+      - not-applicable
+  pov:
+    type: object
+    required:
+      - allowed
+      - mode
+      - notes
+  age:
+    type: object
+    optional: true
+  appearance:
+    type: object
+    required:
+      - required_markers
+    optional:
+      - optional_markers
+  voice:
+    type: object
+    required:
+      - summary
+    optional:
+      - diction_rules
+  personality:
+    type: object
+    required:
+      - traits
+    optional:
+      - weaknesses
+  motive:
+    type: object
+    required:
+      - public
+      - private
+  arc:
+    type: object
+    required:
+      - start
+      - middle
+      - end
+  relationships:
+    type: list[object]
+    optional: true
+  locks:
+    type: object
+    required:
+      - must_show
+      - must_not
+  continuity:
+    type: object
+    optional: true
+  source_refs:
+    type: object
+    required:
+      - phase_0
+      - rulebook
+  status:
+    type: enum
+    values:
+      - draft
+      - approved
+      - superseded
+
+optional_fields:
+  - gear
+  - weapons
+  - skills
+  - wounds
+  - secrets
+  - series_arc
+  - research_notes
+  - source_extract
