@@ -102,3 +102,19 @@ def chapter_draft_path(folder: Path, slug: str) -> Path:
         if p.exists():
             return p
     return folder / draft_options[0]
+
+
+def scene_folder(book_folder: Path, chapter_slug: str, scene_id: str) -> Path:
+    changes_path = book_folder / "changes" / chapter_slug / "scenes" / scene_id
+    if changes_path.exists():
+        return changes_path
+    return book_folder / "chapters" / chapter_slug / "scenes" / scene_id
+
+
+def scene_draft_path(folder: Path, scene_id: str) -> Path:
+    draft_options = ["draft.md", f"{scene_id}.md"]
+    for opt in draft_options:
+        p = folder / opt
+        if p.exists():
+            return p
+    return folder / draft_options[0]

@@ -1,0 +1,30 @@
+# BookForge Scene Manifest Template
+# Keyed on scene_id and stored in changes/chapter-NN/scenes/scene-MM/manifest.yml
+
+scene_id: scene-01
+chapter: chapter-01
+target_words: 3500
+status: draft                # draft | revision | clean
+
+# Required narrative beats to cover in this scene
+required_beats:
+  - "Beat 1: Describe the initial setup or tension."
+  - "Beat 2: Introduce the main interaction or conflict."
+  - "Beat 3: End with a solid link/cliffhanger to the next scene."
+
+# Specific concepts, phrasing, or actions that must NOT be present
+forbidden:
+  - "unrealistic technology"
+  - "modern slang"
+
+# Historical or continuity questions that need to be resolved prior to drafting
+research_questions:
+  - "What was the weather like in this region during the scene's season?"
+
+# Context scope elements for relevant rulebook excerpt construction
+inputs:
+  characters:
+    - darin
+    - harlan
+  locations:
+    - saloon
