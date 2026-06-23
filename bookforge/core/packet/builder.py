@@ -338,6 +338,177 @@ next_chapter_needs:
     return current_text.rstrip() + "\n"
 
 
+def build_scene_packet(book_folder: Path, chapter: str, scene_id: str) -> str:
+    """Compiles a targeted context packet for scene-level drafting."""
+    from bookforge.core.scene import load_scene_manifest, manifest_path, discover_scenes
+    from bookforge.core.packet.helpers import chapter_folder
+    from bookforge.core import characters as characters_module
+    from bookforge.core.packet.excerpt import _render_character_profile_excerpt
+
+    ch_folder = chapter_folder(book_folder, chapter)
+    m_path = manifest_path(ch_folder, scene_id)
+    if not m_path.exists():
+        # Fallback to changes folder
+        m_path = book_folder / "changes" / chapter / "scenes" / scene_id / "manifest.yml"
+
+    if not m_path.exists():
+        raise RuntimeError(f"Manifest for scene {scene_id} not found in chapter {chapter}.")
+
+    manifest = load_scene_manifest(m_path, book_folder)
+
+    parts = []
+
+    parts.append({
+        "name": "Header",
+        "heading": f"# Scene Context Packet: {scene_id} ({chapter})",
+        "body": (
+            f"- **Book Folder:** `{book_folder}`\n"
+            f"- **Chapter:** `{chapter}`\n"
+            f"- **Scene ID:** `{scene_id}`\n"
+            f"- **Target Words:** {manifest.target_words}\n"
+            f"- **Status:** `{manifest.status}`\n"
+            f"- **Purpose:** Focused scene-level packet for high-fidelity prose drafting.\n"
+        ),
+        "limit": 0,
+        "critical": True
+    })
+
+    beats_text = "\n".join(f"- {beat}" for beat in manifest.required_beats)
+    parts.append({
+        "name": "Required Beats",
+        "heading": "## Required Beats",
+        "body": beats_text or "No beats specified.",
+        "limit": 0,
+        "critical": True
+    })
+
+    if manifest.forbidden:
+        forbidden_text = "\n".join(f"- {term}" for term in manifest.forbidden)
+        parts.append({
+            "name": "Forbidden Elements",
+            "heading": "## Forbidden Elements",
+            "body": forbidden_text,
+            "limit": 0,
+            "critical": True
+        })
+
+    if manifest.research_questions:
+        rq_text = "\n".join(f"- {q}" for q in manifest.research_questions)
+        parts.append({
+            "name": "Research Questions",
+            "heading": "## Research Questions",
+            "body": rq_text,
+            "limit": 0,
+            "critical": True
+        })
+
+    parts.append({
+        "name": "Compressed Style Lock",
+        "heading": "## Compressed Style Lock",
+        "body": COMPRESSED_STYLE_LOCK,
+        "limit": 0,
+        "critical": True
+    })
+
+    char_ids = manifest.inputs.get("characters", [])
+    if char_ids:
+        profiles, warnings = characters_module.load_character_profiles(book_folder)
+        active_profiles = [p for p in profiles if p.id in char_ids or p.canonical_name.lower() in [c.lower() for c in char_ids]]
+        if not active_profiles:
+            active_profiles = [p for p in profiles if p.category == "main"]
+
+        char_parts = list(warnings)
+        for profile in active_profiles:
+            char_parts.append(_render_character_profile_excerpt(profile))
+
+        parts.append({
+            "name": "Relevant Character Profiles",
+            "heading": "## Relevant Character Profiles",
+            "body": compress_text("\n\n".join(char_parts)),
+            "limit": 1000,
+            "critical": False,
+            "omit_if_empty": True
+        })
+
+    rulebook_excerpt = relevant_rulebook_excerpt(book_folder, chapter, "\n".join(manifest.required_beats))
+    parts.append({
+        "name": "Relevant Rulebook Facts",
+        "heading": "## Relevant Rulebook Facts",
+        "body": compress_text(rulebook_excerpt),
+        "limit": 1200,
+        "critical": False
+    })
+
+    scenes_in_ch = discover_scenes(ch_folder, book_folder)
+    scene_ids_in_ch = [s.scene_id for s in scenes_in_ch]
+
+    prior_sc_text = ""
+    if scene_id in scene_ids_in_ch:
+        idx = scene_ids_in_ch.index(scene_id)
+        if idx > 0:
+            prior_sc = scenes_in_ch[idx - 1]
+            prior_sc_draft_p = prior_sc.draft_path
+            if prior_sc_draft_p.exists():
+                prior_sc_text = f"From prior scene `{prior_sc.scene_id}` draft:\n" + prior_sc_draft_p.read_text(encoding="utf-8")
+            else:
+                prior_sc_text = f"Prior scene `{prior_sc.scene_id}` has no draft yet."
+
+    if not prior_sc_text:
+        prior_sc_text = prior_continuity(book_folder, chapter)
+
+    parts.append({
+        "name": "Prior Continuity",
+        "heading": "## Prior Continuity Out",
+        "body": compress_text(prior_sc_text),
+        "limit": 600,
+        "critical": False
+    })
+
+    budget = 5000
+
+    def get_rendered(part_list):
+        rendered_states = []
+        for part in part_list:
+            hdr = part["heading"].strip()
+            body = part["body"].strip()
+            if not body and part.get("omit_if_empty"):
+                continue
+            if body:
+                rendered_states.append(f"{hdr}\n\n{body}")
+            else:
+                rendered_states.append(hdr)
+        return "\n\n".join(rendered_states)
+
+    current_text = get_rendered(parts)
+    current_tokens = estimate_tokens(current_text)
+
+    if current_tokens > budget:
+        for part in parts:
+            if not part["critical"] and part["limit"] > 0:
+                new_limit = max(50, int(part["limit"] * 0.3))
+                part["body"] = word_excerpt(part["body"], new_limit)
+                part["limit"] = new_limit
+
+        current_text = get_rendered(parts)
+        current_tokens = estimate_tokens(current_text)
+
+        if current_tokens > budget:
+            parts = [p for p in parts if p["critical"]]
+            current_text = get_rendered(parts)
+            current_tokens = estimate_tokens(current_text)
+
+            if current_tokens > budget:
+                for part in parts:
+                    if part["name"] not in ("Header", "Required Beats") and part["body"]:
+                        part["body"] = word_excerpt(part["body"], 250)
+                current_text = get_rendered(parts)
+                current_tokens = estimate_tokens(current_text)
+
+        current_text = current_text.rstrip() + f"\n\n<!-- BUDGET_WARNING: Scene task packet was trimmed to fit {budget} tokens budget. -->\n"
+
+    return current_text.rstrip() + "\n"
+
+
 def main() -> int:
     import argparse
     import sys
