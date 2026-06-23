@@ -25,9 +25,16 @@ def ensure_research_pack(book_folder: Path) -> Path:
     """Ensure research-pack.md exists, copying template if missing."""
     path = get_research_pack_path(book_folder)
     if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
         if DEFAULT_TEMPLATE_PATH.exists():
             path.write_text(DEFAULT_TEMPLATE_PATH.read_text(encoding="utf-8"), encoding="utf-8")
         else:
+            import warnings
+            warnings.warn(
+                f"Research pack template not found at {DEFAULT_TEMPLATE_PATH}. "
+                "Creating stub research-pack.md. Populate it with research content before querying.",
+                stacklevel=2
+            )
             path.write_text("# Research Pack\n", encoding="utf-8")
     return path
 

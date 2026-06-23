@@ -32,12 +32,14 @@ class ManualBackend:
         return get_research_pack_path(self.book_folder)
 
     def query(self, query_str: str) -> str:
-        """Scans research-pack.md for matching headers or keywords, returning sections."""
-        pack_path = self._get_research_pack_path()
-        if not pack_path.exists():
-            return "Error: research-pack.md does not exist."
+        from bookforge.core.research_cache import query_with_cache
+        return query_with_cache(self.book_folder, query_str, self).answer
 
+    def raw_query(self, query_str: str) -> str:
+        """Scans research-pack.md for matching headers or keywords, returning sections."""
+        from bookforge.core.research import ensure_research_pack
         try:
+            pack_path = ensure_research_pack(self.book_folder)
             content = pack_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
             return f"Error reading research pack: {e}"
@@ -129,10 +131,14 @@ class NotebookLMBackend:
         return info["id"] if info else None
 
     def query(self, query_str: str) -> str:
+        from bookforge.core.research_cache import query_with_cache
+        return query_with_cache(self.book_folder, query_str, self).answer
+
+    def raw_query(self, query_str: str) -> str:
         notebook_id = self._get_notebook_id()
         if not notebook_id:
             # Fall back to ManualBackend query if no notebook is associated
-            return ManualBackend(self.book_folder).query(query_str)
+            return ManualBackend(self.book_folder).raw_query(query_str)
 
         try:
             res = subprocess.run(
