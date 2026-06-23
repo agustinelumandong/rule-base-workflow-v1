@@ -117,7 +117,9 @@ def check_persona_capabilities(
     persona_name: str,
     model: str,
     action: str,
-    projected_input_tokens: int = 0
+    projected_input_tokens: int = 0,
+    projected_output_tokens: int | None = None,
+    target_words: int | None = None,
 ) -> tuple[bool, str]:
     """Validates if an LLM call matches all registry rules.
     
@@ -210,11 +212,65 @@ def check_persona_capabilities(
     global_cap = registry.get("global_budget_cap_usd", 15.00)
     cumulative_cost = calculate_cumulative_cost(book_folder)
     
-    # Projected cost estimation (assume output is 25% of input)
-    projected_output_tokens = projected_input_tokens // 4
-    projected_cost = calculate_run_cost(model, projected_input_tokens, projected_output_tokens)
+    # Projected cost estimation
+    if projected_output_tokens is None:
+        if target_words is not None:
+            calc_output_tokens = int(target_words * 1.35)
+        else:
+            calc_output_tokens = projected_input_tokens // 4
+    else:
+        calc_output_tokens = projected_output_tokens
+        
+    projected_cost = calculate_run_cost(model, projected_input_tokens, calc_output_tokens)
     
     if cumulative_cost + projected_cost > global_cap:
         return False, f"LLM call blocked: Projected cost (${cumulative_cost + projected_cost:.4f}) exceeds global budget cap (${global_cap:.2f})."
+
+    # 6. Operator Prose Guard verification
+    try:
+        from bookforge.core.validators.format import load_project_settings
+        settings = load_project_settings(book_folder)
+    except Exception:
+        settings = {}
+
+    guard_config = settings.get("operator_prose_guard") or {
+        "enabled": True,
+        "mode": "advisory",          # "advisory" | "hard"
+        "output_token_cap": 500,
+        "operator_personas": ["extractor", "reviewer", "planner"],
+        "prose_actions": ["draft", "draft_prose", "expand"],
+    }
+
+    if guard_config.get("enabled", True):
+        is_operator = persona_name in guard_config.get("operator_personas", [])
+        is_prose_action = (action in guard_config.get("prose_actions", []) or 
+                           mapped_action in guard_config.get("prose_actions", []))
+        output_cap = guard_config.get("output_token_cap", 500)
+
+        if is_operator and is_prose_action and calc_output_tokens > output_cap:
+            mode = guard_config.get("mode", "advisory")
+            if mode == "hard":
+                return False, f"REFUSED: operator persona '{persona_name}' cannot perform prose action '{action}' exceeding output token cap of {output_cap} tokens (projected {calc_output_tokens}). Use the provider-web lane (bf packet --scene ...)."
+            else:
+                # Advisory mode - log to guard-log.jsonl and return True
+                import time
+                log_entry = {
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "persona": persona_name,
+                    "model": model,
+                    "action": action,
+                    "projected_input_tokens": projected_input_tokens,
+                    "projected_output_tokens": calc_output_tokens,
+                    "mode": mode,
+                }
+                log_dir = book_folder / "state"
+                try:
+                    log_dir.mkdir(parents=True, exist_ok=True)
+                    log_file = log_dir / "guard-log.jsonl"
+                    with log_file.open("a", encoding="utf-8") as f:
+                        f.write(json.dumps(log_entry) + "\n")
+                except OSError:
+                    pass
+                return True, f"AUTHORIZED (advisory guard warning logged): operator persona '{persona_name}' performing prose action '{action}' exceeding output cap."
 
     return True, "LLM call authorized."
