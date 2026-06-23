@@ -113,8 +113,9 @@ class NotebookLMSystemTests(unittest.TestCase):
         mock_proc.stdout = "This is the answer from NotebookLM."
         mock_run.return_value = mock_proc
 
-        res = notebooklm.query_notebook("uuid-123", "who is the protagonist?")
-        self.assertEqual(res, "This is the answer from NotebookLM.")
+        with tempfile.TemporaryDirectory() as tmp:
+            res = notebooklm.query_notebook("uuid-123", "who is the protagonist?", book_folder=Path(tmp))
+            self.assertEqual(res, "This is the answer from NotebookLM.")
         mock_run.assert_called_with(
             ["nlm", "notebook", "query", "uuid-123", "who is the protagonist?"],
             capture_output=True,

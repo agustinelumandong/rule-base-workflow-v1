@@ -79,5 +79,60 @@ class TestQueue(unittest.TestCase):
         self.assertEqual(rebuilt_scene["provider"], "chatgpt_web")
         self.assertEqual(rebuilt_scene["attempts"]["generation"], 1)
 
+    def test_next_runnable_scene(self):
+        # Initialize two scenes
+        init_scene_manifest(self.tmp_dir, "chapter-01", "scene-01", 3000)
+        init_scene_manifest(self.tmp_dir, "chapter-01", "scene-02", 2000)
+        build_queue(self.tmp_dir)
+
+        from bookforge.core.queue import get_next_runnable_scene, get_next_command
+
+        # Initially, the first scene should be runnable (dependencies are empty)
+        next_scene = get_next_runnable_scene(self.tmp_dir)
+        self.assertIsNotNone(next_scene)
+        self.assertEqual(next_scene["scene_key"], "chapter-01/scene-01")
+
+        # Mock mark the first scene as validation_passed
+        update_queue_scene(self.tmp_dir, "chapter-01/scene-01", status="validation_passed")
+
+        # Now, the second scene should be runnable
+        next_scene = get_next_runnable_scene(self.tmp_dir)
+        self.assertIsNotNone(next_scene)
+        self.assertEqual(next_scene["scene_key"], "chapter-01/scene-02")
+        self.assertEqual(next_scene["status"], "ready_for_generation")
+
+        desc, cmd = get_next_command(next_scene)
+        self.assertIn("Generate the initial prompt/context packet", desc)
+        self.assertEqual(cmd, "bf packet --chapter chapter-01 --scene scene-02 --task draft-prose")
+
+    def test_valid_patch_advances_queue_and_single_active_constraint(self):
+        # 1. Initialize two scenes
+        init_scene_manifest(self.tmp_dir, "chapter-01", "scene-01", 3000)
+        init_scene_manifest(self.tmp_dir, "chapter-01", "scene-02", 2000)
+        build_queue(self.tmp_dir)
+
+        from bookforge.core.queue import verify_scene_runnable
+
+        # Initially, scene-01 should be runnable
+        self.assertTrue(verify_scene_runnable(self.tmp_dir, "chapter-01/scene-01"))
+
+        # Initially, scene-02 is NOT runnable because its dependency (scene-01) is not completed
+        self.assertFalse(verify_scene_runnable(self.tmp_dir, "chapter-01/scene-02"))
+
+        # Transition scene-01 to generation_packet_ready (in-progress)
+        update_queue_scene(self.tmp_dir, "chapter-01/scene-01", status="generation_packet_ready")
+
+        # Now scene-01 is in-progress (active)
+        # Verify single-active constraint: scene-02 cannot be run.
+        self.assertFalse(verify_scene_runnable(self.tmp_dir, "chapter-01/scene-02"))
+
+        # Now transition scene-01 to validation_passed (completed)
+        update_queue_scene(self.tmp_dir, "chapter-01/scene-01", status="validation_passed")
+
+        # Now that scene-01 is completed, there are no active scenes in the queue.
+        # Next eligible scene (scene-02) becomes runnable.
+        self.assertTrue(verify_scene_runnable(self.tmp_dir, "chapter-01/scene-02"))
+
+
 if __name__ == "__main__":
     unittest.main()

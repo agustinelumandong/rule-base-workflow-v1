@@ -59,6 +59,22 @@ class TestPatchingEngine(unittest.TestCase):
         self.assertTrue(success)
         self.assertEqual(result.strip(), "Line A\nLine B Modified\nLine C")
 
+    def test_multiline_replacement_parse(self):
+        original = "First line of draft.\nTarget section to replace.\nLast line of draft."
+        # SEARCH / ======= / replacement / EOF format
+        replacement = (
+            "SEARCH\n"
+            "Target section to replace.\n"
+            "=======\n"
+            "This is a longer replacement body that has multiple words and lines.\n"
+            "It should not be truncated to only 16 words, but keep the full content."
+        )
+        success, result = splice_prose(original, replacement)
+        self.assertTrue(success)
+        self.assertIn("This is a longer replacement body", result)
+        self.assertIn("but keep the full content.", result)
+        self.assertIn("First line of draft.", result)
+
     def test_splice_prose_no_match(self):
         original = "Line A\nLine B\nLine C"
         replacement = "Line X\nLine Y\nLine Z"
@@ -68,7 +84,7 @@ class TestPatchingEngine(unittest.TestCase):
 
     def test_validate_merged_prose(self):
         # 1. Valid merged prose
-        prose_ok = "This is a clean prose file with exactly some words. " * 30 # ~300 words
+        prose_ok = "The quick brown fox jumps over the lazy dog. " * 30 # 270 words
         errors = validate_merged_prose(prose_ok, 300)
         self.assertEqual(len(errors), 0)
 
