@@ -8,6 +8,7 @@ import yaml
 from pathlib import Path
 
 from bookforge.core import world as world_module
+from bookforge.core import characters as characters_module
 from bookforge.core.packet.helpers import (
     read_optional,
     word_excerpt,
@@ -141,6 +142,57 @@ def relevant_rulebook_excerpt(book_folder: Path, slug: str, scene_breakdown_text
     if not parts:
         parts.append(extract_matching_lines(text, ["source", "length", "invent", "pov", slug]))
     return word_excerpt("\n\n".join(part for part in parts if part.strip()), 900)
+
+
+def relevant_character_profiles(book_folder: Path, scene_breakdown_text: str, limit: int = 700) -> str:
+    profiles, warnings = characters_module.load_character_profiles(book_folder)
+    if not profiles and not warnings:
+        return ""
+
+    active_profiles = [
+        profile
+        for profile in profiles
+        if _profile_is_active(profile, scene_breakdown_text)
+    ]
+    if not active_profiles:
+        active_profiles = [profile for profile in profiles if profile.category == "main"]
+
+    parts: list[str] = []
+    parts.extend(warnings)
+    for profile in active_profiles:
+        parts.append(_render_character_profile_excerpt(profile))
+
+    return word_excerpt("\n\n".join(part for part in parts if part.strip()), limit)
+
+
+def _profile_is_active(profile: characters_module.CharacterProfile, scene_breakdown_text: str) -> bool:
+    if not scene_breakdown_text.strip():
+        return False
+    for term in profile.match_terms:
+        if _term_in_text(term, scene_breakdown_text):
+            return True
+    return False
+
+
+def _term_in_text(term: str, text: str) -> bool:
+    normalized_term = re.escape(term).replace(r"\ ", r"[\s_-]+").replace(r"\-", r"[\s_-]+")
+    return bool(re.search(rf"(?<![A-Za-z0-9]){normalized_term}(?![A-Za-z0-9])", text, re.IGNORECASE))
+
+
+def _render_character_profile_excerpt(profile: characters_module.CharacterProfile) -> str:
+    aliases = ", ".join(profile.aliases) if profile.aliases else "None"
+    pov = "yes" if profile.pov_allowed else "no"
+    header = [
+        f"### {profile.canonical_name}",
+        f"- **ID:** {profile.id}",
+        f"- **Category:** {profile.category}",
+        f"- **Role:** {profile.story_role or 'Not specified'}",
+        f"- **POV Allowed:** {pov}",
+        f"- **Aliases:** {aliases}",
+        f"- **Profile:** `{profile.path}`",
+    ]
+    body = profile.body.strip()
+    return "\n".join(header + (["", body] if body else []))
 
 
 def extract_named_section(text: str, name_fragment: str) -> str:

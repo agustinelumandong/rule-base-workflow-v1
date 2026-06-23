@@ -78,7 +78,11 @@ def choose_expansion_chapter(
             if match:
                 words_by_chapter[f"chapter-{int(match.group(1)):02d}"] = item.words
 
-    valid_slugs = [report.chapter.slug for report in reports if report.status == "PASS" and report.chapter.slug != "epilogue"]
+    valid_slugs = [
+        report.chapter.slug
+        for report in reports
+        if not report.failures and report.chapter.slug != "epilogue"
+    ]
     if not valid_slugs:
         return "NONE"
     return min(valid_slugs, key=lambda slug: words_by_chapter.get(slug, 10**9))

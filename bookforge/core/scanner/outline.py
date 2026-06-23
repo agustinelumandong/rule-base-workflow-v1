@@ -29,15 +29,15 @@ CHAPTER_LINE_RE = re.compile(
 EPILOGUE_RE = re.compile(r"(?im)^\s*(?:#{1,6}\s*)?(?:epilogue|epilogue teaser)\b")
 
 SECTION_PATTERNS: dict[str, list[str]] = {
-    "Premise": [r"\bpremise\b", r"\blogline\b", r"\bcore plot\b"],
-    "Setting": [r"\bsetting\b", r"\blocation\b", r"\bworld\b", r"\bgeography\b"],
-    "Characters": [r"\bcharacters?\b", r"\bcast\b", r"\bprotagonist\b", r"\bantagonist\b"],
-    "Chapter List": [r"\bchapter\b", r"\boverall structure\b", r"\bplot outline\b"],
-    "Act Structure": [r"\bact\b", r"\bthree-act\b", r"\b3-act\b"],
-    "Epilogue": [r"\bepilogue\b", r"\bteaser\b"],
-    "Weapons / Horses": [r"\bweapons?\b", r"\bhorse\b", r"\bmount\b", r"\bsignature gear\b"],
-    "Factions": [r"\bfactions?\b", r"\bgang\b", r"\boutlaws?\b", r"\brecurring antagonists?\b"],
-    "Series Arc": [r"\bseries arc\b", r"\bseries potential\b", r"\brecurring conflict\b"],
+    "Premise": [r"\bpremise\b", r"\blogline\b", r"\bcore plot\b", r"\bplot summary\b", r"\bsummary\b"],
+    "Setting": [r"\bsetting\b", r"\blocation\b", r"\bworld\b", r"\bgeography\b", r"\blandscape\b", r"\bterritory\b"],
+    "Characters": [r"\bcharacters?\b", r"\bcast\b", r"\bprotagonist\b", r"\bantagonist\b", r"\bsupporting\b"],
+    "Chapter List": [r"\bchapter\b", r"\boverall structure\b", r"\bplot outline\b", r"\bchapter outline\b"],
+    "Act Structure": [r"\bact\b", r"\bthree-act\b", r"\b3-act\b", r"\barc\b", r"\bstructure\b", r"\bscenes?\b", r"\bbeats?\b"],
+    "Epilogue": [r"\bepilogue\b", r"\bteaser\b", r"\bbook two\b", r"\bbook 2\b", r"\bnext book\b"],
+    "Weapons / Horses": [r"\bweapons?\b", r"\bhorse\b", r"\bmount\b", r"\bsignature gear\b", r"\bgear\b", r"\brifle\b", r"\btomahawk\b", r"\bbow\b"],
+    "Factions": [r"\bfactions?\b", r"\bgang\b", r"\boutlaws?\b", r"\brecurring antagonists?\b", r"\bwar party\b", r"\bmilitia\b"],
+    "Series Arc": [r"\bseries arc\b", r"\bseries potential\b", r"\brecurring conflict\b", r"\bbook two\b", r"\bbook 2\b", r"\bnext book\b"],
 }
 
 

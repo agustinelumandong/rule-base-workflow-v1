@@ -21,6 +21,7 @@ from bookforge.core.packet.excerpt import (
     optimize_character_profiles,
     relevant_rulebook_excerpt_from_text,
     relevant_rulebook_excerpt,
+    relevant_character_profiles,
     extract_named_section,
     prior_continuity,
     next_continuity_need,

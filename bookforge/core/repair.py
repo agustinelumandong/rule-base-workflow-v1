@@ -72,7 +72,7 @@ def run_repair_wizard(book_folder: Path, chapter_slug: str) -> int:
     outline_path = scanner_module.source_path(book_folder)
     phase_sections = {}
     if outline_path:
-        phase_sections = scanner_module.scan_source_sections(outline_path.read_text(encoding="utf-8"))
+        phase_sections = context_validator.parse_phase_chapters(book_folder)
 
     while True:
         report = context_validator.validate_chapter(target_chap, phase_sections)

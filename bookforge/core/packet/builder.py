@@ -17,6 +17,7 @@ from bookforge.core.packet.helpers import (
 from bookforge.core.packet.excerpt import (
     relevant_rulebook_excerpt_from_text,
     relevant_rulebook_excerpt,
+    relevant_character_profiles,
     prior_continuity,
     next_continuity_need,
     pacing_excerpt,
@@ -100,6 +101,7 @@ def render_packet(book_folder: Path, slug: str, task: str = "all") -> str:
         source_section = extract_heading_section(source_text, slug) or "MISSING: source chapter section."
         mood_lock = read_optional(book_folder / "mood-lock.md") or "MISSING: mood-lock.md"
         rulebook_excerpt = relevant_rulebook_excerpt(book_folder, slug, scene_breakdown)
+        character_profiles = relevant_character_profiles(book_folder, scene_breakdown or "")
         pacing_guidance = pacing_excerpt(book_folder, slug)
         prior_cont = prior_continuity(book_folder, slug)
         research_excerpt = relevant_research_excerpt(book_folder, scene_breakdown or "")
@@ -116,6 +118,7 @@ def render_packet(book_folder: Path, slug: str, task: str = "all") -> str:
             {"name": "Source Chapter Anchor", "heading": "## Source Chapter Anchor", "body": compress_text(source_section), "limit": 700, "critical": False},
             {"name": "Chapter Summary", "heading": "## Chapter Summary", "body": compress_text(chapter_summary), "limit": 450, "critical": False},
             {"name": "Relevant Rulebook Facts", "heading": "## Relevant Rulebook Facts", "body": compress_text(rulebook_excerpt), "limit": 900, "critical": False},
+            {"name": "Relevant Character Profiles", "heading": "## Relevant Character Profiles", "body": compress_text(character_profiles), "limit": 700, "critical": False, "omit_if_empty": True},
             {"name": "Relevant Research Facts", "heading": "## Relevant Research Facts", "body": compress_text(research_excerpt), "limit": 600, "critical": False},
             {"name": "Mood And Tone Summary", "heading": "## Mood And Tone Summary", "body": compress_text(mood_lock), "limit": 450, "critical": False},
             {"name": "Pacing Guidance", "heading": "## Pacing Guidance", "body": compress_text(pacing_guidance), "limit": 300, "critical": False},
@@ -249,6 +252,7 @@ next_chapter_needs:
         source_section = extract_heading_section(source_text, slug) or "MISSING: source chapter section."
         mood_lock = read_optional(book_folder / "mood-lock.md") or "MISSING: mood-lock.md"
         rulebook_excerpt = relevant_rulebook_excerpt(book_folder, slug, scene_breakdown)
+        character_profiles = relevant_character_profiles(book_folder, scene_breakdown or "")
         pacing_guidance = pacing_excerpt(book_folder, slug)
         prior_cont = prior_continuity(book_folder, slug)
         next_cont = next_continuity_need(book_folder, slug)
@@ -266,6 +270,7 @@ next_chapter_needs:
             {"name": "Source Chapter Anchor", "heading": "## Source Chapter Anchor", "body": compress_text(source_section), "limit": 700, "critical": False},
             {"name": "Chapter Summary", "heading": "## Chapter Summary", "body": compress_text(chapter_summary), "limit": 450, "critical": False},
             {"name": "Relevant Rulebook Facts", "heading": "## Relevant Rulebook Facts", "body": compress_text(rulebook_excerpt), "limit": 900, "critical": False},
+            {"name": "Relevant Character Profiles", "heading": "## Relevant Character Profiles", "body": compress_text(character_profiles), "limit": 700, "critical": False, "omit_if_empty": True},
             {"name": "Relevant Research Facts", "heading": "## Relevant Research Facts", "body": compress_text(research_excerpt), "limit": 600, "critical": False},
             {"name": "Mood And Tone Summary", "heading": "## Mood And Tone Summary", "body": compress_text(mood_lock), "limit": 450, "critical": False},
             {"name": "Pacing Guidance", "heading": "## Pacing Guidance", "body": compress_text(pacing_guidance), "limit": 300, "critical": False},
@@ -289,6 +294,8 @@ next_chapter_needs:
         for part in part_list:
             hdr = part["heading"].strip()
             body = part["body"].strip()
+            if not body and part.get("omit_if_empty"):
+                continue
             if body:
                 rendered_states.append(f"{hdr}\n\n{body}")
             else:
