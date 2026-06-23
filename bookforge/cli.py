@@ -443,10 +443,43 @@ def cmd_pacing(args: argparse.Namespace) -> int:
 
 
 def cmd_packet(args: argparse.Namespace) -> int:
-    book_folder = Path(args.book_folder)
+    book_folder = _shift_scene_args(args)
     if not book_folder.exists():
         print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
         return 2
+
+    scene = getattr(args, "scene", None)
+    if scene:
+        from bookforge.core.scene import parse_scene_id
+        from bookforge.core.packet.builder import build_scene_packet
+        from bookforge.core.packet.helpers import scene_folder
+        
+        ch, sc = parse_scene_id(scene)
+        chapter = args.chapter or ch
+        if not chapter:
+            print("Error: --chapter must be specified or included in --scene value (e.g. chapter-08/scene-02).", file=sys.stderr)
+            return 2
+            
+        try:
+            markdown = build_scene_packet(book_folder, chapter, sc)
+        except Exception as error:
+            print(f"Error building scene packet: {error}", file=sys.stderr)
+            return 2
+            
+        folder = scene_folder(book_folder, chapter, sc)
+        folder.mkdir(parents=True, exist_ok=True)
+        out_p = folder / "generation-packet.md"
+        out_p.write_text(markdown, encoding="utf-8")
+        print(f"Wrote scene generation-packet.md to {out_p}")
+        
+        # Increment generation attempts in queue and update status
+        try:
+            from bookforge.core.queue import update_queue_scene
+            update_queue_scene(book_folder, f"{chapter}/{sc}", status="generation_packet_ready", inc_generation=True)
+        except Exception:
+            pass
+            
+        return 0
 
     if not args.chapter:
         print("Error: --chapter is required (e.g. chapter-01).", file=sys.stderr)
@@ -744,10 +777,70 @@ def cmd_validate(args: argparse.Namespace) -> int:
     from bookforge.core import validator as context_validator
     from bookforge.core import canon
     from bookforge.core.issue import Severity
-    book_folder = Path(args.book_folder)
+    
+    book_folder = _shift_scene_args(args)
     if not book_folder.exists():
         print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
         return 2
+
+    # If --scene is specified, run scene-level validation instead of full chapter/book validation
+    scene = getattr(args, "scene", None)
+    if scene:
+        from bookforge.core.scene import parse_scene_id, load_scene_manifest, manifest_path
+        from bookforge.core.packet.helpers import scene_folder
+        from bookforge.core.validators.orchestration import validate_scene
+        from bookforge.core.queue import update_queue_scene
+        
+        ch, sc = parse_scene_id(scene)
+        chapter_slug = args.chapter or ch
+        if not chapter_slug:
+            print("Error: --chapter must be specified or included in --scene value (e.g. chapter-08/scene-02).", file=sys.stderr)
+            return 2
+            
+        s_folder = scene_folder(book_folder, chapter_slug, sc)
+        m_path = manifest_path(s_folder.parent.parent, sc)
+        if not m_path.exists():
+            m_path = s_folder / "manifest.yml"
+            
+        if not m_path.exists():
+            print(f"Error: scene manifest not found for {scene}", file=sys.stderr)
+            return 2
+            
+        manifest = load_scene_manifest(m_path, book_folder)
+        issues = validate_scene(manifest)
+        
+        failures = [i.message for i in issues if i.severity == Severity.HARD]
+        warnings = [i.message for i in issues if i.severity == Severity.SOFT]
+        passes = [] if failures or warnings else ["Scene draft is clean and meets all rules."]
+        
+        print(f"=== Scene Validation Report: {chapter_slug}/{sc} ===")
+        if passes:
+            for p in passes:
+                print(f"[PASS] {p}")
+        if warnings:
+            for w in warnings:
+                print(f"[WARN] {w}")
+        if failures:
+            for f in failures:
+                print(f"[FAIL] {f}")
+                
+        # Write validation result to file
+        val_data = {
+            "status": "failed" if failures else "clean",
+            "errors": failures + warnings,
+            "failed_rules": failures
+        }
+        import json
+        (s_folder / "validation.json").write_text(json.dumps(val_data, indent=2), encoding="utf-8")
+        
+        # Update queue
+        new_status = "validation_failed" if failures else "validation_passed"
+        try:
+            update_queue_scene(book_folder, f"{chapter_slug}/{sc}", status=new_status)
+        except Exception:
+            pass
+            
+        return 1 if failures else 0
 
     chapters = context_validator.discover_chapters(book_folder)
     if args.chapter:
@@ -914,6 +1007,473 @@ def cmd_checkpoint(args: argparse.Namespace) -> int:
             return 1
 
     return 1
+
+
+def _shift_scene_args(args: argparse.Namespace) -> Path:
+    """Detects if chapter slug is passed in book_folder and shifts parameters.
+    
+    Returns the resolved book_folder Path.
+    """
+    import re
+    raw_folder = getattr(args, "book_folder", None)
+    book_folder = _normalize_books_folder_arg(raw_folder or "books/book-example")
+    
+    if raw_folder and (raw_folder.startswith("chapter-") or raw_folder.startswith("ch-") or re.match(r"^ch\d+", raw_folder)):
+        if hasattr(args, "chapter") and not args.chapter:
+            args.chapter = raw_folder
+        book_folder = _normalize_books_folder_arg("books/book-example")
+        
+    return book_folder
+
+
+def cmd_scene(args: argparse.Namespace) -> int:
+    """Handles scene subcommands (init, packet, report)."""
+    subcommand = getattr(args, "scene_command", None)
+    if subcommand == "init":
+        book_folder = _shift_scene_args(args)
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+            
+        scene_id = getattr(args, "scene_id", None) or getattr(args, "scene", None)
+        if not scene_id:
+            print("Error: --scene-id is required.", file=sys.stderr)
+            return 2
+
+        from bookforge.core.scene import parse_scene_id, init_scene_manifest
+        ch, sc = parse_scene_id(scene_id)
+        chapter = args.chapter or ch
+        if not chapter:
+            print("Error: --chapter must be specified or included in scene identifier (e.g. ch08_sc02).", file=sys.stderr)
+            return 2
+
+        target_words = getattr(args, "target_words", 3500)
+        m_path = init_scene_manifest(book_folder, chapter, sc, target_words)
+        print(f"Initialized scene manifest at: {m_path}")
+        
+        # Update/sync the queue status
+        try:
+            from bookforge.core.queue import update_queue_scene
+            update_queue_scene(book_folder, f"{chapter}/{sc}", status="ready_for_generation", target_words=target_words)
+        except Exception:
+            pass
+            
+        return 0
+
+    elif subcommand == "packet":
+        book_folder = _shift_scene_args(args)
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+            
+        scene_id = getattr(args, "scene_id", None) or getattr(args, "scene", None)
+        if not scene_id:
+            print("Error: --scene-id is required.", file=sys.stderr)
+            return 2
+
+        from bookforge.core.scene import parse_scene_id
+        ch, sc = parse_scene_id(scene_id)
+        chapter = args.chapter or ch
+        if not chapter:
+            print("Error: --chapter must be specified or included in scene identifier (e.g. ch08_sc02).", file=sys.stderr)
+            return 2
+
+        from bookforge.core.packet.builder import build_scene_packet
+        try:
+            markdown = build_scene_packet(book_folder, chapter, sc)
+        except Exception as error:
+            print(f"Error building scene packet: {error}", file=sys.stderr)
+            return 2
+
+        from bookforge.core.packet.helpers import scene_folder
+        folder = scene_folder(book_folder, chapter, sc)
+        folder.mkdir(parents=True, exist_ok=True)
+        out_p = folder / "generation-packet.md"
+        out_p.write_text(markdown, encoding="utf-8")
+        print(f"Wrote scene generation-packet.md to {out_p}")
+        
+        # Increment generation attempts in queue and update status
+        try:
+            from bookforge.core.queue import update_queue_scene
+            update_queue_scene(book_folder, f"{chapter}/{sc}", status="generation_packet_ready", inc_generation=True)
+        except Exception:
+            pass
+            
+        return 0
+
+    elif subcommand == "report":
+        import re
+        raw_folder = args.book_folder
+        chapter = args.chapter
+        scene_id = args.scene_id
+        
+        # Shift logic specifically for report positional arguments
+        if raw_folder and (raw_folder.startswith("chapter-") or raw_folder.startswith("ch-") or re.match(r"^ch\d+", raw_folder)):
+            scene_id = chapter
+            chapter = raw_folder
+            book_folder = _normalize_books_folder_arg("books/book-example")
+        else:
+            book_folder = _normalize_books_folder_arg(raw_folder or "books/book-example")
+            
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+            
+        if not chapter or not scene_id:
+            print("Error: Both chapter and scene-id are required.", file=sys.stderr)
+            return 2
+            
+        from bookforge.core.scene import parse_scene_id, load_scene_manifest
+        from bookforge.core.packet.helpers import scene_folder, scene_draft_path
+        from bookforge.core.queue import load_queue
+        
+        ch, sc_id = parse_scene_id(scene_id)
+        ch_slug = chapter or ch
+        
+        s_folder = scene_folder(book_folder, ch_slug, sc_id)
+        m_path = s_folder / "manifest.yml"
+        if not m_path.exists():
+            m_path = s_folder.parent.parent / "scenes" / sc_id / "manifest.yml"
+            
+        if not m_path.exists():
+            print(f"Error: Scene manifest not found for {ch_slug}/{sc_id}", file=sys.stderr)
+            return 2
+            
+        manifest = load_scene_manifest(m_path, book_folder)
+        
+        # Draft word count
+        draft_p = scene_draft_path(s_folder, sc_id)
+        draft_words = 0
+        if draft_p.exists():
+            try:
+                draft_words = len(draft_p.read_text(encoding="utf-8").split())
+            except Exception:
+                pass
+                
+        # Packet token estimation
+        packet_p = s_folder / "generation-packet.md"
+        packet_tokens = 0
+        if packet_p.exists():
+            try:
+                from bookforge.core.analytics import estimate_tokens
+                packet_tokens = estimate_tokens(packet_p.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+                
+        # Patch token estimation
+        patch_packet_p = s_folder / "patch-packet.md"
+        patch_tokens = 0
+        if patch_packet_p.exists():
+            try:
+                from bookforge.core.analytics import estimate_tokens
+                patch_tokens = estimate_tokens(patch_packet_p.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+                
+        # Validation status
+        val_json = s_folder / "validation.json"
+        val_status = "unknown"
+        if val_json.exists():
+            try:
+                import json
+                val_data = json.loads(val_json.read_text(encoding="utf-8"))
+                val_status = "passed" if val_data.get("status") == "clean" else "failed"
+            except Exception:
+                pass
+        elif manifest.status == "clean":
+            val_status = "passed"
+            
+        # Attempts and provider from queue
+        q_data = load_queue(book_folder)
+        attempts_patch = 0
+        provider = "manual-web"
+        for s in q_data.get("scenes", []):
+            if s["scene_key"] == f"{ch_slug}/{sc_id}":
+                attempts_patch = s["attempts"].get("patch", 0)
+                provider = s.get("provider", "manual-web")
+                if val_status == "unknown":
+                    if s["status"] in ("clean", "validation_passed"):
+                        val_status = "passed"
+                    elif s["status"] in ("validation_failed", "ready_for_patch", "patch_packet_ready"):
+                        val_status = "failed"
+                break
+                
+        # Guard warnings
+        guard_log_p = s_folder / "guard-log.jsonl"
+        guard_warnings = 0
+        if guard_log_p.exists():
+            try:
+                with open(guard_log_p, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if "warning" in line.lower() or "violation" in line.lower() or "fail" in line.lower():
+                            guard_warnings += 1
+            except Exception:
+                pass
+                
+        # Output formatting
+        print(f"Scene: {ch_slug}/{sc_id}")
+        print(f"Target words: {manifest.target_words}")
+        print(f"Draft words: {draft_words}")
+        print(f"Packet tokens: {packet_tokens}")
+        print(f"Patch tokens: {patch_tokens}")
+        print(f"Validation: {val_status}")
+        print(f"Patch attempts: {attempts_patch}")
+        print(f"Guard warnings: {guard_warnings}")
+        print(f"Provider lane: {provider}")
+        print(f"Status: {manifest.status}")
+        return 0
+
+    else:
+        print("Error: Invalid or missing scene subcommand. Use init, packet, or report.", file=sys.stderr)
+        return 2
+
+
+def cmd_patch(args: argparse.Namespace) -> int:
+    """Handles patch subcommands (build, splice, apply)."""
+    subcommand = getattr(args, "patch_command", None)
+    if subcommand is None:
+        subcommand = "build"
+        args.scene_id = getattr(args, "scene", None) or getattr(args, "scene_id", None)
+
+    if subcommand == "build":
+        book_folder = _shift_scene_args(args)
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+            
+        scene_id = getattr(args, "scene_id", None) or getattr(args, "scene", None)
+        if not scene_id:
+            print("Error: --scene-id is required.", file=sys.stderr)
+            return 2
+
+        from bookforge.core.scene import parse_scene_id, load_scene_manifest, manifest_path
+        ch, sc = parse_scene_id(scene_id)
+        chapter = args.chapter or ch
+        if not chapter:
+            print("Error: --chapter must be specified or included in scene identifier (e.g. ch08_sc02).", file=sys.stderr)
+            return 2
+
+        from bookforge.core.packet.helpers import scene_folder
+        folder = scene_folder(book_folder, chapter, sc)
+        m_path = manifest_path(folder.parent.parent, sc)
+        if not m_path.exists():
+            m_path = folder / "manifest.yml"
+
+        if not m_path.exists():
+            print(f"Error: scene manifest not found for {scene_id}", file=sys.stderr)
+            return 2
+
+        manifest = load_scene_manifest(m_path, book_folder)
+        failed_rules = args.failed_rules or []
+        if not failed_rules:
+            val_json_path = folder / "validation.json"
+            if val_json_path.exists():
+                try:
+                    import json
+                    val_data = json.loads(val_json_path.read_text(encoding="utf-8"))
+                    failed_rules = val_data.get("failed_rules", []) or val_data.get("errors", [])
+                except Exception:
+                    pass
+            if not failed_rules:
+                failed_rules = ["Generic style validation failure. Check style guide."]
+
+        from bookforge.core.patch import build_patch_packet
+        patch_content = build_patch_packet(manifest, failed_rules)
+        out_p = folder / "patch-packet.md"
+        out_p.write_text(patch_content, encoding="utf-8")
+        print(f"Wrote patch-packet.md to {out_p}")
+        
+        # Update queue status and increment patch attempts
+        try:
+            from bookforge.core.queue import update_queue_scene
+            update_queue_scene(book_folder, f"{chapter}/{sc}", status="patch_packet_ready", inc_patch=True)
+        except Exception:
+            pass
+            
+        return 0
+
+    elif subcommand in ("splice", "apply"):
+        book_folder = _shift_scene_args(args)
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+            
+        scene_id = getattr(args, "scene_id", None) or getattr(args, "scene", None)
+        if not scene_id:
+            print("Error: --scene-id is required.", file=sys.stderr)
+            return 2
+
+        from bookforge.core.scene import parse_scene_id, load_scene_manifest
+        from bookforge.core.packet.helpers import scene_folder
+        ch, sc = parse_scene_id(scene_id)
+        chapter = args.chapter or ch
+        if not chapter:
+            print("Error: --chapter must be specified or included in scene identifier (e.g. ch08_sc02).", file=sys.stderr)
+            return 2
+
+        folder = scene_folder(book_folder, chapter, sc)
+        draft_p = folder / "draft.md"
+        repl_p = folder / "replacement.md"
+
+        from_file = getattr(args, "from_file", None)
+        if from_file:
+            from_file_path = Path(from_file)
+            if from_file_path.exists():
+                folder.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(from_file_path, repl_p)
+                print(f"Copied replacement from {from_file} to {repl_p}")
+            else:
+                print(f"Error: source file from --from-file does not exist: {from_file_path}", file=sys.stderr)
+                return 2
+
+        if not draft_p.exists():
+            print(f"Error: scene draft.md does not exist at {draft_p}", file=sys.stderr)
+            return 2
+        if not repl_p.exists():
+            print(f"Error: scene replacement.md does not exist at {repl_p}", file=sys.stderr)
+            return 2
+
+        original = draft_p.read_text(encoding="utf-8")
+        replacement = repl_p.read_text(encoding="utf-8")
+
+        from bookforge.core.patch import splice_prose, validate_merged_prose
+        success, merged = splice_prose(original, replacement)
+        if not success:
+            print(f"Splicing failed: {merged}", file=sys.stderr)
+            return 1
+
+        m_path = folder / "manifest.yml"
+        if not m_path.exists():
+            m_path = folder.parent.parent / "scenes" / sc / "manifest.yml"
+        if m_path.exists():
+            manifest = load_scene_manifest(m_path, book_folder)
+            target_words = manifest.target_words
+        else:
+            target_words = 3500
+
+        errors = validate_merged_prose(merged, target_words)
+        if errors:
+            print("Merged prose failed validation checks:", file=sys.stderr)
+            for err in errors:
+                print(f"- {err}", file=sys.stderr)
+            val_data = {"status": "failed", "errors": errors}
+            import json
+            (folder / "validation.json").write_text(json.dumps(val_data, indent=2), encoding="utf-8")
+            
+            # Update queue status
+            try:
+                from bookforge.core.queue import update_queue_scene
+                update_queue_scene(book_folder, f"{chapter}/{sc}", status="validation_failed")
+            except Exception:
+                pass
+                
+            return 1
+
+        draft_p.write_text(merged, encoding="utf-8")
+        val_data = {"status": "clean", "errors": []}
+        import json
+        (folder / "validation.json").write_text(json.dumps(val_data, indent=2), encoding="utf-8")
+
+        if m_path.exists():
+            manifest.status = "clean"
+            from bookforge.core.scene import save_scene_manifest
+            save_scene_manifest(manifest, m_path)
+
+        # Update queue status
+        try:
+            from bookforge.core.queue import update_queue_scene
+            update_queue_scene(book_folder, f"{chapter}/{sc}", status="validation_passed")
+        except Exception:
+            pass
+
+        print(f"Successfully spliced patch and updated draft.md at {draft_p}")
+        return 0
+    else:
+        print("Error: Invalid or missing patch subcommand. Use build, splice, or apply.", file=sys.stderr)
+        return 2
+
+
+def cmd_queue(args: argparse.Namespace) -> int:
+    """Handles queue subcommands (build, show, update)."""
+    subcommand = getattr(args, "queue_command", None)
+    if not subcommand:
+        print("Error: Invalid or missing queue subcommand. Use build, show, or update.", file=sys.stderr)
+        return 2
+
+    book_folder = _normalize_books_folder_arg(args.book_folder)
+    from bookforge.core import queue as queue_core
+
+    if subcommand == "build":
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+        q_path = queue_core.build_queue(book_folder)
+        print(f"Queue compiled successfully and written to {q_path}")
+        return 0
+
+    elif subcommand == "show":
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+        queue_data = queue_core.load_queue(book_folder)
+        scenes = queue_data.get("scenes", [])
+        print(f"Queue for: {queue_data.get('book', book_folder.name)}")
+        print("=" * 60)
+        if not scenes:
+            print("No scenes in queue. Run 'bf queue build' first.")
+            return 0
+            
+        for s in scenes:
+            key = s["scene_key"]
+            status = s["status"]
+            provider = s["provider"]
+            gen_att = s["attempts"].get("generation", 0)
+            pat_att = s["attempts"].get("patch", 0)
+            deps = s["dependencies"]
+            
+            if status in ("clean", "validation_passed"):
+                prefix = "[DONE]"
+            elif status in ("ready_for_patch", "patch_packet_ready", "validation_failed"):
+                prefix = "[REPAIR]"
+            elif status in ("ready_for_generation", "generation_packet_ready"):
+                prefix = "[ACTIVE]"
+            else:
+                prefix = "[PENDING]"
+                
+            att_str = f"(attempts: gen={gen_att}, patch={pat_att})"
+            dep_str = f" (depends on: {', '.join(deps)})" if deps else ""
+            print(f"{prefix:<9} {key:<20} {status:<24} {provider:<12} {att_str}{dep_str}")
+        return 0
+
+    elif subcommand == "update":
+        if not book_folder.exists():
+            print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+            return 2
+        if not args.scene_key:
+            print("Error: --scene-key is required.", file=sys.stderr)
+            return 2
+            
+        status = getattr(args, "status", None)
+        provider = getattr(args, "provider", None)
+        inc_gen = getattr(args, "inc_generation", False)
+        inc_patch = getattr(args, "inc_patch", False)
+        
+        success = queue_core.update_queue_scene(
+            book_folder,
+            args.scene_key,
+            status=status,
+            provider=provider,
+            inc_generation=inc_gen,
+            inc_patch=inc_patch
+        )
+        if success:
+            print(f"Successfully updated scene '{args.scene_key}' in queue.")
+            return 0
+        else:
+            print(f"Error: scene '{args.scene_key}' not found in queue.", file=sys.stderr)
+            return 1
+
+    return 2
 
 
 def cmd_memory(args: argparse.Namespace) -> int:
@@ -1258,6 +1818,78 @@ def main() -> int:
     parser_chk_diff.add_argument("name", help="Name of the checkpoint")
     parser_chk_diff.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
 
+    # scene
+    parser_scene = subparsers.add_parser("scene", help="Scene-level authoring and manifest commands")
+    scene_subparsers = parser_scene.add_subparsers(dest="scene_command", required=True)
+
+    # scene init
+    parser_scene_init = scene_subparsers.add_parser("init", help="Initialize a new scene manifest")
+    parser_scene_init.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_scene_init.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
+    parser_scene_init.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
+    parser_scene_init.add_argument("--target-words", type=int, default=3500, help="Target word count for the scene")
+
+    # scene packet
+    parser_scene_packet = scene_subparsers.add_parser("packet", help="Generate a targeted scene context packet")
+    parser_scene_packet.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_scene_packet.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
+    parser_scene_packet.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
+
+    # scene report
+    parser_scene_report = scene_subparsers.add_parser("report", help="Generate scene metrics report")
+    parser_scene_report.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_scene_report.add_argument("chapter", nargs="?", help="Chapter slug (e.g. chapter-08)")
+    parser_scene_report.add_argument("scene_id", nargs="?", help="Scene ID (e.g. scene-02)")
+
+    # patch
+    parser_patch = subparsers.add_parser("patch", help="Patch building and splicing commands")
+    # For top-level patch calls like: bf patch --chapter chapter-08 --scene scene-02
+    parser_patch.add_argument("--scene", help="Scene ID (e.g. scene-02)")
+    parser_patch.add_argument("--chapter", help="Chapter ID")
+    parser_patch.add_argument("--failed-rules", nargs="+", help="Failed rules for top-level patch build")
+    patch_subparsers = parser_patch.add_subparsers(dest="patch_command", required=False)
+
+    # patch build
+    parser_patch_build = patch_subparsers.add_parser("build", help="Build a small patch packet for failed rules")
+    parser_patch_build.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_patch_build.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
+    parser_patch_build.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
+    parser_patch_build.add_argument("--failed-rules", nargs="+", help="List of failed rules or issues to patch")
+
+    # patch splice
+    parser_patch_splice = patch_subparsers.add_parser("splice", help="Splice replacement prose into original draft")
+    parser_patch_splice.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_patch_splice.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
+    parser_patch_splice.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
+
+    # patch apply
+    parser_patch_apply = patch_subparsers.add_parser("apply", help="Apply replacement patch (alias for splice)")
+    parser_patch_apply.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_patch_apply.add_argument("--scene-id", "--scene", dest="scene_id", required=True, help="Scene ID (e.g. scene-01, ch01_sc01)")
+    parser_patch_apply.add_argument("--chapter", help="Chapter slug (optional if encoded in scene-id)")
+    parser_patch_apply.add_argument("--from-file", help="Path to replacement file")
+
+    # queue
+    parser_queue = subparsers.add_parser("queue", help="Central scene execution queue commands")
+    queue_subparsers = parser_queue.add_subparsers(dest="queue_command", required=True)
+
+    # queue build
+    parser_queue_build = queue_subparsers.add_parser("build", help="Build or compile the scene queue")
+    parser_queue_build.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # queue show
+    parser_queue_show = queue_subparsers.add_parser("show", help="Display the scene queue status")
+    parser_queue_show.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+
+    # queue update
+    parser_queue_update = queue_subparsers.add_parser("update", help="Update scene attributes in the queue")
+    parser_queue_update.add_argument("book_folder", nargs="?", default="books/book-example", help="Path to book folder")
+    parser_queue_update.add_argument("scene_key", help="Scene key in format chapter/scene (e.g. chapter-08/scene-02)")
+    parser_queue_update.add_argument("--status", help="New status value")
+    parser_queue_update.add_argument("--provider", help="New provider value")
+    parser_queue_update.add_argument("--inc-generation", action="store_true", help="Increment generation attempts")
+    parser_queue_update.add_argument("--inc-patch", action="store_true", help="Increment patch attempts")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -1288,6 +1920,9 @@ def main() -> int:
         "migrate": cmd_migrate,
         "memory": cmd_memory,
         "checkpoint": cmd_checkpoint,
+        "scene": cmd_scene,
+        "patch": cmd_patch,
+        "queue": cmd_queue,
     }
 
     try:
