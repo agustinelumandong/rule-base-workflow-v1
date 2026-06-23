@@ -23,6 +23,7 @@ from bookforge.core import relationship as relationship_module
 from bookforge.core import research as research_module
 from bookforge.core import pacing as pacing_module
 from bookforge.core import packet as packet_module
+from bookforge.core import characters as characters_module
 from bookforge import config
 
 
@@ -41,6 +42,7 @@ BOOK_COMPATIBILITY_MARKERS = {
     "loop-state.json",
     "world-state.json",
     "chapters",
+    "characters",
     "spec",
     "canon",
 }
@@ -143,6 +145,10 @@ def cmd_init(args: argparse.Namespace) -> int:
         # 3. Fallback stub
         dest_path.write_text(f"# {book_folder.name.replace('-', ' ').title()}\n\nStub file for {filename}.\n", encoding="utf-8")
         print(f"Created: {dest_path} (fallback stub)")
+
+    character_files = characters_module.scaffold_character_files(book_folder)
+    for path in character_files:
+        print(f"Created: {path}")
 
     # 2. Perform continuity carry-forward from a completed book if requested
     if hasattr(args, "carry_from") and args.carry_from:
