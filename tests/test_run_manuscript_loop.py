@@ -196,6 +196,29 @@ class ManuscriptLoopTests(unittest.TestCase):
 
         self.assertEqual(loop.choose_rebalance_chapter(rhythm_report), "chapter-02")
 
+    def test_choose_expansion_chapter_includes_warning_only_chapters(self):
+        loop = load_loop()
+        reports = [
+            SimpleNamespace(
+                status="PASS",
+                failures=[],
+                warnings=[],
+                chapter=SimpleNamespace(slug="chapter-01"),
+            ),
+            SimpleNamespace(
+                status="WARN",
+                failures=[],
+                warnings=["soft source-overlap warning"],
+                chapter=SimpleNamespace(slug="chapter-02"),
+            ),
+        ]
+        counts = [
+            loop.length_checker.DraftCount(label="Chapter 01", words=3500),
+            loop.length_checker.DraftCount(label="Chapter 02", words=1200),
+        ]
+
+        self.assertEqual(loop.choose_expansion_chapter(reports, counts), "chapter-02")
+
     def test_load_save_persistent_repairs(self):
         loop = load_loop()
         with tempfile.TemporaryDirectory() as tmp:

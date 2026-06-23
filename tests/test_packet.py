@@ -125,6 +125,121 @@ Darin Mayweather is a sheriff's deputy.
         self.assertIn("## Scene Breakdown", pkt)
         self.assertNotIn("## Canon Snapshot", pkt)
 
+    def write_character_profile(
+        self,
+        relative_path,
+        *,
+        char_id,
+        canonical_name,
+        category,
+        body,
+        aliases=None,
+        role="Gunman",
+        pov_allowed=False,
+    ):
+        aliases = aliases or []
+        path = self.temp_dir / "characters" / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        alias_lines = "\n".join(f"  - {alias}" for alias in aliases) if aliases else "  []"
+        path.write_text(
+            f"""---
+id: {char_id}
+canonical_name: {canonical_name}
+aliases:
+{alias_lines}
+category: {category}
+story_role: {role}
+pov:
+  allowed: {str(pov_allowed).lower()}
+---
+# {canonical_name}
+
+{body}
+""",
+            encoding="utf-8",
+        )
+        return path
+
+    def test_draft_packet_includes_active_character_profile(self):
+        self.create_mock_chapter()
+        folder = self.temp_dir / "changes" / "chapter-01"
+        (folder / "proposal.md").write_text("Scene 1: Harlan arrives in town.", encoding="utf-8")
+        self.write_character_profile(
+            "main/harlan.md",
+            char_id="harlan",
+            canonical_name="Harlan Stone",
+            category="main",
+            aliases=["Marshal Harlan"],
+            body="Harlan profile from character file. Carries a Colt.",
+            pov_allowed=True,
+        )
+        self.write_character_profile(
+            "supporting/darin.md",
+            char_id="darin",
+            canonical_name="Darin Mayweather",
+            category="supporting",
+            body="Darin profile should not be selected.",
+        )
+
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "draft-prose")
+
+        self.assertIn("## Relevant Character Profiles", pkt)
+        self.assertIn("Harlan profile from character file", pkt)
+        self.assertNotIn("Darin profile should not be selected", pkt)
+
+    def test_draft_packet_falls_back_to_main_profiles_when_no_character_matches(self):
+        self.create_mock_chapter()
+        folder = self.temp_dir / "changes" / "chapter-01"
+        (folder / "proposal.md").write_text("Scene 1: A rider arrives.", encoding="utf-8")
+        self.write_character_profile(
+            "main/harlan.md",
+            char_id="harlan",
+            canonical_name="Harlan",
+            category="main",
+            body="Main profile fallback text.",
+        )
+        self.write_character_profile(
+            "supporting/darin.md",
+            char_id="darin",
+            canonical_name="Darin Mayweather",
+            category="supporting",
+            body="Supporting fallback should not appear.",
+        )
+
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "draft-prose")
+
+        self.assertIn("## Relevant Character Profiles", pkt)
+        self.assertIn("Main profile fallback text", pkt)
+        self.assertNotIn("Supporting fallback should not appear", pkt)
+
+    def test_draft_packet_omits_character_profiles_when_folder_missing(self):
+        self.create_mock_chapter()
+
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "draft-prose")
+
+        self.assertNotIn("## Relevant Character Profiles", pkt)
+
+    def test_draft_packet_warns_but_does_not_crash_on_malformed_character_front_matter(self):
+        self.create_mock_chapter()
+        path = self.temp_dir / "characters" / "main" / "harlan.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            """---
+id: [not valid
+canonical_name: Harlan
+---
+# Harlan
+
+Malformed profile body.
+""",
+            encoding="utf-8",
+        )
+
+        pkt = packet.render_packet(self.temp_dir, "chapter-01", "draft-prose")
+
+        self.assertIn("## Relevant Character Profiles", pkt)
+        self.assertIn("WARNING: Could not parse character profile", pkt)
+
     def test_render_packet_continuity_check(self):
         self.create_mock_chapter()
         pkt = packet.render_packet(self.temp_dir, "chapter-01", "continuity-check")

@@ -197,7 +197,18 @@ class NotebookLMSystemTests(unittest.TestCase):
         # Mocking queries (query 1 for research_query, query 2 for generator_prompt)
         mock_query.side_effect = [
             "Authentic Western events",  # research query response
-            "# Book Outline: Tex Cade: Texas Ranger - Book 3\n\n## Overview\n- Premise: Tex Cade hunts outlaws."  # generator outline response
+            """# Book Outline: Tex Cade: Texas Ranger - Book 3
+
+## Overview
+- Premise: Tex Cade hunts outlaws.
+
+## Returning Characters
+
+### Tex Cade (Protagonist)
+- **Role:** POV protagonist.
+- **Function:** Special attaché Ranger whose investigation drives the book's main conflict.
+- **Profile:** `characters/main/tex-cade.md`
+"""  # generator outline response
         ]
         
         # Mock subprocess run for source upload checks
@@ -220,6 +231,8 @@ class NotebookLMSystemTests(unittest.TestCase):
             phase_0 = folder / "phase-0.md"
             self.assertTrue(phase_0.exists())
             self.assertIn("# Book Outline: Tex Cade: Texas Ranger - Book 3", phase_0.read_text(encoding="utf-8"))
+            self.assertTrue((folder / "characters/main/tex-cade.md").exists())
+            self.assertTrue((folder / "characters/cast-index.md").exists())
 
     @patch("shutil.which")
     @patch("bookforge.core.notebooklm.get_auth_status")
@@ -260,6 +273,8 @@ class NotebookLMSystemTests(unittest.TestCase):
             generator_prompt = mock_query.call_args_list[1][0][1]
             self.assertIn("The name \"Silas\"", generator_prompt)
             self.assertIn("The name \"Voss\"", generator_prompt)
+            self.assertIn("## Returning Characters", generator_prompt)
+            self.assertIn("Do not put full character profiles in phase-0.md", generator_prompt)
 
 
 
