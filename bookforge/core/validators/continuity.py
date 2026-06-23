@@ -136,7 +136,7 @@ def validate_continuity_out_issues(chapter: ChapterFiles) -> tuple:
     draft_text = chapter.draft.read_text(encoding="utf-8")
     if not draft_text.strip():
         return tuple(issues)
-    continuity_path = chapter.folder / "continuity-out.md"
+    continuity_path = chapter.continuity_out
     if not continuity_path.exists():
         issues.append(_make_issue(
             "VALIDATOR_MISSING_CONTINUITY_OUT",
