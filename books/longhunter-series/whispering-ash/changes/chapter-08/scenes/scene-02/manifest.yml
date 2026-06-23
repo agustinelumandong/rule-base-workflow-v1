@@ -1,0 +1,19 @@
+scene_id: scene-02
+chapter: chapter-08
+target_words: 1100
+status: draft
+required_beats:
+- Jake wins by mixing Cherokee training with brute farm wrestling.
+- Use body mechanics, dirt, grips, breath, and farm wrestling.
+- Jake should win without killing.
+- The victory must use both Thorn's training and old farm toughness.
+forbidden:
+- modern slang
+- permanent named antagonist
+research_questions: []
+inputs:
+  characters:
+  - jake
+  - thorn
+  locations:
+  - village hard ground

@@ -1,0 +1,365 @@
+book: whispering-ash
+scenes:
+- scene_key: chapter-01/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-01/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-01/scenes/scene-01/draft.md
+  validation_path: changes/chapter-01/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-01/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies: []
+- scene_key: chapter-02/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-02/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-02/scenes/scene-01/draft.md
+  validation_path: changes/chapter-02/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-02/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-01/scene-01
+- scene_key: chapter-02/scene-02
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-02/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-02/scenes/scene-02/draft.md
+  validation_path: changes/chapter-02/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-02/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-02/scene-01
+- scene_key: chapter-02/scene-03
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-02/scenes/scene-03/generation-packet.md
+  draft_path: changes/chapter-02/scenes/scene-03/draft.md
+  validation_path: changes/chapter-02/scenes/scene-03/validation.json
+  patch_packet_path: changes/chapter-02/scenes/scene-03/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-02/scene-02
+- scene_key: chapter-03/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-03/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-03/scenes/scene-01/draft.md
+  validation_path: changes/chapter-03/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-03/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-02/scene-03
+- scene_key: chapter-03/scene-02
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-03/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-03/scenes/scene-02/draft.md
+  validation_path: changes/chapter-03/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-03/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-03/scene-01
+- scene_key: chapter-03/scene-03
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-03/scenes/scene-03/generation-packet.md
+  draft_path: changes/chapter-03/scenes/scene-03/draft.md
+  validation_path: changes/chapter-03/scenes/scene-03/validation.json
+  patch_packet_path: changes/chapter-03/scenes/scene-03/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-03/scene-02
+- scene_key: chapter-04/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-04/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-04/scenes/scene-01/draft.md
+  validation_path: changes/chapter-04/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-04/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-03/scene-03
+- scene_key: chapter-04/scene-02
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-04/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-04/scenes/scene-02/draft.md
+  validation_path: changes/chapter-04/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-04/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-04/scene-01
+- scene_key: chapter-04/scene-03
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-04/scenes/scene-03/generation-packet.md
+  draft_path: changes/chapter-04/scenes/scene-03/draft.md
+  validation_path: changes/chapter-04/scenes/scene-03/validation.json
+  patch_packet_path: changes/chapter-04/scenes/scene-03/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-04/scene-02
+- scene_key: chapter-04/scene-04
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-04/scenes/scene-04/generation-packet.md
+  draft_path: changes/chapter-04/scenes/scene-04/draft.md
+  validation_path: changes/chapter-04/scenes/scene-04/validation.json
+  patch_packet_path: changes/chapter-04/scenes/scene-04/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-04/scene-03
+- scene_key: chapter-05/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-05/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-05/scenes/scene-01/draft.md
+  validation_path: changes/chapter-05/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-05/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-04/scene-04
+- scene_key: chapter-05/scene-02
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-05/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-05/scenes/scene-02/draft.md
+  validation_path: changes/chapter-05/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-05/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-05/scene-01
+- scene_key: chapter-05/scene-03
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-05/scenes/scene-03/generation-packet.md
+  draft_path: changes/chapter-05/scenes/scene-03/draft.md
+  validation_path: changes/chapter-05/scenes/scene-03/validation.json
+  patch_packet_path: changes/chapter-05/scenes/scene-03/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-05/scene-02
+- scene_key: chapter-06/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-06/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-06/scenes/scene-01/draft.md
+  validation_path: changes/chapter-06/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-06/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-05/scene-03
+- scene_key: chapter-06/scene-02
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-06/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-06/scenes/scene-02/draft.md
+  validation_path: changes/chapter-06/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-06/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-06/scene-01
+- scene_key: chapter-06/scene-03
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-06/scenes/scene-03/generation-packet.md
+  draft_path: changes/chapter-06/scenes/scene-03/draft.md
+  validation_path: changes/chapter-06/scenes/scene-03/validation.json
+  patch_packet_path: changes/chapter-06/scenes/scene-03/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-06/scene-02
+- scene_key: chapter-06/scene-04
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-06/scenes/scene-04/generation-packet.md
+  draft_path: changes/chapter-06/scenes/scene-04/draft.md
+  validation_path: changes/chapter-06/scenes/scene-04/validation.json
+  patch_packet_path: changes/chapter-06/scenes/scene-04/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-06/scene-03
+- scene_key: chapter-07/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-07/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-07/scenes/scene-01/draft.md
+  validation_path: changes/chapter-07/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-07/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-06/scene-04
+- scene_key: chapter-07/scene-02
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-07/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-07/scenes/scene-02/draft.md
+  validation_path: changes/chapter-07/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-07/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-07/scene-01
+- scene_key: chapter-08/scene-02
+  status: validation_passed
+  provider: manual-web
+  target_words: 1100
+  packet_path: changes/chapter-08/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-08/scenes/scene-02/draft.md
+  validation_path: changes/chapter-08/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-08/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 12
+    patch: 0
+  dependencies:
+  - chapter-07/scene-02
+- scene_key: chapter-09/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-09/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-09/scenes/scene-01/draft.md
+  validation_path: changes/chapter-09/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-09/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-08/scene-02
+- scene_key: chapter-09/scene-02
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-09/scenes/scene-02/generation-packet.md
+  draft_path: changes/chapter-09/scenes/scene-02/draft.md
+  validation_path: changes/chapter-09/scenes/scene-02/validation.json
+  patch_packet_path: changes/chapter-09/scenes/scene-02/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-09/scene-01
+- scene_key: chapter-10/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-10/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-10/scenes/scene-01/draft.md
+  validation_path: changes/chapter-10/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-10/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-09/scene-02
+- scene_key: chapter-11/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-11/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-11/scenes/scene-01/draft.md
+  validation_path: changes/chapter-11/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-11/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-10/scene-01
+- scene_key: chapter-12/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-12/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-12/scenes/scene-01/draft.md
+  validation_path: changes/chapter-12/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-12/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-11/scene-01
+- scene_key: chapter-13/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-13/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-13/scenes/scene-01/draft.md
+  validation_path: changes/chapter-13/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-13/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-12/scene-01
+- scene_key: chapter-14/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-14/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-14/scenes/scene-01/draft.md
+  validation_path: changes/chapter-14/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-14/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-13/scene-01
