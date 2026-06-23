@@ -820,6 +820,75 @@ None.
             finally:
                 subprocess.run = original_run
 
+    def test_simile_and_metaphor_detection(self):
+        validator = load_validator()
+        # Test simile/metaphor warning triggers
+        text_simile_1 = "The name lay on the paper like an old bloodstain."
+        text_simile_2 = "Pain stretches hours out like wet rawhide."
+        text_simile_3 = "He looked as if he had seen a ghost."
+        
+        # Non-simile patterns that should not trigger
+        text_clean = "I would like to go. I feel like it is cold. He looks like his father."
+        
+        findings_simile_1 = validator.check_similes_and_metaphors(text_simile_1)
+        findings_simile_2 = validator.check_similes_and_metaphors(text_simile_2)
+        findings_simile_3 = validator.check_similes_and_metaphors(text_simile_3)
+        findings_clean = validator.check_similes_and_metaphors(text_clean)
+        
+        self.assertTrue(len(findings_simile_1) > 0, "Expected simile 1 to trigger")
+        self.assertTrue(len(findings_simile_2) > 0, "Expected simile 2 to trigger")
+        self.assertTrue(len(findings_simile_3) > 0, "Expected simile 3 to trigger")
+        self.assertEqual(findings_clean, [], "Expected clean text not to trigger simile warning")
+
+    def test_personification_detection(self):
+        validator = load_validator()
+        # Personification of inanimate object triggers
+        text_personification_1 = "The land did not speak like men wanted it to."
+        text_personification_2 = "The night moved around them."
+        text_personification_3 = "Wonder wasted room."
+        
+        # Weapon metaphor triggers
+        text_weapon_metaphor = "The Colt was a warning."
+        
+        # Non-personification patterns
+        text_clean = "The horse moved across the creek. Jed spoke to Harlan."
+        
+        findings_1 = validator.check_personification_of_objects(text_personification_1)
+        findings_2 = validator.check_personification_of_objects(text_personification_2)
+        findings_3 = validator.check_personification_of_objects(text_personification_3)
+        findings_weapon = validator.check_personification_of_objects(text_weapon_metaphor)
+        findings_clean = validator.check_personification_of_objects(text_clean)
+        
+        self.assertTrue(len(findings_1) > 0, "Expected land speaking to trigger")
+        self.assertTrue(len(findings_2) > 0, "Expected night moving to trigger")
+        self.assertTrue(len(findings_3) > 0, "Expected wonder wasting to trigger")
+        self.assertTrue(len(findings_weapon) > 0, "Expected Colt warning metaphor to trigger")
+        self.assertEqual(findings_clean, [], "Expected clean text not to trigger personification warning")
+
+    def test_abstract_internalization_detection(self):
+        validator = load_validator()
+        # Abstract internalization triggers
+        text_internal_1 = "He had known the question would come."
+        text_internal_2 = "Branton did not wonder long."
+        text_internal_3 = "Eleanor believed the storm was passing."
+        
+        # Dialogue should be ignored
+        text_dialogue = '"I believed you," Jed said.'
+        
+        # Non-internalization patterns
+        text_clean = "Jed walked to the barn. He grabbed the post."
+        
+        findings_1 = validator.check_abstract_internalization(text_internal_1)
+        findings_2 = validator.check_abstract_internalization(text_internal_2)
+        findings_3 = validator.check_abstract_internalization(text_internal_3)
+        findings_dialogue = validator.check_abstract_internalization(text_dialogue)
+        findings_clean = validator.check_abstract_internalization(text_clean)
+        
+        self.assertTrue(len(findings_1) > 0, "Expected he had known to trigger")
+        self.assertTrue(len(findings_2) > 0, "Expected did not wonder to trigger")
+        self.assertTrue(len(findings_3) > 0, "Expected Eleanor believed to trigger")
+        self.assertEqual(findings_dialogue, [], "Expected dialogue containing believed to be ignored")
+        self.assertEqual(findings_clean, [], "Expected clean text not to trigger internalization warning")
 
 
 if __name__ == "__main__":

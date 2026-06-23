@@ -297,5 +297,50 @@ Malformed profile body.
         self.assertIn("[Excerpt trimmed for token budget.]", pkt)
 
 
+    def test_build_scene_packet(self):
+        from bookforge.core.scene import init_scene_manifest
+        from bookforge.core.packet.builder import build_scene_packet
+        import yaml
+
+        # Initialize a mock scene manifest under changes/chapter-01/scenes/scene-01
+        m_path = init_scene_manifest(self.temp_dir, "chapter-01", "scene-01", 3000)
+        self.assertTrue(m_path.exists())
+
+        # Populate custom manifest values
+        manifest_data = yaml.safe_load(m_path.read_text(encoding="utf-8"))
+        manifest_data["required_beats"] = ["Beat A: Harlan drinks whiskey.", "Beat B: Darin enters saloon."]
+        manifest_data["forbidden"] = ["space laser"]
+        manifest_data["research_questions"] = ["Did salons sell beer?"]
+        manifest_data["inputs"] = {
+            "characters": ["harlan"]
+        }
+        with open(m_path, "w", encoding="utf-8") as f:
+            yaml.dump(manifest_data, f)
+
+        # Write harlan profile
+        self.write_character_profile(
+            "main/harlan.md",
+            char_id="harlan",
+            canonical_name="Harlan Stone",
+            category="main",
+            aliases=["Marshal Harlan"],
+            body="Harlan profile from character file.",
+            pov_allowed=True,
+        )
+
+        pkt = build_scene_packet(self.temp_dir, "chapter-01", "scene-01")
+
+        self.assertIn("# Scene Context Packet: scene-01 (chapter-01)", pkt)
+        self.assertIn("## Required Beats", pkt)
+        self.assertIn("Beat A: Harlan drinks whiskey.", pkt)
+        self.assertIn("## Forbidden Elements", pkt)
+        self.assertIn("space laser", pkt)
+        self.assertIn("## Research Questions", pkt)
+        self.assertIn("Did salons sell beer?", pkt)
+        self.assertIn("## Compressed Style Lock", pkt)
+        self.assertIn("## Relevant Character Profiles", pkt)
+        self.assertIn("Harlan profile from character file", pkt)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -212,7 +212,7 @@ class TestPersonaRegistry(unittest.TestCase):
         )
         self.assertTrue(is_allowed)
 
-        # 5. Unauthorized action
+        # 5. Point out unrecognized actions
         is_allowed, reason = persona.check_persona_capabilities(
             book_folder=self.tmp_dir,
             persona_name="writer",
@@ -221,6 +221,87 @@ class TestPersonaRegistry(unittest.TestCase):
         )
         self.assertFalse(is_allowed)
         self.assertIn("is not authorized for persona", reason)
+
+    def test_operator_prose_guard_advisory(self):
+        settings = {
+            "operator_prose_guard": {
+                "enabled": True,
+                "mode": "advisory",
+                "output_token_cap": 200,
+                "operator_personas": ["planner"],
+                "prose_actions": ["draft"]
+            }
+        }
+        (self.tmp_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+        custom_registry = {
+            "personas": {
+                "planner": {
+                    "allowed_models": ["gpt-4o"],
+                    "allowed_actions": ["draft"]
+                }
+            },
+            "global_budget_cap_usd": 15.00
+        }
+        self.registry_path.write_text(json.dumps(custom_registry), encoding="utf-8")
+
+        is_allowed, reason = persona.check_persona_capabilities(
+            book_folder=self.tmp_dir,
+            persona_name="planner",
+            model="gpt-4o",
+            action="draft",
+            projected_output_tokens=300
+        )
+        self.assertTrue(is_allowed)
+        self.assertIn("advisory guard warning logged", reason)
+
+        log_file = self.tmp_dir / "state" / "guard-log.jsonl"
+        self.assertTrue(log_file.exists())
+        log_content = log_file.read_text(encoding="utf-8")
+        self.assertIn('"persona": "planner"', log_content)
+        self.assertIn('"action": "draft"', log_content)
+
+    def test_operator_prose_guard_hard(self):
+        settings = {
+            "operator_prose_guard": {
+                "enabled": True,
+                "mode": "hard",
+                "output_token_cap": 200,
+                "operator_personas": ["planner"],
+                "prose_actions": ["draft"]
+            }
+        }
+        (self.tmp_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+        custom_registry = {
+            "personas": {
+                "planner": {
+                    "allowed_models": ["gpt-4o"],
+                    "allowed_actions": ["draft"]
+                }
+            },
+            "global_budget_cap_usd": 15.00
+        }
+        self.registry_path.write_text(json.dumps(custom_registry), encoding="utf-8")
+
+        is_allowed, reason = persona.check_persona_capabilities(
+            book_folder=self.tmp_dir,
+            persona_name="planner",
+            model="gpt-4o",
+            action="draft",
+            projected_output_tokens=300
+        )
+        self.assertFalse(is_allowed)
+        self.assertIn("REFUSED: operator persona 'planner' cannot perform prose action", reason)
+
+        is_allowed, reason = persona.check_persona_capabilities(
+            book_folder=self.tmp_dir,
+            persona_name="planner",
+            model="gpt-4o",
+            action="draft",
+            projected_output_tokens=150
+        )
+        self.assertTrue(is_allowed)
 
 
 if __name__ == "__main__":
