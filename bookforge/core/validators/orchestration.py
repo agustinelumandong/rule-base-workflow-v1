@@ -411,8 +411,105 @@ def validate_source_alignment(chapter: ChapterFiles, phase_sections: dict[str, s
     return tuple(issues)
 
 
+def validate_scene(scene: SceneManifest) -> tuple[ManuscriptIssue, ...]:
+    """Runs style, length, and forbidden term validations on a single scene draft."""
+    from bookforge.core.validators.format import _make_issue, ChapterFiles
+    from bookforge.core.issue import Severity, ManuscriptIssue
+
+    issues: list[ManuscriptIssue] = []
+    if not scene.draft_path.exists():
+        issues.append(_make_issue(
+            "SCENE_MISSING_DRAFT",
+            f"Scene draft `{scene.draft_path}` is missing.",
+            chapter=scene.chapter,
+            file=scene.draft_path,
+            severity=Severity.HARD
+        ))
+        return tuple(issues)
+
+    text = scene.draft_path.read_text(encoding="utf-8")
+    if not text.strip():
+        issues.append(_make_issue(
+            "SCENE_EMPTY_DRAFT",
+            f"Scene draft `{scene.draft_path}` is empty.",
+            chapter=scene.chapter,
+            file=scene.draft_path,
+            severity=Severity.HARD
+        ))
+        return tuple(issues)
+
+    # 1. Word count check (±20% tolerance)
+    words = len(re.findall(r"\b\w+\b", text))
+    lower_bound = int(scene.target_words * 0.8)
+    upper_bound = int(scene.target_words * 1.2)
+    if words < lower_bound or words > upper_bound:
+        issues.append(_make_issue(
+            "SCENE_WORD_COUNT_VIOLATION",
+            f"Scene draft word count ({words}) is outside ±20% tolerance of target ({scene.target_words} words, range {lower_bound}-{upper_bound}).",
+            chapter=scene.chapter,
+            file=scene.draft_path,
+            severity=Severity.HARD
+        ))
+
+    # 2. Forbidden elements
+    if scene.forbidden:
+        found_forbidden = []
+        for term in scene.forbidden:
+            if re.search(rf"\b{re.escape(term)}\b", text, re.IGNORECASE):
+                found_forbidden.append(term)
+        if found_forbidden:
+            issues.append(_make_issue(
+                "SCENE_FORBIDDEN_ELEMENT",
+                f"Scene draft contains forbidden elements: {', '.join(found_forbidden)}.",
+                chapter=scene.chapter,
+                file=scene.draft_path,
+                severity=Severity.HARD
+            ))
+
+    # 3. Standard style checks
+    mock_cf = ChapterFiles(
+        slug=scene.chapter,
+        folder=scene.draft_path.parent,
+        proposal=scene.draft_path.parent / "manifest.yml",
+        draft=scene.draft_path,
+        beats=scene.draft_path.parent / "manifest.yml",
+        continuity_out=scene.draft_path.parent / "manifest.yml",
+        drafting_plan=scene.draft_path.parent / "manifest.yml"
+    )
+    style_issues = validate_draft(mock_cf)
+    for issue in style_issues:
+        if issue.id in ("VALIDATOR_MISSING_DRAFT", "VALIDATOR_EMPTY_DRAFT"):
+            continue
+        new_msg = f"[{scene.scene_id}] {issue.message}"
+        issues.append(_make_issue(
+            issue.id,
+            new_msg,
+            chapter=scene.chapter,
+            file=scene.draft_path,
+            span=issue.span,
+            severity=issue.severity
+        ))
+
+    return tuple(issues)
+
+
 def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> ChapterReport:
+    # Import SceneManifest internally to avoid circular references
+    from bookforge.core.scene import discover_scenes, SceneManifest
+
     report = ChapterReport(chapter=chapter)
+    
+    # Run validation on scenes first if they exist
+    book_folder = chapter.folder.parent.parent
+    scenes = discover_scenes(chapter.folder, book_folder)
+    for scene in scenes:
+        scene_issues = validate_scene(scene)
+        for issue in scene_issues:
+            if issue.severity == Severity.HARD:
+                report.failures.append(issue.message)
+            else:
+                report.warnings.append(issue.message)
+
     if not chapter.drafting_plan.exists() or not read_text(chapter.drafting_plan).strip():
         report.failures.append(f"Missing or empty `{chapter.drafting_plan}`.")
     else:
@@ -522,6 +619,12 @@ def collect_all_issues(book_folder: Path) -> tuple[ManuscriptIssue, ...]:
         all_issues.extend(validate_draft(chapter))
         all_issues.extend(validate_source_alignment(chapter, phase_sections))
         all_issues.extend(validate_continuity_out_issues(chapter))
+        
+        # Add scene validation issues
+        from bookforge.core.scene import discover_scenes
+        scenes = discover_scenes(chapter.folder, book_folder)
+        for scene in scenes:
+            all_issues.extend(validate_scene(scene))
 
     return tuple(all_issues)
 

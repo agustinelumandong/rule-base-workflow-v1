@@ -8,6 +8,13 @@ from typing import Any
 
 # Style patterns & constants
 DEFAULT_SETTINGS: dict[str, Any] = {
+    "operator_prose_guard": {
+        "enabled": True,
+        "mode": "advisory",          # "advisory" | "hard"
+        "output_token_cap": 500,
+        "operator_personas": ["extractor", "reviewer", "planner"],
+        "prose_actions": ["draft", "draft_prose", "expand"],
+    },
     "name_policy": {
         "banned_names": [],
         "allowed_names": [],
@@ -613,6 +620,139 @@ def check_plot_mode_risk(text: str, book_folder: Path | None = None) -> list[str
         "Draft appears to lean into legal-procedure plot mode despite rulebook guardrails; "
         f"review before rewriting. Terms: {', '.join(hits[:10])}."
     ]
+def check_similes_and_metaphors(text: str) -> list[str]:
+    # Strip double quoted dialogue to check narrative only
+    narrative = re.sub(r'"[^"]*"', '', text)
+    sentences = SENTENCE_SPLIT_RE.split(narrative)
+    
+    simile_pat = re.compile(
+        r'\b(as\s+if|as\s+though|like\s+(?:a|an|the|my|his|her|its|our|their|your|some|any|wet|old|dry|cold|hot|dark|bright|thin|thick|sharp|hard|soft|wild|dead|living|slow|fast|heavy|light|\w+))\b',
+        re.IGNORECASE
+    )
+    
+    non_similes = {
+        "like to", "like it", "like this", "like that", "like these", "like those",
+        "like so", "like me", "like us", "like you", "like him", "like her", "like them",
+        "would like", "should like", "could like", "does like", "did like", "do like",
+        "nothing like", "anything like", "something like", "not like to", "don't like",
+        "feel like", "feels like", "felt like", "seemed like", "seems like", "seem like",
+        "look like", "looks like", "looked like"
+    }
+    
+    findings = []
+    for sentence in sentences:
+        sentence_clean = sentence.strip()
+        if not sentence_clean:
+            continue
+        
+        matches = simile_pat.finditer(sentence_clean)
+        for match in matches:
+            matched_str = match.group(1).lower()
+            
+            # Check if it is a known non-simile pattern
+            is_non_simile = False
+            for non_simile in non_similes:
+                if non_simile in sentence_clean.lower():
+                    if matched_str in non_simile or non_simile in matched_str:
+                        is_non_simile = True
+                        break
+            
+            if not is_non_simile:
+                snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+                findings.append(f"Simile/Metaphor detected in narrative: '{snippet}' (found '{match.group(1)}')")
+                break # Warn once per sentence
+    return findings
+
+
+def check_personification_of_objects(text: str) -> list[str]:
+    # Strip double quoted dialogue to check narrative only
+    narrative = re.sub(r'"[^"]*"', '', text)
+    sentences = SENTENCE_SPLIT_RE.split(narrative)
+    
+    # Nouns representing inanimate objects or abstract concepts
+    inanimate_nouns = (
+        r"land|wind|dust|night|sun|sky|shadow|shadows|darkness|fire|smoke|stone|rock|paper|wood|wagon|wheel|carriage|train|"
+        r"saddle|scabbard|bullet|lead|iron|steel|leather|rope|water|river|creek|mud|snow|trail|road|arroyo|valley|ridge|cliff|"
+        r"mountain|hill|slope|wonder|fear|pain|silence|danger|memory|memories|thought|time|hour|hours|minute|minutes|day|"
+        r"days|week|weeks|season|seasons|year|years|truth|lie|lies|voice|sound|word|words|name|names|blood|bloodstain|heat|"
+        r"cold|winter|summer|spring|autumn|fall|weather|colt|rifle|gun|revolver|pistol|carbine|winchester"
+    )
+    
+    # Verbs representing human-like action, communication, or mental states
+    agency_verbs = (
+        r"speak|speaks|spoke|speaking|talk|talks|talked|talking|whisper|whispers|whispered|whispering|tell|tells|told|telling|"
+        r"say|says|said|saying|want|wants|wanted|wanting|wish|wishes|wished|wishing|hope|hopes|hoped|hoping|know|knows|knew|"
+        r"knowing|think|thinks|thought|thinking|believe|believes|believed|believing|wonder|wonders|wondered|wondering|waste|"
+        r"wastes|wasted|wasting|watch|watches|watched|watching|creep|creeps|crept|creeping|breathe|breathes|breathed|breathing|"
+        r"listen|listens|listened|listening|stare|stares|stared|staring|gaze|gazes|gazed|gazing|move|moves|moved|moving|stretch|"
+        r"stretches|stretched|stretching|chase|chases|chased|chasing"
+    )
+    
+    personification_pat = re.compile(
+        rf"\b({inanimate_nouns})\b(?:\s+(?:did\s+not|had|was|were|could|would|should|will|can|might)\b)?(?:\s+[a-z]+ly\b)?\s+\b({agency_verbs})\b",
+        re.IGNORECASE
+    )
+    
+    # Look for gun/rifle equated to warning/curse/etc.
+    metaphor_pat = re.compile(
+        rf"\b(colt|rifle|gun|revolver|pistol|carbine|winchester)\b(?:\s+(?:was|were|is|are)\b)?\s+(?:a|an)\s+\b(curse|warning|blessing|promise|threat|enemy|friend|companion|partner)\b",
+        re.IGNORECASE
+    )
+    
+    findings = []
+    for sentence in sentences:
+        sentence_clean = sentence.strip()
+        if not sentence_clean:
+            continue
+        
+        match = personification_pat.search(sentence_clean)
+        if match:
+            snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+            findings.append(
+                f"Personification of inanimate object/concept '{match.group(1)}' with action '{match.group(2)}': '{snippet}'"
+            )
+            continue
+            
+        metaphor_match = metaphor_pat.search(sentence_clean)
+        if metaphor_match:
+            snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+            findings.append(
+                f"Metaphorical/figurative description of weapon '{metaphor_match.group(1)}' as '{metaphor_match.group(2)}': '{snippet}'"
+            )
+            
+    return findings
+
+
+def check_abstract_internalization(text: str) -> list[str]:
+    # Strip double quoted dialogue to check narrative only
+    narrative = re.sub(r'"[^"]*"', '', text)
+    sentences = SENTENCE_SPLIT_RE.split(narrative)
+    
+    # Check for pronoun/character name followed by internalization verb
+    subjects = r"he|she|they|jed|branton|harlan|tex|creed|lask|eleanor"
+    internal_verbs = (
+        r"knew|known|believed|wondered|resolved|decided|expected|doubted|suspected|predicted|"
+        r"sensed|remembered|forgot|wished|hoped|recalled|imagined|feared"
+    )
+    
+    internal_pat = re.compile(
+        rf"\b({subjects})\b(?:\s+(?:had|was|were|did|could|would|should|will|can|might)\b)?(?:\s+[a-z]+ly\b)?\s+\b({internal_verbs})\b",
+        re.IGNORECASE
+    )
+    
+    findings = []
+    for sentence in sentences:
+        sentence_clean = sentence.strip()
+        if not sentence_clean:
+            continue
+        
+        match = internal_pat.search(sentence_clean)
+        if match:
+            snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+            findings.append(
+                f"Abstract internalization / thought-summary detected for '{match.group(1)}' with '{match.group(2)}': '{snippet}'"
+            )
+    return findings
 
 
 def check_style_review_signals(text: str, settings_start: Path | None = None) -> list[str]:
@@ -718,5 +858,9 @@ def check_style_review_signals(text: str, settings_start: Path | None = None) ->
                 + "; ".join(short_sentences_detected[:3])
                 + "..."
             )
+
+    findings.extend(check_similes_and_metaphors(text))
+    findings.extend(check_personification_of_objects(text))
+    findings.extend(check_abstract_internalization(text))
 
     return findings
