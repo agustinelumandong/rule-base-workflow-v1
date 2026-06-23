@@ -259,6 +259,19 @@ scenes:
     patch: 0
   dependencies:
   - chapter-07/scene-01
+- scene_key: chapter-08/scene-01
+  status: ready_for_generation
+  provider: manual-web
+  target_words: 3500
+  packet_path: changes/chapter-08/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-08/scenes/scene-01/draft.md
+  validation_path: changes/chapter-08/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-08/scenes/scene-01/patch-packet.md
+  attempts:
+    generation: 0
+    patch: 0
+  dependencies:
+  - chapter-07/scene-02
 - scene_key: chapter-08/scene-02
   status: validation_passed
   provider: manual-web
@@ -268,36 +281,36 @@ scenes:
   validation_path: changes/chapter-08/scenes/scene-02/validation.json
   patch_packet_path: changes/chapter-08/scenes/scene-02/patch-packet.md
   attempts:
-    generation: 12
+    generation: 13
     patch: 0
   dependencies:
-  - chapter-07/scene-02
-- scene_key: chapter-09/scene-01
+  - chapter-08/scene-01
+- scene_key: chapter-08/scene-03
   status: ready_for_generation
   provider: manual-web
   target_words: 3500
-  packet_path: changes/chapter-09/scenes/scene-01/generation-packet.md
-  draft_path: changes/chapter-09/scenes/scene-01/draft.md
-  validation_path: changes/chapter-09/scenes/scene-01/validation.json
-  patch_packet_path: changes/chapter-09/scenes/scene-01/patch-packet.md
+  packet_path: changes/chapter-08/scenes/scene-03/generation-packet.md
+  draft_path: changes/chapter-08/scenes/scene-03/draft.md
+  validation_path: changes/chapter-08/scenes/scene-03/validation.json
+  patch_packet_path: changes/chapter-08/scenes/scene-03/patch-packet.md
   attempts:
     generation: 0
     patch: 0
   dependencies:
   - chapter-08/scene-02
-- scene_key: chapter-09/scene-02
-  status: ready_for_generation
+- scene_key: chapter-09/scene-01
+  status: generation_packet_ready
   provider: manual-web
-  target_words: 3500
-  packet_path: changes/chapter-09/scenes/scene-02/generation-packet.md
-  draft_path: changes/chapter-09/scenes/scene-02/draft.md
-  validation_path: changes/chapter-09/scenes/scene-02/validation.json
-  patch_packet_path: changes/chapter-09/scenes/scene-02/patch-packet.md
+  target_words: 1100
+  packet_path: changes/chapter-09/scenes/scene-01/generation-packet.md
+  draft_path: changes/chapter-09/scenes/scene-01/draft.md
+  validation_path: changes/chapter-09/scenes/scene-01/validation.json
+  patch_packet_path: changes/chapter-09/scenes/scene-01/patch-packet.md
   attempts:
-    generation: 0
-    patch: 0
+    generation: 3
+    patch: 2
   dependencies:
-  - chapter-09/scene-01
+  - chapter-08/scene-03
 - scene_key: chapter-10/scene-01
   status: ready_for_generation
   provider: manual-web
@@ -310,7 +323,7 @@ scenes:
     generation: 0
     patch: 0
   dependencies:
-  - chapter-09/scene-02
+  - chapter-09/scene-01
 - scene_key: chapter-11/scene-01
   status: ready_for_generation
   provider: manual-web

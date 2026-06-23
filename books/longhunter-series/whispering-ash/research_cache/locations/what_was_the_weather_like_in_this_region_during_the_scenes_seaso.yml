@@ -1,0 +1,29 @@
+key: locations/what_was_the_weather_like_in_this_region_during_the_scenes_seaso
+category: locations
+subject: What was the weather
+period: 18th century
+question: What was the weather like in this region during the scene's season?
+answer: '## Weapons & Ammo
+
+  - Colt Peacemaker: Single-action .45 caliber revolver, standard frontier handgun.
+
+  - Winchester 1873: Lever-action rifle, chambered in .44-40, highly common in the
+  late 1870s and 1880s.
+
+  - Sharps Big Fifty: Single-shot buffalo rifle, .50-90 caliber, heavy range.
+
+
+  ## Clothing & Gear
+
+  - Standard garb: Wool flannel shirts, canvas trousers, leather boots, Stetson or
+  slouch hats.'
+confidence: medium
+canon_status: pending
+source_backend: manual
+source_notebook_id: null
+source_titles: []
+created_at: '2026-06-23T19:30:41.228111Z'
+last_verified_at: '2026-06-23T19:30:41.228125Z'
+expires: never
+used_by:
+- chapter-09/scene-01

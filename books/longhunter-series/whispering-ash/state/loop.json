@@ -6,10 +6,10 @@
     "chapter-05": 0,
     "chapter-06": 0,
     "chapter-07": 0,
-    "chapter-08": 0,
+    "chapter-08": 1,
     "chapter-09": 0,
     "chapter-10": 0
   },
-  "last_run": "2026-06-23T06:13:13.609114Z",
-  "last_status": "DONE_WITH_WARNINGS"
+  "last_run": "2026-06-23T19:19:01.601263Z",
+  "last_status": "NEEDS_CONTINUITY_REPAIR"
 }

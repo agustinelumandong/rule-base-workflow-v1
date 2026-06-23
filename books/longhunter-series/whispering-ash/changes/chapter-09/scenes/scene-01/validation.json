@@ -1,0 +1,7 @@
+{
+  "status": "clean",
+  "errors": [
+    "[scene-01] Draft contains banned AI echo word(s): sharp, heavy, perfectly."
+  ],
+  "failed_rules": []
+}

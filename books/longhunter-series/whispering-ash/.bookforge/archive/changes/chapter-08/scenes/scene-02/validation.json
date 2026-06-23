@@ -1,0 +1,12 @@
+{
+  "status": "clean",
+  "errors": [
+    "[scene-02] Simile/Metaphor detected in narrative: 'He rushed like a man who wanted weight to solve the fight.' (found 'like a')",
+    "[scene-02] Simile/Metaphor detected in narrative: 'He did not snatch them like a man afraid of a second fight.' (found 'like a')",
+    "[scene-02] Simile/Metaphor detected in narrative: 'Thorn had taught him the middle way: walk as if the ground had already been meas...' (found 'as if')",
+    "[scene-02] Abstract internalization / thought-summary detected for 'He' with 'expected': 'He had expected the pale man to fold under weight.'",
+    "[scene-02] Abstract internalization / thought-summary detected for 'He' with 'expected': 'He had expected old mockery to carry force.'",
+    "[scene-02] Sentence Opener Failure: Discouraged '-ing' word opener in: 'Killing would make a different thing of the fight....'"
+  ],
+  "failed_rules": []
+}

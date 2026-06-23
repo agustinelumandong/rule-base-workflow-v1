@@ -1,0 +1,19 @@
+scene_id: scene-01
+chapter: chapter-09
+target_words: 1100
+status: clean
+required_beats:
+- 'Beat 1: Describe the initial setup or tension.'
+- 'Beat 2: Introduce the main interaction or conflict.'
+- 'Beat 3: End with a solid link/cliffhanger to the next scene.'
+forbidden:
+- unrealistic technology
+- modern slang
+research_questions:
+- What was the weather like in this region during the scene's season?
+inputs:
+  characters:
+  - darin
+  - harlan
+  locations:
+  - saloon
