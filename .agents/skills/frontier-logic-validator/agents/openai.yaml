@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontier Logic Validator"
+  short_description: "Validate Western plot cause and evidence"
+  default_prompt: "Use $frontier-logic-validator to check whether this Western outline's cause-and-effect, evidence, motives, and frontier mechanics hold together."

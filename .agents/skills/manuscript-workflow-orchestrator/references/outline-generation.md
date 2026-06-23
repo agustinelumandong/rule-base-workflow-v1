@@ -8,6 +8,21 @@ A strong outline is not just a chapter list. It is a structural contract. Every 
 
 ## Required Outline Sections
 
+## Phase-0 Character Contract
+
+`phase-0.md` is the story outline, not the full character bible. When generating or revising `phase-0.md`, keep character sections concise and link to the character profile files that will be created under `characters/`.
+
+Use this pattern for character entries:
+
+```md
+### Character Name (Role)
+- **Role:** Protagonist, ally, antagonist, rival, or supporting role.
+- **Function:** One sentence describing what this character does in this book's story movement.
+- **Profile:** `characters/main/character-name.md`
+```
+
+Use `characters/main/`, `characters/supporting/`, and `characters/antagonists/` for detailed profiles. The detailed profile files must preserve age, appearance, voice, personality, motive, private secrets, relationship notes, locks, and source extracts. Do not duplicate full profiles inside `phase-0.md`.
+
 ### 1. Title
 Book title and series name.
 
@@ -59,19 +74,21 @@ Approximate word count, chapter count, and target chapter range. These are plann
 
 ### 12. Returning Characters
 For each returning character, include:
-- Full name and alias.
-- Role (POV or supporting).
-- Physical condition carried from the prior book.
-- Current goal.
-- What they know or carry that is plot-relevant.
+- Full name and alias in the heading when useful.
+- Role.
+- One-sentence function in this book.
+- Profile path under `characters/`.
+
+Put physical condition carried from the prior book, current goal, plot-relevant knowledge, and carried objects in the character profile file. Keep only the concise story-facing summary in `phase-0.md`.
 
 ### 13. New Characters
 For each new character, include:
-- Full name and alias.
-- Role (what they do in the wagon/party/town).
-- One physical marker (quick visual identification).
-- Voice note (how they speak: short, bitter, formal, silent, etc.).
-- Private motive or secret (what they really want or hide).
+- Full name and alias in the heading when useful.
+- Role.
+- One-sentence function in this book.
+- Profile path under `characters/`.
+
+Put physical marker, voice note, private motive or secret, relationships, and drafting locks in the character profile file. Keep only the concise story-facing summary in `phase-0.md`.
 
 ### 14. Core Conflicts
 A numbered or bulleted list of the main tension lines: who wants what, who is in their way, and what the stakes are. Each line should be a single sentence.
@@ -103,7 +120,8 @@ Before approving an outline, verify:
 - [ ] Setting Function names at least three specific terrain or resource pressures that will force decisions.
 - [ ] Story Pattern includes a chapter function rule with a clear repeating structure.
 - [ ] Hard Story Guardrails are embedded in the outline, not just referenced from external rules.
-- [ ] New character entries all include a physical marker, a voice note, and a private motive or secret.
+- [ ] Returning and new character entries in `phase-0.md` use concise role/function/profile-path entries.
+- [ ] Full character profile details are planned for `characters/`; do not duplicate the full character bible inside `phase-0.md`.
 - [ ] No chapter summary uses vague language ("tension increases," "things get worse"). Each must name a specific action, revelation, or change.
 - [ ] If a split POV structure is used, the convergence point is named and both threads have defined entry and exit states.
 - [ ] Ending State for Book N+1 is present and covers all major characters.

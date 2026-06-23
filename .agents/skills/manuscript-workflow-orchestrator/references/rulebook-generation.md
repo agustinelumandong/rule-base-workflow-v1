@@ -10,12 +10,25 @@ bf init books/<book-slug>
 
 ## `rulebook.md`
 
+Create or update `characters/` alongside the rulebook. Character files are the durable writer-facing cast layer; `rulebook.md` stays the compact drafting contract.
+
+Use this layout:
+
+- `characters/cast-index.md`
+- `characters/_schema.character.yml`
+- `characters/main/<character-id>.md`
+- `characters/supporting/<character-id>.md`
+- `characters/antagonists/<character-id>.md`
+- `characters/archetypes/role-notes.md` or specific archetype notes when useful
+
+Each character file should use YAML front matter plus Markdown notes. Preserve source wording in a `## Source Extract` section. Keep `phase-0.md` cast entries concise: role, function, and profile path.
+
 Create a durable series bible with these sections:
 
 - Source format: source file used, detected source sections, chapter-list detail, length target source, and missing source fields.
 - Series overview: title, genre, length target, premise, core themes.
-- Returning character profiles: name, aliases, role, appearance, personality, backstory, internal conflict, skills, weaknesses, gear, weapons, horse, voice, POV rules, and current physical condition carried from the prior book.
-- New character profiles: for every character introduced in this book, include — name, aliases, role in the story (wagon member, gunman, driver, etc.), one physical marker for quick identification, voice note (how they speak), and private motive or secret (what they really want or hide).
+- Returning character profiles: summarize only the drafting-critical facts mirrored from `characters/`: name, aliases, role, physical marker, voice, POV rules, motive, and current physical condition carried from the prior book.
+- New character profiles: summarize only the drafting-critical facts mirrored from `characters/`: name, role in the story, one physical marker for quick identification, voice note, and private motive or secret. Put the fuller reusable profile in `characters/`.
 - World and setting: primary locations, geography, law and order, social pressure, economy, hazards. Include a **Setting Pressure List**: the specific terrain features, crossings, weather events, supply limits, or repair demands that will force decisions in this book.
 - Continuity facts: timeline, prior wounds, alliances, grudges, dead characters, known secrets.
 - Series arc: recurring conflict, unresolved betrayal, future threat, romantic tension, next-book hook.
