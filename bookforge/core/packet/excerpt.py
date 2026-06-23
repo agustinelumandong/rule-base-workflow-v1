@@ -216,6 +216,15 @@ def prior_continuity(book_folder: Path, slug: str) -> str:
         return "No prior chapter in this book folder."
     folder = chapter_folder(book_folder, prior)
     continuity = read_optional(folder / "continuity-out.md")
+    if not continuity and "changes" in folder.parts:
+        parts = list(folder.parts)
+        try:
+            idx = parts.index("changes")
+            parts[idx] = "chapters"
+            fallback_folder = Path(*parts)
+            continuity = read_optional(fallback_folder / "continuity-out.md")
+        except ValueError:
+            pass
     if continuity:
         return word_excerpt(continuity, 450)
     proposal_path = folder / "proposal.md"

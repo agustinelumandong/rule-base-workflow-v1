@@ -439,6 +439,32 @@ def build_scene_packet(book_folder: Path, chapter: str, scene_id: str) -> str:
         "critical": False
     })
 
+    # Add relevant research cache facts
+    from bookforge.core.research_cache import get_accepted_research_for_scene
+    scene_key = f"{chapter}/{scene_id}"
+    cache_entries = get_accepted_research_for_scene(book_folder, scene_key, manifest.research_questions)
+    if cache_entries:
+        research_facts_lines = []
+        for entry in cache_entries:
+            provenance = entry.source_backend
+            if entry.source_titles:
+                provenance += f" ({', '.join(entry.source_titles)})"
+            research_facts_lines.append(
+                f"### {entry.subject.title()} ({entry.category})\n"
+                f"- **Question:** {entry.question}\n"
+                f"- **Answer:** {entry.answer}\n"
+                f"- **Confidence:** {entry.confidence}\n"
+                f"- **Provenance:** {provenance}"
+            )
+        parts.append({
+            "name": "Relevant Research Facts",
+            "heading": "## Relevant Research Facts",
+            "body": compress_text("\n\n".join(research_facts_lines)),
+            "limit": 1000,
+            "critical": False,
+            "omit_if_empty": True
+        })
+
     scenes_in_ch = discover_scenes(ch_folder, book_folder)
     scene_ids_in_ch = [s.scene_id for s in scenes_in_ch]
 
