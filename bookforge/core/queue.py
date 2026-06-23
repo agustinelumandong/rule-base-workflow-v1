@@ -166,6 +166,7 @@ def update_queue_scene(
     found = False
     for scene in scenes:
         if scene["scene_key"] == scene_key:
+            old_status = scene.get("status")
             if status is not None:
                 scene["status"] = status
             if provider is not None:
@@ -173,12 +174,145 @@ def update_queue_scene(
             if target_words is not None:
                 scene["target_words"] = target_words
             if inc_generation:
-                scene["attempts"]["generation"] = scene["attempts"].get("generation", 0) + 1
+                # Only increment if transitioning to generation_packet_ready
+                if old_status != "generation_packet_ready":
+                    scene["attempts"]["generation"] = scene["attempts"].get("generation", 0) + 1
             if inc_patch:
-                scene["attempts"]["patch"] = scene["attempts"].get("patch", 0) + 1
+                # Only increment if transitioning to patch_packet_ready
+                if old_status != "patch_packet_ready":
+                    scene["attempts"]["patch"] = scene["attempts"].get("patch", 0) + 1
             found = True
             break
             
     if found:
         save_queue(book_folder, queue_data)
     return found
+
+
+def verify_scene_runnable(book_folder: Path, scene_key: str, force: bool = False) -> bool:
+    """
+    Checks if a scene is allowed to be run/activated.
+    If force is True, bypasses checks.
+    Otherwise:
+      1. Scene must exist in queue.
+      2. All dependencies of the scene must be completed (clean, validation_passed, committed).
+      3. There must not be another ACTIVE scene in the queue that is different.
+         (i.e. another scene in an active/in-progress status).
+    """
+    if force:
+        return True
+        
+    q_path = get_queue_path(book_folder)
+    if not q_path.exists():
+        build_queue(book_folder)
+        
+    queue_data = load_queue(book_folder)
+    scenes = queue_data.get("scenes", [])
+    if not scenes:
+        return True
+        
+    status_map = {s["scene_key"]: s["status"] for s in scenes}
+    completed_statuses = {"clean", "validation_passed", "committed"}
+    
+    # 1. Find the target scene in the queue
+    target_scene = None
+    for s in scenes:
+        if s["scene_key"] == scene_key:
+            target_scene = s
+            break
+            
+    if not target_scene:
+        # If scene not in queue, build/rebuild the queue
+        build_queue(book_folder)
+        queue_data = load_queue(book_folder)
+        scenes = queue_data.get("scenes", [])
+        status_map = {s["scene_key"]: s["status"] for s in scenes}
+        for s in scenes:
+            if s["scene_key"] == scene_key:
+                target_scene = s
+                break
+        if not target_scene:
+            return False
+            
+    # 2. Check dependencies of target scene
+    for dep in target_scene.get("dependencies", []):
+        dep_status = status_map.get(dep)
+        if dep_status not in completed_statuses:
+            return False
+            
+    # 3. Check single-active invariant:
+    # There should not be any OTHER scene that is active (in-progress) in the queue.
+    # An active scene is one that is not completed and not ready_for_generation (not started).
+    for s in scenes:
+        if s["scene_key"] == scene_key:
+            continue
+        status = s["status"]
+        if status not in completed_statuses and status != "ready_for_generation":
+            # Another scene is active/in-progress!
+            return False
+            
+    return True
+
+
+
+def get_next_runnable_scene(book_folder: Path) -> dict | None:
+    """Finds the first scene in the queue that is not completed and whose dependencies are all completed."""
+    queue_data = load_queue(book_folder)
+    scenes = queue_data.get("scenes", [])
+    
+    # Create a map of scene_key -> status for quick lookup
+    status_map = {s["scene_key"]: s["status"] for s in scenes}
+    
+    for scene in scenes:
+        status = scene.get("status")
+        # Completed statuses
+        if status in ("validation_passed", "committed", "clean"):
+            continue
+            
+        # Check dependencies
+        deps = scene.get("dependencies", [])
+        blocked = False
+        for dep in deps:
+            dep_status = status_map.get(dep)
+            if dep_status not in ("validation_passed", "committed", "clean"):
+                blocked = True
+                break
+                
+        if not blocked:
+            return scene
+            
+    return None
+
+
+def get_next_command(scene: dict) -> tuple[str, str]:
+    """Returns a description and the next command to run for a given scene based on its status."""
+    status = scene.get("status")
+    scene_key = scene["scene_key"]
+    parts = scene_key.split("/")
+    chapter = parts[0]
+    scene_id = parts[1]
+    
+    if status == "ready_for_generation":
+        desc = "Generate the initial prompt/context packet for the provider web."
+        cmd = f"bf packet --chapter {chapter} --scene {scene_id} --task draft-prose"
+    elif status == "generation_packet_ready":
+        desc = "Prose has been prepared. Paste packet into provider web, save draft to changes/{chapter}/scenes/{scene_id}/draft.md, then run validate."
+        cmd = f"bf validate --chapter {chapter} --scene {scene_id}"
+    elif status == "ready_for_validation":
+        desc = "Validate the newly written/modified scene draft."
+        cmd = f"bf validate --chapter {chapter} --scene {scene_id}"
+    elif status == "validation_failed":
+        desc = "The draft failed validation rules. Generate a patch repair packet."
+        cmd = f"bf patch --chapter {chapter} --scene {scene_id}"
+    elif status == "patch_packet_ready":
+        desc = "Patch packet is ready. Paste it into the provider web, save replacement to changes/{chapter}/scenes/{scene_id}/replacement.md, and apply the patch."
+        cmd = f"bf patch apply --chapter {chapter} --scene {scene_id} --from-file changes/{chapter}/scenes/{scene_id}/replacement.md"
+    elif status in ("validation_passed", "clean"):
+        desc = "Scene validation passed! Commit the scene changes to canon."
+        cmd = f"bf apply change <book_folder> {chapter}"
+    else:
+        desc = f"Unknown scene status: {status}"
+        cmd = "# No recommendation available."
+        
+    return desc, cmd
+

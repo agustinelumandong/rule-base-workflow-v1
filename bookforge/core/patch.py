@@ -71,7 +71,7 @@ def splice_prose(original: str, replacement: str) -> tuple[bool, str]:
     replacement_lines = [line.rstrip() for line in replacement_clean.splitlines() if line.strip()]
     
     # Try searching for SEARCH/REPLACE blocks first
-    sr_pattern = r"(?:SEARCH|<<<<<<<.*?)\n(.*?)\n(?:=======|REPLACE)\n(.*?)\n(?:>>>>>>>|.*)"
+    sr_pattern = r"(?:SEARCH|<<<<<<<.*?)\n(.*?)\n(?:=======|REPLACE)\n(.*?)(?:\n(?:>>>>>>>|<<<<<<<)|\Z)"
     sr_match = re.search(sr_pattern, replacement, re.DOTALL | re.IGNORECASE)
     if sr_match:
         target = sr_match.group(1).strip()

@@ -63,6 +63,13 @@ def init_scene_manifest(book_folder: Path, chapter: str, scene_id: str, target_w
 
     m_path = scene_dir / "manifest.yml"
     if m_path.exists():
+        try:
+            manifest = load_scene_manifest(m_path, book_folder)
+            if manifest.target_words != target_words:
+                manifest.target_words = target_words
+                save_scene_manifest(manifest, m_path)
+        except Exception:
+            pass
         return m_path
 
     # Attempt to load from template
