@@ -355,7 +355,7 @@ The plot must be completely different from previous books and must strictly excl
 Use new character names, original conflicts, and a differentiated setting. Make any travel or search sequences active and exciting by incorporating active scouting, environmental hazards, or significant discoveries.
 The protagonist is Tex Cade. His gear/weapons: matched pair of Colt .45 Peacemakers, Bowie knife, Ranger star.
 
-Structure the generated outline exactly in this markdown format:
+Structure the generated outline exactly in this markdown format. Keep phase-0 character entries concise. Do not put full character profiles in phase-0.md; profile files under characters/ own age, appearance, voice, motive, relationships, and locks.
 
 # Book Outline: [Book Title]
 
@@ -370,10 +370,24 @@ Structure the generated outline exactly in this markdown format:
 ## Continuity Position
 [A detailed paragraph summarizing where this book begins in the series, what happened in the previous book, what consequences carry over, what names/elements return, and what unresolved conflicts or emotional burdens shape the opening of this story.]
 
-## Character Profiles
-- Tex Cade: Protagonist, matched pair of Colt .45 Peacemakers, Bowie knife, Ranger star. Laconic, carrying survivors' guilt, special attaché Ranger.
-- [Key Character Name]: [Role in story, relationship to protagonist, motivation, conflict, and whether they are ally, enemy, or uncertain.]
-- [Key Character Name]: [Description]
+## Returning Characters
+
+### Tex Cade (Protagonist)
+- **Role:** POV protagonist.
+- **Function:** Special attaché Ranger whose investigation drives the book's main conflict.
+- **Profile:** `characters/main/tex-cade.md`
+
+## New Characters
+
+### [Key Character Name] ([Role])
+- **Role:** [Protagonist ally, antagonist, rival, witness, guide, town contact, or other story role.]
+- **Function:** [One sentence describing what this character does in this book's story movement.]
+- **Profile:** `characters/[main|supporting|antagonists]/[character-id].md`
+
+### [Key Character Name] ([Role])
+- **Role:** [Role.]
+- **Function:** [One sentence.]
+- **Profile:** `characters/[main|supporting|antagonists]/[character-id].md`
 
 ## World and Setting
 - Primary Locations:
@@ -426,6 +440,12 @@ Provide exactly 12 chapters in the following format:
     # 5. Write the generated outline to phase-0.md
     dest_outline = book_folder / "phase-0.md"
     dest_outline.write_text(clean_outline, encoding="utf-8")
+
+    try:
+        from bookforge.core import characters as characters_module
+        characters_module.scaffold_character_files(book_folder)
+    except (OSError, UnicodeDecodeError, ValueError):
+        pass
     
     # Update loop state
     try:
