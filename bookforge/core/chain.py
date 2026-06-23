@@ -56,7 +56,7 @@ def analyze_chain(book_folder: Path) -> tuple[bool, list[str]]:
     for chapter in chapters:
         if not chapter.draft.exists() or not chapter.draft.read_text(encoding="utf-8").strip():
             continue
-        continuity_path = chapter.folder / "continuity-out.md"
+        continuity_path = chapter.continuity_out
         if not continuity_path.exists():
             logs.append(f"{chapter.slug}: continuity-out.md is MISSING.")
             has_failures = True
@@ -94,7 +94,7 @@ def main() -> int:
     has_failures = False
     for chapter in chapters:
         draft_exists = "YES" if chapter.draft.exists() else "NO"
-        continuity_path = chapter.folder / "continuity-out.md"
+        continuity_path = chapter.continuity_out
         
         if not chapter.draft.exists():
             print(f"{chapter.slug:<15} | {draft_exists:<6} | {'—':<18} | OK (no draft)")

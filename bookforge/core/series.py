@@ -87,7 +87,7 @@ def carry_forward_book_continuity(from_book: Path, to_book: Path) -> str:
 
     # Identify last chapter by sort key
     last_chap = max(draft_chapters, key=lambda c: context_validator.chapter_sort_key(c.folder))
-    continuity_path = last_chap.folder / "continuity-out.md"
+    continuity_path = last_chap.continuity_out
     if not continuity_path.exists():
         return f"Continuity file missing in last chapter: {last_chap.slug}/continuity-out.md"
 

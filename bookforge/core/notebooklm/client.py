@@ -143,8 +143,8 @@ def create_new_notebook(title: str) -> str | None:
     return None
 
 
-def query_notebook(notebook_id: str, query: str) -> str:
+def query_notebook(notebook_id: str, query: str, book_folder: Path = Path(".")) -> str:
     """Queries the given notebook with a specific question using `nlm notebook query`."""
     from bookforge.core.adapters.research import NotebookLMBackend
-    backend = NotebookLMBackend(Path("."), notebook_id=notebook_id)
+    backend = NotebookLMBackend(book_folder, notebook_id=notebook_id)
     return backend.query(query)

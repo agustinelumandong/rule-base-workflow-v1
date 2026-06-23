@@ -30,7 +30,7 @@ def analyze(book_folder: Path) -> NarrativeReport:
 
         draft_text = chapter.draft.read_text(encoding="utf-8")
         scene_text = chapter.scene_breakdown.read_text(encoding="utf-8") if chapter.scene_breakdown.exists() else ""
-        continuity_path = chapter.folder / "continuity-out.md"
+        continuity_path = chapter.continuity_out
         continuity_text = continuity_path.read_text(encoding="utf-8") if continuity_path.exists() else ""
 
         beats = _extract_beats(scene_text)

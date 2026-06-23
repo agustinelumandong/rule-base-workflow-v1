@@ -143,7 +143,7 @@ def run_loop_check(
     continuity_failures: list[str] = []
     for chapter in chapters:
         if chapter.draft.exists() and chapter.draft.read_text(encoding="utf-8").strip():
-            continuity_path = chapter.folder / "continuity-out.md"
+            continuity_path = chapter.continuity_out
             if not continuity_path.exists():
                 continuity_failures.append(f"{chapter.slug} is missing continuity-out.md")
             else:

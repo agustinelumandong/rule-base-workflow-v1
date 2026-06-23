@@ -88,7 +88,7 @@ def get_project_file_analytics(book_folder: Path) -> dict[str, any]:
         for f_name, path in [
             ("scene_breakdown", chap.scene_breakdown),
             ("draft", chap.draft),
-            ("continuity_out", chap.folder / "continuity-out.md")
+            ("continuity_out", chap.continuity_out)
         ]:
             if path.exists():
                 chap_data["files"][f_name] = {
