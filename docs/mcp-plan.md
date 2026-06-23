@@ -1,0 +1,1 @@
+Decisions locked in: **advisory + log** guard mode (with a settings flag to flip to hard-refuse), and **scenes nested inside the chapter folder** (`changes/chapter-NN/scenes/sc-MM.manifest.yml`). Now presenting the plan.
