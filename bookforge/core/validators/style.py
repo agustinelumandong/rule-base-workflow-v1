@@ -651,11 +651,28 @@ def check_similes_and_metaphors(text: str) -> list[str]:
             
             # Check if it is a known non-simile pattern
             is_non_simile = False
-            for non_simile in non_similes:
-                if non_simile in sentence_clean.lower():
-                    if matched_str in non_simile or non_simile in matched_str:
-                        is_non_simile = True
-                        break
+            if matched_str.startswith("like"):
+                like_start = match.start()
+                sentence_lower = sentence_clean.lower()
+                
+                # Check for preceding non-simile verbs/phrases ending in 'like'
+                pre_text = sentence_lower[:like_start + 4]  # includes 'like'
+                for non_simile in non_similes:
+                    if non_simile.endswith("like"):
+                        if pre_text.endswith(non_simile):
+                            is_non_simile = True
+                            break
+                            
+                # Check for succeeding non-simile phrases starting with 'like'
+                if not is_non_simile:
+                    post_text = sentence_lower[like_start:]
+                    for non_simile in non_similes:
+                        if non_simile.startswith("like"):
+                            if post_text.startswith(non_simile):
+                                next_char_idx = len(non_simile)
+                                if next_char_idx >= len(post_text) or not post_text[next_char_idx].isalnum():
+                                    is_non_simile = True
+                                    break
             
             if not is_non_simile:
                 snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
@@ -731,12 +748,18 @@ def check_abstract_internalization(text: str) -> list[str]:
     # Check for pronoun/character name followed by internalization verb
     subjects = r"he|she|they|jed|branton|harlan|tex|creed|lask|eleanor"
     internal_verbs = (
-        r"knew|known|believed|wondered|resolved|decided|expected|doubted|suspected|predicted|"
-        r"sensed|remembered|forgot|wished|hoped|recalled|imagined|feared"
+        r"knew|known|know|believed|believe|wondered|wonder|resolved|resolve|decided|decide|"
+        r"expected|expect|doubted|doubt|suspected|suspect|predicted|predict|"
+        r"sensed|sense|remembered|remember|forgot|forgotten|forget|wished|wish|hoped|hope|"
+        r"recalled|recall|imagined|imagine|feared|fear"
     )
     
     internal_pat = re.compile(
-        rf"\b({subjects})\b(?:\s+(?:had|was|were|did|could|would|should|will|can|might)\b)?(?:\s+[a-z]+ly\b)?\s+\b({internal_verbs})\b",
+        rf"\b({subjects})\b"
+        rf"(?:\s+(?:had|was|were|did|could|would|should|will|can|might)\b)?"
+        rf"(?:\s+(?:not|never)\b)?"
+        rf"(?:\s+[a-z]+ly\b)?"
+        rf"\s+\b({internal_verbs})\b",
         re.IGNORECASE
     )
     

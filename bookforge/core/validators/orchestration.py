@@ -55,7 +55,7 @@ EXIT_HOOK_PREFIX_RE = re.compile(
 )
 
 
-@dataclass(frozen=True)
+@dataclass
 class ChapterReport:
     chapter: ChapterFiles
     passes: list[str] = field(default_factory=list)
@@ -470,19 +470,17 @@ def validate_scene(scene: SceneManifest) -> tuple[ManuscriptIssue, ...]:
     mock_cf = ChapterFiles(
         slug=scene.chapter,
         folder=scene.draft_path.parent,
-        proposal=scene.draft_path.parent / "manifest.yml",
         draft=scene.draft_path,
-        beats=scene.draft_path.parent / "manifest.yml",
-        continuity_out=scene.draft_path.parent / "manifest.yml",
+        scene_breakdown=scene.draft_path.parent / "manifest.yml",
         drafting_plan=scene.draft_path.parent / "manifest.yml"
     )
     style_issues = validate_draft(mock_cf)
     for issue in style_issues:
-        if issue.id in ("VALIDATOR_MISSING_DRAFT", "VALIDATOR_EMPTY_DRAFT"):
+        if issue.rule_id in ("VALIDATOR_MISSING_DRAFT", "VALIDATOR_EMPTY_DRAFT"):
             continue
         new_msg = f"[{scene.scene_id}] {issue.message}"
         issues.append(_make_issue(
-            issue.id,
+            issue.rule_id,
             new_msg,
             chapter=scene.chapter,
             file=scene.draft_path,
@@ -490,7 +488,16 @@ def validate_scene(scene: SceneManifest) -> tuple[ManuscriptIssue, ...]:
             severity=issue.severity
         ))
 
-    return tuple(issues)
+    # Deduplicate issues before returning
+    seen = set()
+    deduped_issues = []
+    for issue in issues:
+        key = (issue.severity, issue.rule_id, issue.message, issue.chapter, str(issue.file))
+        if key not in seen:
+            seen.add(key)
+            deduped_issues.append(issue)
+    return tuple(deduped_issues)
+
 
 
 def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> ChapterReport:
@@ -603,7 +610,12 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
         else:
             report.warnings.append(issue.message)
 
+    report.passes = list(dict.fromkeys(report.passes))
+    report.failures = list(dict.fromkeys(report.failures))
+    report.warnings = list(dict.fromkeys(report.warnings))
     return report
+
+
 
 
 def collect_all_issues(book_folder: Path) -> tuple[ManuscriptIssue, ...]:

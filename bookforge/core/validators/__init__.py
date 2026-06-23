@@ -24,6 +24,9 @@ from bookforge.core.validators.style import (
     forbidden_length_language,
     check_forbidden_conflicts,
     check_style_review_signals,
+    check_similes_and_metaphors,
+    check_personification_of_objects,
+    check_abstract_internalization,
 )
 
 from bookforge.core.validators.format import (
@@ -99,6 +102,9 @@ __all__ = [
     "forbidden_length_language",
     "check_forbidden_conflicts",
     "check_style_review_signals",
+    "check_similes_and_metaphors",
+    "check_personification_of_objects",
+    "check_abstract_internalization",
     # format
     "REQUIRED_BOOK_FILES",
     "BEAT_REQUIRED_MARKERS",

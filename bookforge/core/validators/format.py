@@ -97,6 +97,10 @@ RULE_META: dict[str, RuleMeta] = {
     "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION": RuleMeta(
         "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION", Severity.SOFT, IssueCategory.CONTINUITY
     ),
+    "SCENE_MISSING_DRAFT": RuleMeta("SCENE_MISSING_DRAFT", Severity.HARD, IssueCategory.CONTEXT),
+    "SCENE_EMPTY_DRAFT": RuleMeta("SCENE_EMPTY_DRAFT", Severity.HARD, IssueCategory.CONTEXT),
+    "SCENE_WORD_COUNT_VIOLATION": RuleMeta("SCENE_WORD_COUNT_VIOLATION", Severity.HARD, IssueCategory.STYLE),
+    "SCENE_FORBIDDEN_ELEMENT": RuleMeta("SCENE_FORBIDDEN_ELEMENT", Severity.HARD, IssueCategory.NARRATIVE),
 }
 
 
@@ -107,10 +111,12 @@ def _make_issue(
     file: Path | None = None,
     line: int | None = None,
     span: str | None = None,
+    severity: Severity | None = None,
 ) -> ManuscriptIssue:
     meta = RULE_META.get(rule_id, RuleMeta(rule_id, Severity.INFO, IssueCategory.CONTEXT))
+    resolved_severity = severity if severity is not None else meta.severity
     return ManuscriptIssue(
-        severity=meta.severity,
+        severity=resolved_severity,
         category=meta.category,
         chapter=chapter,
         file=file,
@@ -131,6 +137,7 @@ class ChapterFiles:
     draft: Path
     scene_breakdown: Path
     drafting_plan: Path
+    continuity_out: Path
 
     def __init__(
         self,
@@ -140,6 +147,7 @@ class ChapterFiles:
         draft: Path | None = None,
         scene_breakdown: Path | None = None,
         drafting_plan: Path | None = None,
+        continuity_out: Path | None = None,
     ):
         if isinstance(slug, Path) and label is None and folder is None:
             folder = slug
@@ -155,28 +163,82 @@ class ChapterFiles:
                 match = re.match(r"chapter-(\d+)", slug_value)
                 label = f"Chapter {int(match.group(1)):02d}" if match else slug_value.replace("-", " ").title()
 
+        fallback_folder = None
+        if "changes" in folder.parts:
+            parts = list(folder.parts)
+            try:
+                idx = parts.index("changes")
+                parts[idx] = "chapters"
+                fallback_folder = Path(*parts)
+            except ValueError:
+                pass
+
         if draft is None:
-            # Look for draft.md or default names ({slug}.md, epilogue.md)
+            # Look for draft.md or default names ({slug_value}.md, epilogue.md)
             draft_options = ["draft.md", f"{slug_value}.md", "epilogue.md" if slug_value == "epilogue" else f"{slug_value}.md"]
             draft = folder / draft_options[0]
+            found = False
             for opt in draft_options:
                 p = folder / opt
                 if p.exists():
                     draft = p
+                    found = True
                     break
+            if not found and fallback_folder:
+                for opt in draft_options:
+                    p = fallback_folder / opt
+                    if p.exists():
+                        draft = p
+                        break
         
         # Staging proposal.md takes priority over scene-breakdown.md
         if scene_breakdown is None:
             proposal_path = folder / "proposal.md"
             scene_bd_path = folder / "scene-breakdown.md"
-            scene_breakdown = proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path
+            if proposal_path.exists():
+                scene_breakdown = proposal_path
+            elif scene_bd_path.exists():
+                scene_breakdown = scene_bd_path
+            elif fallback_folder:
+                fallback_proposal = fallback_folder / "proposal.md"
+                fallback_scene_bd = fallback_folder / "scene-breakdown.md"
+                if fallback_proposal.exists():
+                    scene_breakdown = fallback_proposal
+                else:
+                    scene_breakdown = fallback_scene_bd
+            else:
+                scene_breakdown = proposal_path
 
         # Staging beats.md takes priority over drafting-plan.md
         if drafting_plan is None:
             beats_path = folder / "beats.md"
             drafting_plan_path = folder / "drafting-plan.md"
-            drafting_plan = beats_path if beats_path.exists() or not drafting_plan_path.exists() else drafting_plan_path
+            if beats_path.exists():
+                drafting_plan = beats_path
+            elif drafting_plan_path.exists():
+                drafting_plan = drafting_plan_path
+            elif fallback_folder:
+                fallback_beats = fallback_folder / "beats.md"
+                fallback_drafting_plan = fallback_folder / "drafting-plan.md"
+                if fallback_beats.exists():
+                    drafting_plan = fallback_beats
+                else:
+                    drafting_plan = fallback_drafting_plan
+            else:
+                drafting_plan = beats_path
 
+        if continuity_out is None:
+            continuity_out_path = folder / "continuity-out.md"
+            if continuity_out_path.exists():
+                continuity_out = continuity_out_path
+            elif fallback_folder:
+                fallback_cont_out = fallback_folder / "continuity-out.md"
+                if fallback_cont_out.exists():
+                    continuity_out = fallback_cont_out
+                else:
+                    continuity_out = continuity_out_path
+            else:
+                continuity_out = continuity_out_path
 
         object.__setattr__(self, "slug", slug_value)
         object.__setattr__(self, "label", label)
@@ -184,6 +246,7 @@ class ChapterFiles:
         object.__setattr__(self, "draft", draft)
         object.__setattr__(self, "scene_breakdown", scene_breakdown)
         object.__setattr__(self, "drafting_plan", drafting_plan)
+        object.__setattr__(self, "continuity_out", continuity_out)
 
 
 def read_text(path: Path) -> str:
