@@ -476,7 +476,6 @@ def render_generation_queue(book_folder: Path) -> str:
 def _find_active_scene(queue_data: dict) -> str | None:
     """Return the scene_key of the active scene, or None."""
     scenes = queue_data.get("scenes", [])
-    completed_statuses = {"clean", "validation_passed", "committed"}
     active_statuses = {"generation_packet_ready", "ready_for_validation",
                        "validation_failed", "ready_for_patch", "patch_packet_ready"}
 
@@ -492,8 +491,21 @@ def _scene_key_to_filename(scene_key: str, suffix: str) -> str:
     return f"{safe}_{suffix}"
 
 
+# Statuses where only the generation packet is relevant
+_GENERATION_STATUSES = {"ready_for_generation", "generation_packet_ready", "ready_for_validation"}
+
+# Statuses where only the patch packet is relevant
+_REPAIR_STATUSES = {"validation_failed", "ready_for_patch", "patch_packet_ready"}
+
+
 def sync_active_and_archive_packets(book_folder: Path, provider: str) -> None:
-    """Copy active scene packet to active/, completed to archive/."""
+    """Copy active scene packet to active/, completed to archive/.
+
+    Status-aware:
+      - generation/ready_for_validation: only generation packet in active/
+      - validation_failed/patch: only patch packet in active/
+      - completed: move both to archive/
+    """
     kit_dir = project_kit_folder(book_folder, provider)
     active_dir = kit_dir / "active"
     archive_dir = kit_dir / "archive"
@@ -514,17 +526,24 @@ def sync_active_and_archive_packets(book_folder: Path, provider: str) -> None:
         patch_path = book_folder / s.get("patch_packet_path", "")
 
         if key == active_scene:
-            # Copy generation packet to active/
-            if packet_path.exists():
-                dest = active_dir / _scene_key_to_filename(key, "generation-packet.md")
-                shutil.copy2(packet_path, dest)
-            # Copy patch packet if it exists
-            if patch_path.exists():
-                dest = active_dir / _scene_key_to_filename(key, "patch-packet.md")
-                shutil.copy2(patch_path, dest)
+            if status in _GENERATION_STATUSES:
+                if packet_path.exists():
+                    dest = active_dir / _scene_key_to_filename(key, "generation-packet.md")
+                    shutil.copy2(packet_path, dest)
+                # Remove stale patch packet from active if scene is in generation state
+                stale_patch = active_dir / _scene_key_to_filename(key, "patch-packet.md")
+                if stale_patch.exists():
+                    stale_patch.unlink()
+            elif status in _REPAIR_STATUSES:
+                if patch_path.exists():
+                    dest = active_dir / _scene_key_to_filename(key, "patch-packet.md")
+                    shutil.copy2(patch_path, dest)
+                # Remove stale generation packet from active if scene is in repair state
+                stale_gen = active_dir / _scene_key_to_filename(key, "generation-packet.md")
+                if stale_gen.exists():
+                    stale_gen.unlink()
 
         elif status in completed_statuses:
-            # Copy to archive/
             if packet_path.exists():
                 dest = archive_dir / _scene_key_to_filename(key, "generation-packet.md")
                 shutil.copy2(packet_path, dest)
