@@ -1860,6 +1860,30 @@ def cmd_memory(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    """Handles MCP subcommands (serve)."""
+    book_folder = Path(args.book_folder)
+    if not book_folder.exists():
+        print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
+        return 2
+
+    from bookforge.mcp.server import BookForgeMCPServer
+
+    readonly = not args.allow_write
+    server = BookForgeMCPServer(
+        book_folder,
+        readonly=readonly,
+        allow_write=args.allow_write,
+        force=args.force,
+    )
+
+    if args.transport == "http":
+        print(f"Starting BookForge MCP HTTP Server on {args.host}:{args.port} (readonly={readonly})...")
+        server.run_http(port=args.port, host=args.host)
+    else:
+        print(f"Starting BookForge MCP stdio Server (readonly={readonly})...")
+        server.run_stdio()
+    return 0
 
 
 def main() -> int:
@@ -2125,6 +2149,20 @@ def main() -> int:
     parser_mem_serve.add_argument("--port", type=int, default=8000, help="HTTP server port")
     parser_mem_serve.add_argument("--http", action="store_true", help="Run HTTP server instead of stdio")
 
+    # mcp
+    parser_mcp = subparsers.add_parser("mcp", help="MCP server for Codex/Antigravity integration")
+    mcp_subparsers = parser_mcp.add_subparsers(dest="mcp_command", required=True)
+
+    # mcp serve
+    parser_mcp_serve = mcp_subparsers.add_parser("serve", help="Start BookForge MCP server")
+    parser_mcp_serve.add_argument("book_folder", help="Path to book folder")
+    parser_mcp_serve.add_argument("--transport", choices=["stdio", "http"], default="stdio", help="Transport protocol")
+    parser_mcp_serve.add_argument("--readonly", action="store_true", default=True, help="Run in readonly mode (default)")
+    parser_mcp_serve.add_argument("--allow-write", action="store_true", help="Enable write tools (save_draft, apply_patch)")
+    parser_mcp_serve.add_argument("--force", action="store_true", help="Enable force mode for queue bypass")
+    parser_mcp_serve.add_argument("--host", default="127.0.0.1", help="HTTP host (only with --transport http)")
+    parser_mcp_serve.add_argument("--port", type=int, default=8765, help="HTTP port (only with --transport http)")
+
     # checkpoint
     parser_checkpoint = subparsers.add_parser("checkpoint", help="Local checkpoint stashing (save, load, diff, restore)")
     checkpoint_subparsers = parser_checkpoint.add_subparsers(dest="checkpoint_command", required=True)
@@ -2266,6 +2304,7 @@ def main() -> int:
         "patch": cmd_patch,
         "queue": cmd_queue,
         "project-kit": cmd_project_kit,
+        "mcp": cmd_mcp,
     }
 
     try:
