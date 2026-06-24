@@ -27,3 +27,8 @@ env/
 # Logs & temp files
 *.log
 *.tmp
+
+# Development scratch files
+scratch/
+research_cache/
+scratch_*.py
