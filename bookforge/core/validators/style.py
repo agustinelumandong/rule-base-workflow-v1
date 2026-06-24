@@ -39,6 +39,17 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "therefore",
             "endeavor",
             "proceed",
+            "will be",
+            "shall",
+            "ought",
+            "cannot",
+            "require",
+            "indicate",
+            "attempt",
+            "sufficient",
+            "furthermore",
+            "consequently",
+            "nevertheless",
         ],
         "time_jump_terms": [
             "hours later",
@@ -46,7 +57,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "weeks later",
             "after some time",
         ],
-        "warn_short_sentence_runs": False,
+        "warn_short_sentence_runs": True,
         "banned_terms": [
             "no clean answer",
             "tactical position",
@@ -57,6 +68,21 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "move fast",
             "stay focused",
             "legalese",
+            "cost center",
+            "synergy",
+            "bandwidth",
+            "stakeholder",
+            "deliverable",
+            "action item",
+            "team player",
+            "circle back",
+            "move the needle",
+            "low-hanging fruit",
+            "deep dive",
+            "take offline",
+            "game changer",
+            "paradigm",
+            "disruption",
         ],
     },
     "historical_terms": {
@@ -173,9 +199,35 @@ MODERN_OR_CLINICAL_WORDS = [
     "impact",
     "visible",
     "resolving",
+    "cost center",
+    "synergy",
+    "bandwidth",
+    "stakeholder",
+    "deliverable",
+    "action item",
+    "team player",
+    "circle back",
+    "move the needle",
+    "low-hanging fruit",
+    "deep dive",
+    "take offline",
+    "game changer",
+    "paradigm",
+    "disruption",
+    "explosion",
+    "debris",
+    "shrapnel",
+    "artillery",
+    "impact zone",
 ]
 
-INTERNAL_MONOLOGUE_PHRASES = ["he felt", "he realized", "he thought", "she felt", "she realized", "she thought"]
+INTERNAL_MONOLOGUE_PHRASES = [
+    "he felt", "he realized", "he thought", "he knew", "he wondered",
+    "he believed", "he hoped", "he feared", "he decided", "he suspected",
+    "she felt", "she realized", "she thought", "she knew", "she wondered",
+    "she believed", "she hoped", "she feared", "she decided", "she suspected",
+    "they felt", "they realized", "they thought", "they knew", "they wondered",
+]
 
 # Compatibility vocabulary used by the loop's broad style scan. Precise draft
 # validation is handled by forbidden_length_language().
@@ -191,9 +243,11 @@ FORBIDDEN_CONFLICT_PATTERNS = {
     "business conspiracy": r"\bbusiness\s+conspirac(?:y|ies)\b",
     "syndicate-style": r"\bsyndicate-style\b",
     "voss": r"\bvoss\b",
+    "rafe": r"\brafe\b",
+    "silas": r"\bsilas\b",
 }
 
-PROJECT_RULE_BANNED_NAME_LABELS = {"voss"}
+PROJECT_RULE_BANNED_NAME_LABELS = {"voss", "rafe", "silas"}
 
 ING_OPENER_RE = re.compile(r"(?m)^([A-Z][A-Za-z]{2,}ing)\b[\s,]")
 ING_OPENER_EXCLUSIONS = {
@@ -692,7 +746,10 @@ def check_personification_of_objects(text: str) -> list[str]:
         r"saddle|scabbard|bullet|lead|iron|steel|leather|rope|water|river|creek|mud|snow|trail|road|arroyo|valley|ridge|cliff|"
         r"mountain|hill|slope|wonder|fear|pain|silence|danger|memory|memories|thought|time|hour|hours|minute|minutes|day|"
         r"days|week|weeks|season|seasons|year|years|truth|lie|lies|voice|sound|word|words|name|names|blood|bloodstain|heat|"
-        r"cold|winter|summer|spring|autumn|fall|weather|colt|rifle|gun|revolver|pistol|carbine|winchester"
+        r"cold|winter|summer|spring|autumn|fall|weather|colt|rifle|gun|revolver|pistol|carbine|winchester|"
+        r"habit|name|paper|room|door|window|fence|gate|wall|floor|ground|dirt|clay|sand|grass|brush|mesquite|cedar|pine|"
+        r"oak|elm|cottonwood|sky|cloud|storm|rain|frost|ice|wind|breeze|gust|heat|cold|chill|warmth|"
+        r"distance|miles|mile|league|day|night|dawn|dusk|twilight|sunrise|sunset|moon|stars|constellation"
     )
     
     # Verbs representing human-like action, communication, or mental states
@@ -702,7 +759,14 @@ def check_personification_of_objects(text: str) -> list[str]:
         r"knowing|think|thinks|thought|thinking|believe|believes|believed|believing|wonder|wonders|wondered|wondering|waste|"
         r"wastes|wasted|wasting|watch|watches|watched|watching|creep|creeps|crept|creeping|breathe|breathes|breathed|breathing|"
         r"listen|listens|listened|listening|stare|stares|stared|staring|gaze|gazes|gazed|gazing|move|moves|moved|moving|stretch|"
-        r"stretches|stretched|stretching|chase|chases|chased|chasing"
+        r"stretches|stretched|stretching|chase|chases|chased|chasing|"
+        r"put|puts|putting|hold|holds|held|holding|reach|reaches|reached|reaching|"
+        r"cry|cries|cried|crying|laugh|laughs|laughed|laughing|weep|weeps|wept|weeping|"
+        r"call|calls|called|calling|scream|screams|screamed|screaming|"
+        r"bite|bites|bit|biting|scratch|scratches|scratched|scratching|"
+        r"fight|fights|fought|fighting|kill|kills|killed|killing|"
+        r"run|runs|ran|running|walk|walks|walked|walking|climb|climbs|climbed|climbing|"
+        r"wait|waits|waited|waiting|sleep|sleeps|slept|sleeping|dream|dreams|dreamed|dreaming"
     )
     
     personification_pat = re.compile(
@@ -885,5 +949,154 @@ def check_style_review_signals(text: str, settings_start: Path | None = None) ->
     findings.extend(check_similes_and_metaphors(text))
     findings.extend(check_personification_of_objects(text))
     findings.extend(check_abstract_internalization(text))
+    findings.extend(check_duplicated_actions(text))
+    findings.extend(check_impossible_frontier_actions(text))
+    findings.extend(check_ai_staccato_drama(text))
+    findings.extend(check_rule_of_three(text))
+    findings.extend(check_em_dash_overuse(text))
+
+    return findings
+
+
+def check_duplicated_actions(text: str) -> list[str]:
+    """Detect same action described twice in close proximity (different wording)."""
+    findings: list[str] = []
+    paragraphs = re.split(r"\n\s*\n", text.strip())
+
+    action_verbs = (
+        r"dragged|drag|pull|pulled|push|pushed|lift|lifted|raise|raised|set|placed|"
+        r"checked|examine|examined|looked|stared|gazed|watched|"
+        r"fired|shot|aimed|raised|lowered|drew|reached|"
+        r"rode|mounted|dismounted|tied|untied|saddled|unsaddled|"
+        r"cut|tied|broke|fixed|mended|repaired"
+    )
+
+    seen_actions: list[tuple[str, int]] = []
+    for i, para in enumerate(paragraphs):
+        para_clean = para.strip()
+        if not para_clean or len(para_clean.split()) < 10:
+            continue
+        sentences = SENTENCE_SPLIT_RE.split(para_clean)
+        for sentence in sentences:
+            sentence_clean = sentence.strip()
+            if not sentence_clean:
+                continue
+            words_list = re.findall(r"\b[A-Za-z']+\b", sentence_clean)
+            if len(words_list) < 5:
+                continue
+            match = re.search(rf"\b({action_verbs})\b", sentence_clean, re.IGNORECASE)
+            if not match:
+                continue
+            verb = match.group(1).lower()
+            normalized = _normalize_sentence(sentence_clean)
+            for prev_normalized, prev_idx in seen_actions:
+                if prev_idx == i:
+                    continue
+                overlap = len(set(normalized.split()) & set(prev_normalized.split()))
+                total = len(set(normalized.split()) | set(prev_normalized.split()))
+                if total > 0 and overlap / total > 0.5 and abs(i - prev_idx) <= 5:
+                    snippet = sentence_clean[:120]
+                    findings.append(
+                        f"Possible duplicated action (similar content, different words): '{snippet}'"
+                    )
+                    if len(findings) >= 5:
+                        return findings
+            seen_actions.append((normalized, i))
+
+    return findings
+
+
+def check_impossible_frontier_actions(text: str) -> list[str]:
+    """Flag physically impossible or highly implausible frontier actions."""
+    findings: list[str] = []
+    text_lower = text.lower()
+
+    impossible_patterns = [
+        (r" wagon[s]?\s+.*(?:on|onto|aboard)\s+(?:the\s+)?(?:flat\s*boat|ferry|barge).*(?:moving|drift|current|away)",
+         "Wagon driven onto a moving flatboat/ferry — physically implausible."),
+        (r" bullet[s]?\s+.*(?:explod|burst|shatter).*(?:snow|ice|frost|ground)",
+         "Bullet exploding on snow/ice impact — lead bullets do not detonate."),
+        (r"(?:spot|found|saw|noticed)\s+.*(?:sliver|splinter|toothpick|splinter).*(?:mud|dirt|churned|track)",
+         "Tiny object spotted in churned mud — implausible tracking detail."),
+        (r"(?:faster|outrun|beat).*(?:map|charted|know(?:n)?)\s+.*(?:route|path|trail)",
+         "Character outpacing map-holders on unknown ground — implausible."),
+    ]
+
+    for pattern, message in impossible_patterns:
+        if re.search(pattern, text_lower):
+            findings.append(f"Frontier realism warning: {message}")
+
+    return findings
+
+
+def check_ai_staccato_drama(text: str) -> list[str]:
+    """Detect 3+ consecutive short declarative fragments manufacturing drama."""
+    findings: list[str] = []
+    sentences = SENTENCE_SPLIT_RE.split(text)
+    short_fragments: list[str] = []
+
+    for sentence in sentences:
+        clean = sentence.strip()
+        if not clean:
+            continue
+        words = re.findall(r"\b[A-Za-z']+\b", clean)
+        if 1 <= len(words) <= 6 and clean.rstrip().endswith("."):
+            short_fragments.append(clean)
+        else:
+            if len(short_fragments) >= 3:
+                snippet = "; ".join(short_fragments[:4])
+                findings.append(
+                    f"AI staccato drama: {len(short_fragments)} consecutive short fragments: '{snippet}'"
+                )
+                if len(findings) >= 3:
+                    return findings
+            short_fragments = []
+
+    if len(short_fragments) >= 3:
+        snippet = "; ".join(short_fragments[:4])
+        findings.append(
+            f"AI staccato drama: {len(short_fragments)} consecutive short fragments: '{snippet}'"
+        )
+
+    return findings
+
+
+def check_rule_of_three(text: str) -> list[str]:
+    """Detect forced groups of three items in close proximity."""
+    findings: list[str] = []
+    lines = text.splitlines()
+
+    comma_triple_re = re.compile(
+        r"(\b[A-Z][a-z]+(?:\s+\w+){0,3}),\s+(\b[A-Z][a-z]+(?:\s+\w+){0,3}),\s+and\s+(\b[A-Z][a-z]+(?:\s+\w+){0,3})\b"
+    )
+
+    for line_num, line in enumerate(lines, 1):
+        if '"' in line:
+            continue
+        matches = list(comma_triple_re.finditer(line))
+        if len(matches) >= 2:
+            findings.append(
+                f"Line {line_num}: Multiple rule-of-three groupings in same sentence — may feel forced."
+            )
+            if len(findings) >= 3:
+                return findings
+
+    return findings
+
+
+def check_em_dash_overuse(text: str) -> list[str]:
+    """Flag paragraphs with 3+ em dashes."""
+    findings: list[str] = []
+    paragraphs = re.split(r"\n\s*\n", text.strip())
+
+    for i, para in enumerate(paragraphs):
+        em_dash_count = para.count("—")
+        if em_dash_count >= 3:
+            snippet = para[:100]
+            findings.append(
+                f"Paragraph {i + 1}: {em_dash_count} em dashes — consider reducing for cleaner prose: '{snippet}...'"
+            )
+            if len(findings) >= 3:
+                return findings
 
     return findings

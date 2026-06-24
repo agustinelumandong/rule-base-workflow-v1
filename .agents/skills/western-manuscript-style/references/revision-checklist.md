@@ -14,6 +14,13 @@ Use this checklist after drafting or when the user asks for cleanup, continuity 
 - Character knowledge matches what each character has actually seen or learned.
 - Physical clues such as tracks, boot marks, wounds, gear, dust, blood, or horse sign support only plausible POV conclusions; do not infer exact age, identity, motive, or timing from weak sign unless source-backed.
 - Geography and room/street positions stay coherent.
+- Items lost or damaged do not reappear without an acquisition scene.
+- Wound entry direction matches shooter position.
+- Characters described as dead or dying do not perform subsequent actions.
+- Same character does not perform same physical action twice in consecutive paragraphs.
+- Card players, bystanders, and background characters do not contradict their described behavior within the same scene.
+- Chapter closings do not rewind to repeat at chapter openings.
+- Duplicated paragraphs or near-verbatim sentence repeats are cut.
 
 ## POV
 
@@ -30,6 +37,8 @@ Use this checklist after drafting or when the user asks for cleanup, continuity 
 - Dialogue is short, direct, and not overexplaining the scene.
 - Dialect is restrained and readable.
 - Children, hostages, wounded civilians, and frightened people sound age- and pressure-appropriate rather than like another stoic adult.
+- Dialogue attribution is clear when multiple characters speak in close proximity — no untagged speech obscured by interruptions.
+- Contractions are used in casual speech; formal phrasing only when character-appropriate.
 
 ## Style Cleanup
 

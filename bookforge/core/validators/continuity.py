@@ -15,6 +15,8 @@ from bookforge.core.validators.format import (
     _make_issue,
 )
 
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+
 
 def check_unprofiled_period_terms(text: str, book_folder: Path) -> list[str]:
     """Checks the draft for period-specific terms not documented in research-pack.md."""
@@ -168,3 +170,178 @@ def validate_continuity_out(chapter: ChapterFiles) -> tuple[list[str], list[str]
     if not failures:
         passes.append("`continuity-out.md` is present and non-empty.")
     return passes, failures
+
+
+def check_equipment_state_contradictions(text: str) -> list[str]:
+    """Detect items lost/damaged reappearing without acquisition scene."""
+    findings: list[str] = []
+
+    lost_patterns = [
+        (r"(?:hat|帽子)\s+(?:fell|was shot|blew|knocked|lifted|went)\s+(?:off|away|gone)",
+         r"(?:hat|帽子)"),
+        (r"(?:rifle|gun|colt|winchester|revolver|pistol)\s+(?:fell|was dropped|lost|gone|left behind)",
+         r"(?:rifle|gun|colt|winchester|revolver|pistol)"),
+        (r"(?:saddle|pack|bag|coat|jacket|vest)\s+(?:fell|was lost|left|gone|lost on)",
+         r"(?:saddle|pack|bag|coat|jacket|vest)"),
+    ]
+
+    paragraphs = re.split(r"\n\s*\n", text.strip())
+    lost_items: dict[str, int] = {}
+
+    for i, para in enumerate(paragraphs):
+        para_lower = para.lower()
+        for pattern, item_pattern in lost_patterns:
+            if re.search(pattern, para_lower):
+                match = re.search(item_pattern, para_lower)
+                if match:
+                    lost_items[match.group(0)] = i
+
+        for item, lost_idx in list(lost_items.items()):
+            if i <= lost_idx:
+                continue
+            if re.search(rf"\b{re.escape(item)}\b", para_lower):
+                has_acquisition = any(
+                    kw in para_lower
+                    for kw in ["found a", "picked up", "bought", "borrowed", "replacement", "new " + item, "got a " + item]
+                )
+                if not has_acquisition:
+                    snippet = para[:120]
+                    findings.append(
+                        f"Continuity warning: '{item}' was lost/damaged at paragraph {lost_idx + 1} "
+                        f"but reappears at paragraph {i + 1} without an acquisition scene: '{snippet}...'"
+                    )
+                    if len(findings) >= 5:
+                        return findings
+
+    return findings
+
+
+def check_dead_character_actions(text: str) -> list[str]:
+    """Detect characters performing actions after being described as dead/dying."""
+    findings: list[str] = []
+
+    death_descriptions = [
+        r"dead\b",
+        r"died\b",
+        r"killed\b",
+        r"corpse\b",
+        r"lifeless\b",
+        r"no longer breathing\b",
+        r"drowned\b",
+        r"bled out\b",
+        r"fell dead\b",
+    ]
+
+    paragraphs = re.split(r"\n\s*\n", text.strip())
+    dead_characters: dict[str, int] = {}
+
+    for i, para in enumerate(paragraphs):
+        para_lower = para.lower()
+        for death_pattern in death_descriptions:
+            death_match = re.search(
+                rf"(\b[A-Z][a-z]+\b).{{0,40}}{death_pattern}",
+                para_lower,
+            )
+            if death_match:
+                char_name = death_match.group(1)
+                if char_name.lower() not in ("he", "she", "they", "the", "a", "an"):
+                    dead_characters[char_name] = i
+
+        for char_name, death_idx in list(dead_characters.items()):
+            if i <= death_idx:
+                continue
+            action_verbs = (
+                r"\b(?:said|spoke|answered|replied|told|called|shouted|whispered|"
+                r"moved|walked|ran|rode|climbed|stood|sat|reached|grabbed|fired|shot|"
+                r"grabbed|pulled|pushed|lifted|carried|dragged|drove|led|followed|"
+                r"reached|checked|examined|looked|stared|watched|turned|faced)\b"
+            )
+            if re.search(rf"\b{re.escape(char_name)}\b.{0,60}{action_verbs}", para_lower):
+                snippet = para[:120]
+                findings.append(
+                    f"Continuity error: '{char_name}' performs action at paragraph {i + 1} "
+                    f"but was described as dead/dying at paragraph {death_idx + 1}: '{snippet}...'"
+                )
+                if len(findings) >= 5:
+                    return findings
+
+    return findings
+
+
+def check_character_behavior_contradictions(text: str) -> list[str]:
+    """Detect same character described with opposite behaviors in close proximity."""
+    findings: list[str] = []
+
+    behavior_pairs = [
+        (r"looked?\s+(?:toward|at|over|back)", r"never\s+(?:looked?|turned|glanced)"),
+        (r"spoke|said|answered|replied", r"silent|said nothing|didn(?:'t|t)\s+speak|never\s+(?:spoke|said|answered)"),
+        r"(?:always|kept|never\s+left)", r"(?:left|abandoned|walked away|forgot)",
+    ]
+
+    paragraphs = re.split(r"\n\s*\n", text.strip())
+
+    for i in range(len(paragraphs) - 1):
+        para1 = paragraphs[i].lower()
+        para2 = paragraphs[i + 1].lower()
+
+        if abs(len(para1.split()) - len(para2.split())) > 20:
+            continue
+
+        subjects = re.findall(r"\b([A-Z][a-z]+)\b", paragraphs[i])
+        for subject in subjects:
+            if subject.lower() in ("he", "she", "they", "the", "a", "an", "his", "her"):
+                continue
+            if re.search(rf"\b{re.escape(subject.lower())}\b", para2):
+                for pair in behavior_pairs:
+                    if isinstance(pair, tuple):
+                        pattern1, pattern2 = pair
+                    else:
+                        continue
+                    if re.search(pattern1, para1) and re.search(pattern2, para2):
+                        snippet = paragraphs[i + 1][:100]
+                        findings.append(
+                            f"Behavior contradiction: '{subject}' at paragraph {i + 1} vs {i + 2}: "
+                            f"'{snippet}...'"
+                        )
+                        if len(findings) >= 5:
+                            return findings
+
+    return findings
+
+
+def check_wound_direction_consistency(text: str) -> list[str]:
+    """Flag back-entry wound descriptions when shooter is positioned in front."""
+    findings: list[str] = []
+
+    wound_patterns = [
+        r"(?:ball|bullet|shot|wound)\s+.*(?:in|entered)\s+.*(?:low\s+and\s+back|from\s+behind|in\s+the\s+back)",
+        r"(?:entry|entered|going\s+in)\s+.*(?:back|rear|behind)",
+    ]
+
+    front_shooter_patterns = [
+        r"(?:facing|faced|toward|in\s+front\s+of|from\s+(?:the\s+)?(?:porch|front|yard|door))",
+        r"(?:kneeling|standing|sitting|lying)\s+.*(?:facing|toward|looking\s+at)",
+    ]
+
+    paragraphs = re.split(r"\n\s*\n", text.strip())
+
+    for i, para in enumerate(paragraphs):
+        para_lower = para.lower()
+
+        has_front_shooter = any(
+            re.search(p, para_lower) for p in front_shooter_patterns
+        )
+        has_back_wound = any(
+            re.search(p, para_lower) for p in wound_patterns
+        )
+
+        if has_front_shooter and has_back_wound:
+            snippet = para[:120]
+            findings.append(
+                f"Wound direction warning: Front-positioned shooter with back-entry wound at paragraph {i + 1}: "
+                f"'{snippet}...'"
+            )
+            if len(findings) >= 3:
+                return findings
+
+    return findings

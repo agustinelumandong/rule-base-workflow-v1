@@ -33,6 +33,8 @@ Answer these questions:
 16. **Causality Check:** If the chapter uses betrayal, confession, witness knowledge, planted proof, route timing, or a villain mistake, does the source context support how it happens?
 17. **Physical-Clue Inference Check:** Do tracks, wounds, drag marks, gear, clothing, and other physical signs support only conclusions the POV character could plausibly make? Flag any exact age, identity, motive, timing, or condition inferred from weak sign if later source facts contradict or narrow it.
 18. **Distinct Voice and Age-Pressure Check:** Do major speakers sound distinct in phrasing and rhythm? For children, hostages, wounded people, frightened civilians, guides, and lawmen, does the dialogue match their age, role, fear, work, and pressure instead of making everyone sound like the same controlled adult?
+19. **Character Development Check:** Do characters' decisions and reactions connect to their established past experiences, traumas, or personal history? Are emotional responses earned through prior setup rather than appearing without foundation? Does each return to a character issue add a new angle: fear, anger, disappointment, love, resignation, or moral challenge?
+20. **Unsupported Expertise Check:** When a character tracks, predicts, or judges another person, is the evidence shown first? The reader must see why the character knows — through track sign, terrain, horse condition, witness report, prior knowledge, or direct observation. Flag any conclusion that sounds like magical knowledge.
 
 ## Output Format
 

@@ -36,6 +36,8 @@ Do not invent continuity facts when source material is missing. Mark assumptions
 11. Run a dialogue/voice pass when characters speak. Keep each character's diction distinct and consistent with their role.
 12. Run a frontier mechanics pass when the scene uses wagons, ferries, horses, reins, firearms, wounds, tracking signs, terrain, written proof, brands, or ledgers. Flag implausible mechanics as review findings unless a narrow validator rule exists.
 13. For final polish, make targeted edits. Do not regenerate broad passages unless the user asks for a rewrite.
+14. Connect character decisions to their established past experiences and traumas. Emotional responses must be earned through prior setup, not appear without foundation.
+15. Each return to a character issue (fear of the gun, moral conflict, injury) must add a new angle: fear, anger, disappointment, love, resignation, or moral challenge. Do not repeat the same concern without escalation.
 
 ## References
 

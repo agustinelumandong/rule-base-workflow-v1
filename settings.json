@@ -1,7 +1,9 @@
 {
   "name_policy": {
     "banned_names": [
-      "silas"
+      "Silas",
+      "Rafe",
+      "Voss",
     ],
     "allowed_names": []
   },

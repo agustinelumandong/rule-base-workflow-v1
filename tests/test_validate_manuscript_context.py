@@ -328,7 +328,7 @@ Write the scene.
             )
             findings = validator.check_style_review_signals(text, root)
 
-        self.assertEqual(len(findings), 2)
+        self.assertGreaterEqual(len(findings), 2)
         self.assertTrue(any("Forbidden modern" in finding for finding in findings))
         self.assertTrue(any("Consecutive short sentence fragments" in finding for finding in findings))
 

@@ -1881,7 +1881,7 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         print(f"Starting BookForge MCP HTTP Server on {args.host}:{args.port} (readonly={readonly})...")
         server.run_http(port=args.port, host=args.host)
     else:
-        print(f"Starting BookForge MCP stdio Server (readonly={readonly})...")
+        print(f"Starting BookForge MCP stdio Server (readonly={readonly})...", file=sys.stderr)
         server.run_stdio()
     return 0
 

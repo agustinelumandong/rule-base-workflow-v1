@@ -49,18 +49,41 @@ Do not invent missing facts to rescue a weak plot. Mark unknowns as unknown, and
 - Trace the step-by-step scheme, pursuit, frame-up, raid, robbery, ambush, intimidation, or cover-up.
 - Ask what the antagonist gains from each action and what risks they accept.
 - Flag plans that work only because other characters become careless, forget obvious facts, or fail to use normal frontier judgment.
+- Leaving a witness alive after they confess contradicts a villain who wants all surviving witnesses silenced.
+- A villain's forged records should not be "too neat" or "too even" — a veteran thief would make forgeries look realistic.
+- Stampede or sabotage consequences must account for potential loss of the villain's own planted evidence.
+- A frame-up must survive logical scrutiny — forgery mechanics, timing, and opportunity all need to hold together.
+
+### Motive And Knowledge
+
+- Ask how each character knows what they know.
+- Check whether witnesses can realistically possess the information they provide.
+- Flag clues that are handed to heroes without setup, cost, risk, or observation.
+- Every expert conclusion needs evidence shown first: track sign, terrain, horse condition, witness report, or prior knowledge.
+- A regular hired hand would not know hidden counterfeiting operations without a specific reason.
+- Characters making deductions must have observable basis — no magical knowledge of another's route or habits.
 
 ### Event Logic
 
 - Every major event should serve the antagonist's plan, the hero's goal, or the survival pressure.
 - For stampedes, shootings, raids, fires, robberies, ambushes, escapes, or rescues, ask what practical purpose the event serves.
 - Ask whether the same goal could be achieved more easily another way. If yes, the story needs a reason the harder path is chosen.
+- If a stampede is part of a sabotage plan, note whether the saboteur's own planted evidence (branded cattle, forged tallies) would survive the chaos.
+- Coincidences that perfectly intercept a moving party (message from kin at exact ferry) need justification — frontier travel is slow and unpredictable.
+- Timing that is too clean for hard road travel breaks believability.
+- Confessions must have motivation beyond convenience — injury alone is not enough to make someone reveal hidden locations.
 
 ### Western Realism
 
 - Check whether cattle operations, brands, tallies, ownership records, trails, ranch work, raids, hunting, shelters, food preservation, weapons, and barter are believable for the setting.
 - Ask whether experienced ranchers, drovers, sheriffs, merchants, scouts, hunters, or warriors would accept the evidence or behavior shown.
 - For Long Hunter or frontier survival stories, check terrain, food, caches, winter preparation, wounds, travel speed, and shelter scale.
+- Wagons cannot be driven onto flatboats that have already started moving away from shore.
+- Lead bullets do not explode on snow or ice impact — they absorb and stop.
+- Tracking a toothpick-sized sliver of wood in freshly churned mud from a multi-ton wagon is implausible.
+- A character cannot cross unknown ground faster than people holding the map.
+- Forging a brand requires burning or blotching the original — it cannot simply be painted over.
+- Bounties, warrants, posses, deputies, dead-or-alive rules, ammunition, money, and supplies must be specific and concrete.
 
 ### Proof Chain
 

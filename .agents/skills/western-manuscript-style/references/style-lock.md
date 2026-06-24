@@ -9,6 +9,9 @@ Use these rules when drafting or revising Western prose, chapter beats, action p
 - Do not give the environment feelings, plans, or intentions.
 - Keep descriptions physical, concrete, and grounded in tools, terrain, bodies, animals, buildings, weather, and labor.
 - Show objective action and result. Do not explain obvious psychology or teach the reader what an action means.
+- Never state an emotion directly. Show the physical behavior that reveals it.
+- Never use lines that summarize an atmosphere or emotion ("Fear, if fear had a smell"). Force the reader to rely on physical reactions only.
+- Do not stack contradictory sensory details in one sentence. Make setting physical and simple before poetic.
 
 ## Banned AI Echo Words
 
@@ -48,6 +51,21 @@ Avoid modern or clinical terms when a plainer period-grounded word can do the jo
 - `impact`
 - `visible`
 - `resolving`
+- `cost center`
+- `synergy`
+- `bandwidth`
+- `stakeholder`
+- `deliverable`
+- `action item`
+- `team player`
+- `circle back`
+- `move the needle`
+- `low-hanging fruit`
+- `deep dive`
+- `take offline`
+- `game changer`
+- `paradigm`
+- `disruption`
 
 Avoid Texas slang unless the user specifically requests it.
 
@@ -82,6 +100,17 @@ No one spoke.
 - Avoid internal monologue when behavior-driven prose is requested.
 - Avoid phrases like `He felt`, `He realized`, or `He thought` when the user wants externalized tension.
 - Show principles and tension through action, posture, silence, choices, and what a character refuses to do.
+- Every tracking deduction, route prediction, or behavioral judgment must show evidence first: track sign, terrain, horse condition, witness report, or prior knowledge. The reader must see why the character knows.
+
+## Continuity Discipline
+
+- Items lost or damaged do not reappear without an acquisition scene.
+- Wound entry direction must match shooter position (no back-entry from frontal shooter).
+- Characters described as dead or dying do not perform subsequent actions.
+- Same character should not perform same physical action twice in consecutive paragraphs.
+- Track equipment state: hat, rifle, saddle, coat, ammunition, horse condition across chapters.
+- Track wound progression: location, severity, treatment, healing stage across chapters.
+- Track gang/opposition count progression across chapters (no phantom respawns).
 
 ## Violence And Action
 
