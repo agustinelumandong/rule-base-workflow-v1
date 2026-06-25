@@ -12,6 +12,110 @@ def load_validator():
 
 
 class ManuscriptContextValidatorTests(unittest.TestCase):
+    def test_validate_chapter_fails_when_compiled_draft_missing_chapter_review(self):
+        validator = load_validator()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            chapter_folder = book_folder / "chapters" / "chapter-01"
+            chapter_folder.mkdir(parents=True)
+
+            (book_folder / "phase-0.md").write_text(
+                "# Test Book\n\n## Chapter 1\nJed claims the cabin and decides to stay.\n",
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text("# Rulebook\n\n## Source Hierarchy\nphase-0.md\n", encoding="utf-8")
+            (book_folder / "mood-lock.md").write_text("# Mood Lock\n", encoding="utf-8")
+            (book_folder / "chapter-summaries.md").write_text("## Chapter 1\nJed claims the cabin.\n", encoding="utf-8")
+            (chapter_folder / "chapter-01.md").write_text(
+                "Jed shouldered the bar into place.\n\nHe checked the roof poles and stayed inside till dark.\n",
+                encoding="utf-8",
+            )
+            (chapter_folder / "drafting-plan.md").write_text("# Drafting Plan\n\n## BEAT 1\nClaim the cabin.\n", encoding="utf-8")
+            (chapter_folder / "scene-breakdown.md").write_text(
+                """## BEAT 1: Claim the Cabin
+
+### Source Context Lock
+
+- **Source Anchor:** Chapter 1 cabin claim.
+- **Continuity In:** Jed is alone.
+- **Required Story Movement:** Jed secures the cabin and commits to staying.
+- **Continuity Out:** Cabin is now his shelter.
+- **Do Not Invent:** Extra visitors or attacks.
+
+### Beat Instructions
+
+Write the scene.
+""",
+                encoding="utf-8",
+            )
+            (chapter_folder / "continuity-out.md").write_text(
+                "## Characters\nJed alive.\n## Locations\nCabin.\n## Changes\nCabin claimed.\n## Unresolved Pressure\nWinter close.\n## Next Chapter Must Know\nJed stays.\n",
+                encoding="utf-8",
+            )
+
+            chapter_files = validator.ChapterFiles(chapter_folder)
+            report = validator.validate_chapter(chapter_files, {"chapter-01": "Jed claims the cabin and decides to stay."})
+
+        self.assertTrue(any("chapter-review" in failure for failure in report.failures))
+
+    def test_validate_chapter_fails_on_underdeveloped_money_beat(self):
+        validator = load_validator()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            chapter_folder = book_folder / "chapters" / "chapter-01"
+            chapter_folder.mkdir(parents=True)
+
+            (book_folder / "phase-0.md").write_text(
+                "# Test Book\n\n## Chapter 1\nJed reaches the cabin and finally understands he is home.\n",
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text("# Rulebook\n\n## Source Hierarchy\nphase-0.md\n", encoding="utf-8")
+            (book_folder / "mood-lock.md").write_text("# Mood Lock\n", encoding="utf-8")
+            (book_folder / "chapter-summaries.md").write_text("## Chapter 1\nJed reaches the cabin.\n", encoding="utf-8")
+            (chapter_folder / "chapter-01.md").write_text(
+                "Jed opened the cabin door.\n\nHe saw the dry hearth and knew it would do.\n",
+                encoding="utf-8",
+            )
+            (chapter_folder / "drafting-plan.md").write_text("# Drafting Plan\n\n## BEAT 1\nReach the cabin.\n", encoding="utf-8")
+            (chapter_folder / "scene-breakdown.md").write_text(
+                """## BEAT 1: Home at Last
+
+### Source Context Lock
+
+- **Source Anchor:** Chapter 1 cabin arrival.
+- **Continuity In:** Jed has survived the trail.
+- **Required Story Movement:** Jed accepts the cabin as home.
+- **Continuity Out:** He stays and prepares to winter there.
+- **Do Not Invent:** New enemies or helpers.
+
+### Pacing Guidance
+
+- **Beat Weight:** money
+- **Beat Development Floor:** >= 180 words
+- **Why This Beat Matters:** This is the chapter's emotional payoff.
+
+### Beat Instructions
+
+Write the scene.
+""",
+                encoding="utf-8",
+            )
+            (chapter_folder / "chapter-review.md").write_text(
+                "# Chapter Review\n\n## Read-Through Notes\nBrief note.\n\n## Slow Spots\nNone.\n\n## Rushed Spots\nEnding lands too fast.\n\n## Break Opportunities\nNone.\n\n## Decision\nready\n",
+                encoding="utf-8",
+            )
+            (chapter_folder / "continuity-out.md").write_text(
+                "## Characters\nJed alive.\n## Locations\nCabin.\n## Changes\nJed stays.\n## Unresolved Pressure\nWinter close.\n## Next Chapter Must Know\nCabin is home.\n",
+                encoding="utf-8",
+            )
+
+            chapter_files = validator.ChapterFiles(chapter_folder)
+            report = validator.validate_chapter(chapter_files, {"chapter-01": "Jed reaches the cabin and finally understands he is home."})
+
+        self.assertTrue(any("underdeveloped" in failure.lower() for failure in report.failures))
+
     def test_parse_phase_chapters_accepts_bold_chapter_lines(self):
         validator = load_validator()
 
@@ -300,9 +404,10 @@ Write the scene.
 
             findings = validator.check_style_review_signals(text, root)
 
-        self.assertEqual(len(findings), 4)
+        self.assertEqual(len(findings), 5)
         self.assertTrue(any("Long narrative-summary" in finding for finding in findings))
         self.assertTrue(any("Behavior-analysis" in finding for finding in findings))
+        self.assertTrue(any("Thought-over-behavior narration" in finding for finding in findings))
         self.assertTrue(any("Formal dialogue" in finding for finding in findings))
         self.assertTrue(any("time-jump" in finding for finding in findings))
 
@@ -331,6 +436,120 @@ Write the scene.
         self.assertGreaterEqual(len(findings), 2)
         self.assertTrue(any("Forbidden modern" in finding for finding in findings))
         self.assertTrue(any("Consecutive short sentence fragments" in finding for finding in findings))
+
+    def test_thought_over_behavior_narration_detection(self):
+        validator = load_validator()
+        text = (
+            "The youngest boys watched him from farther off. "
+            "That mattered too.\n\n"
+            "Respect showed itself in the way the men quit shoving his shoulder.\n\n"
+            "None of it made trust. It made use."
+        )
+
+        findings = validator.check_thought_over_behavior_narration(text)
+
+        self.assertEqual(len(findings), 4)
+        self.assertTrue(all("Thought-over-behavior narration" in finding for finding in findings))
+        self.assertTrue(any("That mattered too" in finding for finding in findings))
+        self.assertTrue(any("Respect showed itself" in finding for finding in findings))
+        self.assertTrue(any("None of it made trust" in finding for finding in findings))
+        self.assertTrue(any("It made use" in finding for finding in findings))
+
+    def test_thought_over_behavior_narration_detects_broader_summary_shapes(self):
+        validator = load_validator()
+        text = (
+            "The men quit shoving him after the fight. "
+            "The space around him changed after that.\n\n"
+            "Respect came slower, but it came.\n\n"
+            "That was why the men watched him differently.\n\n"
+            "The work made him useful, not welcome."
+        )
+
+        findings = validator.check_thought_over_behavior_narration(text)
+
+        self.assertEqual(len(findings), 4)
+        self.assertTrue(any("space around him changed" in finding for finding in findings))
+        self.assertTrue(any("Respect came slower" in finding for finding in findings))
+        self.assertTrue(any("That was why" in finding for finding in findings))
+        self.assertTrue(any("made him useful" in finding for finding in findings))
+
+    def test_thought_over_behavior_narration_ignores_clean_behavior_and_dialogue(self):
+        validator = load_validator()
+        clean_text = (
+            "The youngest boys watched him from farther off. "
+            "A woman handed him snare cord instead of the water bucket. "
+            "Jake cleaned the knife and set it beside his blanket.\n\n"
+            "He filled no vessel because he had none worth showing and because a dripping trail showed as plainly as a footprint.\n\n"
+            '"That mattered too," Elias said. '
+            '"Respect came slower, but it came," she said.'
+        )
+
+        findings = validator.check_thought_over_behavior_narration(clean_text)
+
+        self.assertEqual(findings, [])
+
+    def test_thought_over_behavior_narration_honors_config(self):
+        validator = load_validator()
+        text = (
+            "That mattered. That counted. That meant the camp had changed. "
+            "Careful was worth more."
+        )
+
+        disabled = validator.check_thought_over_behavior_narration(
+            text,
+            {"enabled": False, "max_findings": 2},
+        )
+        limited = validator.check_thought_over_behavior_narration(
+            text,
+            {"enabled": True, "max_findings": 2},
+        )
+
+        self.assertEqual(disabled, [])
+        self.assertEqual(len(limited), 2)
+
+    def test_thought_over_behavior_surfaces_as_soft_style_review_signal(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            chapter_dir = root / "chapters" / "chapter-01"
+            chapter_dir.mkdir(parents=True)
+            draft_path = chapter_dir / "chapter-01.md"
+            scene_path = chapter_dir / "scene-breakdown.md"
+            drafting_plan_path = chapter_dir / "drafting-plan.md"
+            continuity_path = chapter_dir / "continuity-out.md"
+            review_path = chapter_dir / "chapter-review.md"
+            draft_path.write_text(
+                "The boys stood farther away after the fight. That mattered too.",
+                encoding="utf-8",
+            )
+            scene_path.write_text(
+                "### Source Context Lock\n\n## BEAT 1\n\n### Beat Instructions\n",
+                encoding="utf-8",
+            )
+            drafting_plan_path.write_text("Plan.\n", encoding="utf-8")
+            continuity_path.write_text("Continuity.\n", encoding="utf-8")
+            review_path.write_text("## Decision\nready\n", encoding="utf-8")
+            chapter = validator.ChapterFiles(
+                slug="chapter-01",
+                label="Chapter 1",
+                folder=chapter_dir,
+                draft=draft_path,
+                scene_breakdown=scene_path,
+                drafting_plan=drafting_plan_path,
+                continuity_out=continuity_path,
+                chapter_review=review_path,
+            )
+
+            issues = validator.validate_draft(chapter)
+
+        thought_issues = [
+            issue
+            for issue in issues
+            if issue.rule_id == "VALIDATOR_STYLE_REVIEW_SIGNAL"
+            and "Thought-over-behavior narration" in issue.message
+        ]
+        self.assertEqual(len(thought_issues), 1)
+        self.assertEqual(thought_issues[0].severity.name, "SOFT")
 
     def test_style_review_signals_resolves_frontier_profile_from_rulebook(self):
         validator = load_validator()

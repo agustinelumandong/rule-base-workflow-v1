@@ -83,6 +83,32 @@ class CompileManuscriptTests(unittest.TestCase):
             self.assertEqual(parts[2], "Chapter two draft prose.")
             self.assertEqual(parts[3].strip(), "Epilogue draft prose.")
 
+    def test_compile_strips_scene_headings(self):
+        compiler = load_compiler()
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            chapters_dir = book_folder / "chapters"
+            ch1_dir = chapters_dir / "chapter-01"
+            ch1_dir.mkdir(parents=True)
+            (ch1_dir / "chapter-01.md").write_text(
+                "# Chapter 1: Dust\n\n"
+                "## Scene 1\n\n"
+                "First scene prose.\n\n"
+                "## Scene 2\n\n"
+                "Second scene prose.",
+                encoding="utf-8",
+            )
+
+            output_file = book_folder / "output.md"
+            compiler.compile_manuscript(book_folder, output_file, include_title=False)
+
+            compiled_content = output_file.read_text(encoding="utf-8")
+            self.assertIn("# Chapter 1: Dust", compiled_content)
+            self.assertIn("First scene prose.", compiled_content)
+            self.assertIn("Second scene prose.", compiled_content)
+            self.assertNotIn("## Scene 1", compiled_content)
+            self.assertNotIn("## Scene 2", compiled_content)
+
     def test_compile_raises_on_missing_or_empty_draft(self):
         compiler = load_compiler()
         with tempfile.TemporaryDirectory() as tmp:
@@ -149,6 +175,34 @@ class CompileManuscriptTests(unittest.TestCase):
             self.assertNotIn("Book Folder:", document_xml)
             self.assertNotIn("Draft Files:", document_xml)
             self.assertNotIn("Manuscript Words:", document_xml)
+
+    def test_format_manuscript_docx_strips_scene_headings(self):
+        compiler = load_compiler()
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            chapters_dir = book_folder / "chapters"
+            ch1_dir = chapters_dir / "chapter-01"
+            ch1_dir.mkdir(parents=True)
+            (ch1_dir / "chapter-01.md").write_text(
+                "# Chapter 1: Dust\n\n"
+                "## Scene 1\n\n"
+                "First scene prose.\n\n"
+                "## Scene 2\n\n"
+                "Second scene prose.",
+                encoding="utf-8",
+            )
+
+            output_file = book_folder / "formatted.docx"
+            compiler.format_manuscript_docx(book_folder, output_file, include_title=False)
+
+            with zipfile.ZipFile(output_file) as archive:
+                document_xml = archive.read("word/document.xml").decode("utf-8")
+
+            self.assertIn("Chapter 1: Dust", document_xml)
+            self.assertIn("First scene prose.", document_xml)
+            self.assertIn("Second scene prose.", document_xml)
+            self.assertNotIn("Scene 1", document_xml)
+            self.assertNotIn("Scene 2", document_xml)
 
 
 if __name__ == "__main__":

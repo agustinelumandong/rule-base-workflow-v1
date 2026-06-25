@@ -158,6 +158,52 @@ class ManuscriptLoopTests(unittest.TestCase):
         self.assertEqual(status, "DONE_WITH_WARNINGS")
         self.assertIn("soft warnings", reason)
 
+    def test_classify_missing_chapter_review_routes_to_review_state(self):
+        loop = load_loop()
+        length_state = self.length_state(total_words=30000)
+
+        class MockReport:
+            def __init__(self):
+                self.failures = ["Compiled chapter is missing required `chapter-review.md`."]
+                self.warnings = []
+                self.chapter = type("MockChapter", (), {"slug": "chapter-01"})()
+
+        status, reason = loop.classify(
+            length_state=length_state,
+            book_failures=[],
+            reports=[MockReport()],
+            style_issues=[],
+            repair_attempts={},
+            max_repair_attempts=3,
+            continuity_failures=[],
+        )
+
+        self.assertEqual(status, "NEEDS_CHAPTER_REVIEW")
+        self.assertIn("chapter review", reason.lower())
+
+    def test_classify_non_ready_chapter_review_routes_to_rhythm_rebalance(self):
+        loop = load_loop()
+        length_state = self.length_state(total_words=30000)
+
+        class MockReport:
+            def __init__(self):
+                self.failures = ["`chapter-review.md` decision is `needs-rhythm-fix`, so the compiled chapter is not ready."]
+                self.warnings = []
+                self.chapter = type("MockChapter", (), {"slug": "chapter-01"})()
+
+        status, reason = loop.classify(
+            length_state=length_state,
+            book_failures=[],
+            reports=[MockReport()],
+            style_issues=[],
+            repair_attempts={},
+            max_repair_attempts=3,
+            continuity_failures=[],
+        )
+
+        self.assertEqual(status, "NEEDS_RHYTHM_REBALANCE")
+        self.assertIn("chapter review", reason.lower())
+
     def test_classify_book_level_hard_issue_blocks_expansion(self):
         loop = load_loop()
         length_state = self.length_state(total_words=1000)

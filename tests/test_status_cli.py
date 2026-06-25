@@ -89,6 +89,27 @@ class TestStatusCli(unittest.TestCase):
         validate.assert_called_once_with(Path("books/tex-cade/books-4"))
         self.assertIn("Run 'bf run-loop books/tex-cade/books-4'", stdout.getvalue())
 
+    def test_status_prints_chapter_review_summary_from_rhythm_report(self):
+        Path("books/my-book").mkdir(parents=True)
+        (Path("books/my-book") / "rulebook.md").write_text("# Rulebook\n", encoding="utf-8")
+        stdout = io.StringIO()
+        rhythm_report = mock.Mock()
+        rhythm_report.issues = []
+        rhythm_report.review_states = {"chapter-01": "ready", "chapter-02": "needs-rhythm-fix"}
+
+        with (
+            redirect_stdout(stdout),
+            mock.patch("bookforge.cli.context_validator.validate_required_book_files", return_value=([], [])),
+            mock.patch("bookforge.cli.scanner_module.check_gaps", return_value=([], [])),
+            mock.patch("bookforge.cli.chain_module.analyze_chain", return_value=(True, [])),
+            mock.patch("bookforge.cli.rhythm_module.analyze", return_value=rhythm_report),
+        ):
+            code = cmd_status(Namespace(book_folder="my-book"))
+
+        self.assertEqual(code, 0)
+        self.assertIn("Chapter Review:", stdout.getvalue())
+        self.assertIn("chapter-02: needs-rhythm-fix", stdout.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
