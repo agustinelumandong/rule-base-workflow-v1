@@ -10,6 +10,11 @@ As an AI agent, you do not need to read the entire repository, full outlines, or
 
 Your core workflow is strictly procedural:
 
+0. **LOCK CHECK (mandatory)**: Before ANY write operation on a book, run:
+   ```
+   ./scripts/check-book-lock.sh books/<series>/<book>
+   ```
+   If exit code is 1 → **STOP**. Book is locked. Report "Book is locked. No modifications permitted." Do not proceed.
 1. **Check Status**: Use `bookforge-mcp_get_queue_status` to see scene statuses and the active scene.
 2. **Identify Task & Chapter**: Locate the chapter (e.g. `chapter-03` or `epilogue`) and the current active task (e.g. `draft-prose`, `revise-style`, `continuity-check`).
 3. **Render Task Packet**: Use `bookforge-mcp_build_generation_packet` with chapter and task parameters to generate a token-budgeted context packet.
@@ -54,8 +59,46 @@ Read the target chapter, inspect the prose directly, apply the narrow fix, and v
 
 ---
 
-## 3. Constraints & Guardrails
+## 3. Book Lock (Immutable Finished Books)
+
+When a book is complete, it is **locked**. A locked book must never be modified.
+
+### How to Check
+Before any write operation on a book, check for `STATUS.md` in the book's root directory:
+```
+books/<series>/<book>/STATUS.md
+```
+If this file exists and contains `Status: LOCKED`, the book is immutable.
+
+### Locked Means
+- No edits to `compiled-manuscript.md`
+- No edits to `world-state.json`
+- No edits to `canon/events/*` or `canon/state/snapshot.yml`
+- No edits to `phase-0.md` or `rulebook.md`
+- No scene generation, patching, or validation
+- Queue can be archived but not reactivated
+
+### Enforcement
+- All agents, AI assistants, and autonomous tools must check `STATUS.md` before any write.
+- If locked, refuse the operation and report: "Book is locked. No modifications permitted."
+- This is irreversible. A locked book should never be unlocked.
+
+### Creating a Lock
+When a book is finished, create `STATUS.md` with:
+```markdown
+# Book Status: LOCKED
+## State
+- **Status:** LOCKED (immutable)
+- **Book:** <book title>
+- **Locked At:** <date>
+- **Reason:** <why the book is complete>
+```
+
+---
+
+## 4. Constraints & Guardrails
 - **No Direct Canon Mutations**: Never manually edit files in `canon/state/snapshot.yml`. All canon updates must be applied via bookforge-mcp tools.
 - **Zero-Trust Input**: Never guess details or invent story facts. If facts are unknown, query them via `bookforge-mcp_query_research_cache`.
 - **Validation is the Gate**: Any validation failures (`bookforge-mcp_validate_scene`) must be resolved before applying changes.
 - **Pacing Guidance is Elastic**: Beat weights and chapter ranges are planning tripwires, not padding quotas. Use them to notice rushed or bloated treatment, never to force exact length.
+- **Locked Books Are Sacred**: Never modify a book with `STATUS.md` set to `LOCKED`. See Section 3.
