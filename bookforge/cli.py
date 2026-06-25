@@ -349,6 +349,10 @@ def cmd_status(args: argparse.Namespace) -> int:
                 print(f"  [{issue.severity.name}] {issue.message}")
         else:
             print("  [PASS] Chapter rhythm variance is healthy.")
+        if getattr(rhythm_report, "review_states", None):
+            print("\nChapter Review:")
+            for slug, decision in sorted(rhythm_report.review_states.items()):
+                print(f"  - {slug}: {decision}")
     except (OSError, UnicodeDecodeError, ZeroDivisionError, ValueError, KeyError, AttributeError) as e:
         print(f"\nChapter Rhythm: [WARN] Could not analyze rhythm ({e})")
 
