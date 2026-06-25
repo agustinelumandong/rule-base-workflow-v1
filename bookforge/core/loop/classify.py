@@ -11,13 +11,13 @@ from bookforge.core.loop.state import LengthState, soft_length_bounds, StyleIssu
 
 
 def mode_for_status(status: str) -> str:
-    if status in ("NEEDS_BOOK_REPAIR", "NEEDS_CONTEXT_REPAIR", "NEEDS_CONTINUITY_REPAIR"):
+    if status in ("NEEDS_BOOK_REPAIR", "NEEDS_CONTEXT_REPAIR", "NEEDS_CONTINUITY_REPAIR", "NEEDS_CHAPTER_REVIEW"):
         return "repair"
     if status == "NEEDS_STYLE_REPAIR":
         return "style"
     if status == "NEEDS_EXPANSION":
         return "expansion"
-    if status == "NEEDS_PACING_REBALANCE":
+    if status in ("NEEDS_PACING_REBALANCE", "NEEDS_RHYTHM_REBALANCE"):
         return "repair"
     if status in ("DONE", "DONE_WITH_WARNINGS"):
         return "final"
@@ -34,13 +34,15 @@ def action_chapter(
 ) -> str | None:
     if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
         return context_problem_chapters[0]
+    if status == "NEEDS_CHAPTER_REVIEW" and context_problem_chapters:
+        return context_problem_chapters[0]
     if status == "NEEDS_CONTINUITY_REPAIR" and continuity_failures:
         match = re.match(r"(chapter-\d+|epilogue)", continuity_failures[0])
         if match:
             return match.group(1)
     if status == "NEEDS_EXPANSION" and expansion_chapter != "NONE":
         return expansion_chapter
-    if status == "NEEDS_PACING_REBALANCE" and rebalance_chapter != "NONE":
+    if status in ("NEEDS_PACING_REBALANCE", "NEEDS_RHYTHM_REBALANCE") and rebalance_chapter != "NONE":
         return rebalance_chapter
     if status == "NEEDS_STYLE_REPAIR" and style_issues:
         for part in style_issues[0].path.parts:
@@ -147,6 +149,20 @@ def classify(
         return "DONE_WITH_WARNINGS", "Book-level soft warnings remain; autonomous loop stops with soft warnings."
     if repeated_blockers:
         return "BLOCKED", f"Repair attempt limit reached for: {', '.join(repeated_blockers)}."
+    review_missing = any(
+        any("chapter-review.md" in failure and "missing" in failure.lower() for failure in report.failures)
+        for report in reports
+    )
+    if review_missing:
+        return "NEEDS_CHAPTER_REVIEW", "Compiled chapter review is missing and must be completed before finishing."
+
+    review_not_ready = any(
+        any("chapter-review.md" in failure and "not ready" in failure.lower() for failure in report.failures)
+        for report in reports
+    )
+    if review_not_ready:
+        return "NEEDS_RHYTHM_REBALANCE", "Chapter review marked the compiled chapter as not ready."
+
     if any(report.failures for report in reports):
         return "NEEDS_CONTEXT_REPAIR", "Context validator reported chapter failures."
     if continuity_failures:

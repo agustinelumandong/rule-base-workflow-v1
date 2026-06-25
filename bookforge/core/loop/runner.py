@@ -203,13 +203,15 @@ def run_loop_check(
         next_action = "Stop autonomous editing and report remaining soft warnings to the user."
     elif status == "NEEDS_BOOK_REPAIR":
         next_action = "Repair book-level rulebook, source, or configuration issues before chapter work."
+    elif status == "NEEDS_CHAPTER_REVIEW":
+        next_action = f"Read the compiled chapter and write `{next_chapter or context_problem_chapters[0]}/chapter-review.md` before continuing."
     elif status == "NEEDS_CONTEXT_REPAIR":
         next_action = f"Repair context issues in `{context_problem_chapters[0]}` before length or style work."
     elif status == "NEEDS_CONTINUITY_REPAIR":
         next_action = f"Write or repair the missing/invalid `continuity-out.md` for `{next_chapter}`."
     elif status == "NEEDS_STYLE_REPAIR":
         next_action = f"Rewrite flagged style line `{style_issues[0].path}:{style_issues[0].line_number}`."
-    elif status == "NEEDS_PACING_REBALANCE":
+    elif status in ("NEEDS_PACING_REBALANCE", "NEEDS_RHYTHM_REBALANCE"):
         next_action = f"Run narrative rebalance repair on `{next_chapter}` by trimming repeated procedural pressure."
     elif status == "NEEDS_EXPANSION":
         next_action = f"Expand `{expansion_chapter}` from its approved scene breakdown."
