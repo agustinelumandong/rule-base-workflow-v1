@@ -58,6 +58,61 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "after some time",
         ],
         "warn_short_sentence_runs": True,
+        "thought_over_behavior": {
+            "enabled": True,
+            "review_only": True,
+            "max_findings": 8,
+            "phrase_role": "reference_seeds",
+            "phrases": [
+                "that mattered",
+                "that counted",
+                "that meant",
+                "careful was worth",
+                "respect showed",
+                "none of it made",
+                "it made use",
+                "useful, dangerous",
+                "did not become kind",
+                "became careful",
+                "worth more",
+                "began to see",
+                "understood",
+                "realized",
+            ],
+            "meaning_markers": [
+                "meant",
+                "proved",
+                "showed",
+                "counted",
+                "mattered",
+                "changed",
+            ],
+            "abstract_labels": [
+                "respect",
+                "trust",
+                "fear",
+                "danger",
+                "kindness",
+                "useful",
+                "mercy",
+                "welcome",
+            ],
+            "explanation_shapes": [
+                "that was why",
+                "that was not",
+                "none of it",
+                "it made",
+                "made him",
+                "made her",
+                "made them",
+                "he understood",
+                "she understood",
+                "they understood",
+                "he realized",
+                "she realized",
+                "they realized",
+            ],
+        },
         "banned_terms": [
             "no clean answer",
             "tactical position",
@@ -842,6 +897,87 @@ def check_abstract_internalization(text: str) -> list[str]:
     return findings
 
 
+def _strip_dialogue(text: str) -> str:
+    return re.sub(r'"[^"]*"', "", text)
+
+
+def check_thought_over_behavior_narration(
+    text: str,
+    config: dict[str, Any] | None = None,
+) -> list[str]:
+    """Flag narrator-summary lines that explain meaning after behavior."""
+    review_config = _as_dict(config)
+    if not review_config.get("enabled", True):
+        return []
+
+    max_findings = _read_int(review_config.get("max_findings"))
+    if max_findings is None or max_findings < 1:
+        max_findings = 8
+
+    phrases = _as_string_list(review_config.get("phrases"))
+    if not phrases:
+        phrases = _as_string_list(
+            DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["phrases"]
+        )
+    meaning_markers = _as_string_list(review_config.get("meaning_markers"))
+    if not meaning_markers:
+        meaning_markers = _as_string_list(
+            DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["meaning_markers"]
+        )
+    abstract_labels = _as_string_list(review_config.get("abstract_labels"))
+    if not abstract_labels:
+        abstract_labels = _as_string_list(
+            DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["abstract_labels"]
+        )
+    explanation_shapes = _as_string_list(review_config.get("explanation_shapes"))
+    if not explanation_shapes:
+        explanation_shapes = _as_string_list(
+            DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["explanation_shapes"]
+        )
+
+    def has_configured_hit(sentence_lower: str, terms: list[str]) -> bool:
+        for term in terms:
+            pattern = rf"(?<!\w){re.escape(term)}(?!\w)"
+            if re.search(pattern, sentence_lower):
+                return True
+        return False
+
+    def is_summary_shape(sentence_lower: str, word_count: int) -> bool:
+        if word_count > 24:
+            return False
+        has_marker = has_configured_hit(sentence_lower, meaning_markers)
+        has_label = has_configured_hit(sentence_lower, abstract_labels)
+        if has_configured_hit(sentence_lower, explanation_shapes):
+            return True
+        if has_marker and has_label:
+            return True
+        if has_marker and re.match(r"(?:that|this|it|none|everything|anything)\b", sentence_lower):
+            return True
+        if has_marker and re.search(r"\b(?:after that|because of it|around him|around her|around them)\b", sentence_lower):
+            return True
+        if has_label and re.search(r"\b(?:came|went|held|stayed|grew|became|made)\b", sentence_lower):
+            return True
+        return False
+
+    findings: list[str] = []
+    narrative = _strip_dialogue(text)
+    for sentence in SENTENCE_SPLIT_RE.split(narrative):
+        excerpt = " ".join(sentence.strip().split())
+        if not excerpt:
+            continue
+        excerpt_lower = excerpt.lower()
+        word_count = len(re.findall(r"\b[A-Za-z']+\b", excerpt))
+        if has_configured_hit(excerpt_lower, phrases) or is_summary_shape(excerpt_lower, word_count):
+            findings.append(
+                "Thought-over-behavior narration: line explains meaning/status after behavior; "
+                f"consider replacing with action, silence, work, or direct speech: '{excerpt[:120]}'"
+            )
+        if len(findings) >= max_findings:
+            break
+
+    return findings
+
+
 def check_style_review_signals(text: str, settings_start: Path | None = None) -> list[str]:
     try:
         _, style_settings, historical_terms, _ = resolve_style_profile(settings_start)
@@ -910,6 +1046,13 @@ def check_style_review_signals(text: str, settings_start: Path | None = None) ->
             + ", ".join(sorted(set(banned_terms))[:8])
             + "."
         )
+
+    findings.extend(
+        check_thought_over_behavior_narration(
+            text,
+            _as_dict(style_settings.get("thought_over_behavior")),
+        )
+    )
 
     if isinstance(historical_terms, dict):
         severity_labels = (

@@ -87,6 +87,12 @@ RULE_META: dict[str, RuleMeta] = {
     "VALIDATOR_EMPTY_CONTINUITY_OUT": RuleMeta("VALIDATOR_EMPTY_CONTINUITY_OUT", Severity.SOFT, IssueCategory.CONTINUITY),
     "VALIDATOR_WEAK_SOURCE_COVERAGE": RuleMeta("VALIDATOR_WEAK_SOURCE_COVERAGE", Severity.SOFT, IssueCategory.CONTEXT),
     "VALIDATOR_WEAK_BEAT_COVERAGE": RuleMeta("VALIDATOR_WEAK_BEAT_COVERAGE", Severity.SOFT, IssueCategory.CONTEXT),
+    "CHAPTER_REVIEW_MISSING": RuleMeta("CHAPTER_REVIEW_MISSING", Severity.HARD, IssueCategory.RHYTHM),
+    "CHAPTER_REVIEW_NOT_READY": RuleMeta("CHAPTER_REVIEW_NOT_READY", Severity.HARD, IssueCategory.RHYTHM),
+    "BEAT_UNDERDEVELOPED": RuleMeta("BEAT_UNDERDEVELOPED", Severity.HARD, IssueCategory.RHYTHM),
+    "CHAPTER_RANGE_TRIPWIRE": RuleMeta("CHAPTER_RANGE_TRIPWIRE", Severity.SOFT, IssueCategory.RHYTHM),
+    "CHAPTER_LONG_BLOCK": RuleMeta("CHAPTER_LONG_BLOCK", Severity.SOFT, IssueCategory.RHYTHM),
+    "CHAPTER_BREAK_OPPORTUNITY": RuleMeta("CHAPTER_BREAK_OPPORTUNITY", Severity.INFO, IssueCategory.RHYTHM),
     "VALIDATOR_NO_MATCHING_SOURCE": RuleMeta("VALIDATOR_NO_MATCHING_SOURCE", Severity.HARD, IssueCategory.CONTEXT),
     "VALIDATOR_POV_VIOLATION": RuleMeta("VALIDATOR_POV_VIOLATION", Severity.HARD, IssueCategory.STYLE),
     "VALIDATOR_SENTENCE_OPENER_ISSUE": RuleMeta("VALIDATOR_SENTENCE_OPENER_ISSUE", Severity.SOFT, IssueCategory.STYLE),
@@ -138,6 +144,7 @@ class ChapterFiles:
     scene_breakdown: Path
     drafting_plan: Path
     continuity_out: Path
+    chapter_review: Path
 
     def __init__(
         self,
@@ -148,6 +155,7 @@ class ChapterFiles:
         scene_breakdown: Path | None = None,
         drafting_plan: Path | None = None,
         continuity_out: Path | None = None,
+        chapter_review: Path | None = None,
     ):
         if isinstance(slug, Path) and label is None and folder is None:
             folder = slug
@@ -240,6 +248,19 @@ class ChapterFiles:
             else:
                 continuity_out = continuity_out_path
 
+        if chapter_review is None:
+            chapter_review_path = folder / "chapter-review.md"
+            if chapter_review_path.exists():
+                chapter_review = chapter_review_path
+            elif fallback_folder:
+                fallback_review = fallback_folder / "chapter-review.md"
+                if fallback_review.exists():
+                    chapter_review = fallback_review
+                else:
+                    chapter_review = chapter_review_path
+            else:
+                chapter_review = chapter_review_path
+
         object.__setattr__(self, "slug", slug_value)
         object.__setattr__(self, "label", label)
         object.__setattr__(self, "folder", folder)
@@ -247,6 +268,7 @@ class ChapterFiles:
         object.__setattr__(self, "scene_breakdown", scene_breakdown)
         object.__setattr__(self, "drafting_plan", drafting_plan)
         object.__setattr__(self, "continuity_out", continuity_out)
+        object.__setattr__(self, "chapter_review", chapter_review)
 
 
 def read_text(path: Path) -> str:

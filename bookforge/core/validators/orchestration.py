@@ -103,6 +103,87 @@ def extract_scene_fields(scene_text: str) -> list[str]:
     return fields
 
 
+def _read_chapter_review(chapter: ChapterFiles) -> tuple[str | None, str | None]:
+    if not chapter.chapter_review.exists():
+        return None, None
+
+    text = read_text(chapter.chapter_review)
+    match = re.search(r"(?ims)^##\s+Decision\s*(.+?)\s*(?=^##\s+|\Z)", text)
+    if not match:
+        return text, None
+    decision = match.group(1).strip().splitlines()[0].strip().lower()
+    return text, decision
+
+
+def _beat_window(text: str, phrase: str) -> tuple[int, int] | None:
+    phrase_terms = [term for term in key_terms(phrase) if len(term) > 3]
+    if not phrase_terms:
+        return None
+
+    paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", text) if paragraph.strip()]
+    for index, paragraph in enumerate(paragraphs):
+        paragraph_terms = key_terms(paragraph)
+        overlap = len(set(phrase_terms).intersection(paragraph_terms))
+        if overlap >= max(1, min(2, len(phrase_terms))):
+            start = max(0, index - 1)
+            end = min(len(paragraphs), index + 2)
+            window_text = "\n\n".join(paragraphs[start:end])
+            return len(window_text.split()), overlap
+    return None
+
+
+def validate_chapter_pacing(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
+    from bookforge.core import pacing as pacing_module
+
+    issues: list[ManuscriptIssue] = []
+    if not chapter.draft.exists() or not chapter.draft.name.startswith(chapter.slug):
+        return tuple(issues)
+
+    review_text, decision = _read_chapter_review(chapter)
+    if review_text is None:
+        issues.append(_make_issue(
+            "CHAPTER_REVIEW_MISSING",
+            f"Compiled chapter is missing required `chapter-review.md` at `{chapter.chapter_review}`.",
+            chapter=chapter.slug,
+            file=chapter.chapter_review,
+        ))
+        return tuple(issues)
+
+    if decision and decision != "ready":
+        issues.append(_make_issue(
+            "CHAPTER_REVIEW_NOT_READY",
+            f"`chapter-review.md` decision is `{decision}`, so the compiled chapter is not ready.",
+            chapter=chapter.slug,
+            file=chapter.chapter_review,
+        ))
+
+    scene_text = read_text(chapter.scene_breakdown) if chapter.scene_breakdown.exists() else ""
+    draft_text = read_text(chapter.draft)
+    for beat in pacing_module.extract_beat_metadata(scene_text):
+        phrase = beat.why_this_matters or beat.label
+        window = _beat_window(draft_text, phrase)
+        if window is None:
+            issues.append(_make_issue(
+                "BEAT_UNDERDEVELOPED",
+                f"Beat `{beat.label}` is underdeveloped or missing from the compiled chapter.",
+                chapter=chapter.slug,
+                file=chapter.draft,
+            ))
+            continue
+        window_words, _ = window
+        if beat.development_floor and window_words < beat.development_floor:
+            severity = Severity.HARD if beat.weight == "money" else Severity.SOFT
+            issues.append(_make_issue(
+                "BEAT_UNDERDEVELOPED",
+                f"Beat `{beat.label}` is underdeveloped: found about {window_words} words near the beat, below floor {beat.development_floor}.",
+                chapter=chapter.slug,
+                file=chapter.draft,
+                severity=severity,
+            ))
+
+    return tuple(issues)
+
+
 def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
     issues: list[ManuscriptIssue] = []
     if not chapter.draft.exists():
@@ -610,6 +691,13 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
         else:
             report.warnings.append(issue.message)
 
+    pacing_issues = validate_chapter_pacing(chapter)
+    for issue in pacing_issues:
+        if issue.severity == Severity.HARD:
+            report.failures.append(issue.message)
+        else:
+            report.warnings.append(issue.message)
+
     report.passes = list(dict.fromkeys(report.passes))
     report.failures = list(dict.fromkeys(report.failures))
     report.warnings = list(dict.fromkeys(report.warnings))
@@ -631,6 +719,7 @@ def collect_all_issues(book_folder: Path) -> tuple[ManuscriptIssue, ...]:
         all_issues.extend(validate_draft(chapter))
         all_issues.extend(validate_source_alignment(chapter, phase_sections))
         all_issues.extend(validate_continuity_out_issues(chapter))
+        all_issues.extend(validate_chapter_pacing(chapter))
         
         # Add scene validation issues
         from bookforge.core.scene import discover_scenes
