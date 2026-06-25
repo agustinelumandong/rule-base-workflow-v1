@@ -251,9 +251,28 @@ def next_continuity_need(book_folder: Path, slug: str) -> str:
 
 
 def pacing_excerpt(book_folder: Path, slug: str) -> str:
+    from bookforge.core import pacing as pacing_module
+
     text = read_optional(book_folder / "chapter-pacing-plan.md")
+    chapter_path = chapter_folder(book_folder, slug)
+    proposal_path = chapter_path / "proposal.md"
+    scene_bd_path = chapter_path / "scene-breakdown.md"
+    scene_text = read_optional(proposal_path if proposal_path.exists() or not scene_bd_path.exists() else scene_bd_path)
+    beat_metadata = pacing_module.extract_beat_metadata(scene_text)
+    beat_lines = []
+    for beat in beat_metadata:
+        parts = [f"{beat.label}: {beat.weight}"]
+        if beat.development_floor:
+            parts.append(f"floor {beat.development_floor} words")
+        if beat.why_this_matters:
+            parts.append(beat.why_this_matters)
+        beat_lines.append("- " + "; ".join(parts))
+
     if not text:
-        return "No chapter-pacing-plan.md found. Use source scope only; do not force uniform chapter length."
+        base = "No chapter-pacing-plan.md found. Use source scope only; do not force uniform chapter length."
+        if beat_lines:
+            return base + "\n" + "\n".join(beat_lines[:6])
+        return base
     labels = [slug]
     number = chapter_number(slug)
     if slug == "epilogue":
@@ -261,7 +280,11 @@ def pacing_excerpt(book_folder: Path, slug: str) -> str:
     elif number is not None:
         labels.extend([f"Chapter {number}", f"Chapter {number:02d}"])
     lines = extract_matching_lines(text, labels + ["Source Rule", "Length Rule"], limit=16)
-    return lines or "No matching pacing row found. Use source scope only; do not force uniform chapter length."
+    if beat_lines:
+        beat_block = "\nBeat weight guidance:\n" + "\n".join(beat_lines[:6])
+    else:
+        beat_block = ""
+    return (lines or "No matching pacing row found. Use source scope only; do not force uniform chapter length.") + beat_block
 
 
 def relevant_research_excerpt(book_folder: Path, scene_breakdown_text: str) -> str:

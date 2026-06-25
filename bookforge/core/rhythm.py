@@ -15,7 +15,11 @@ from typing import Optional
 from bookforge.core import length as length_checker
 from bookforge.core.issue import IssueCategory, ManuscriptIssue, Severity, compute_fingerprint
 
-PACING_ROW_RE = re.compile(r"^\|\s*(Chapter\s+\d+|Epilogue)\s*\|\s*([^|]+?)\s*\|", re.MULTILINE)
+PACING_ROW_RE = re.compile(r"^\|\s*(Chapter\s+\d+|Epilogue)\s*\|(.+)$", re.MULTILINE)
+TRANSITION_CUE_RE = re.compile(
+    r"\b(by morning|by dawn|at dawn|at dusk|that night|next morning|afterward|later|when he woke|he woke|she woke|they woke|crossed to|rode to|returned to|slept)\b",
+    re.IGNORECASE,
+)
 
 RHYTHM_RULE_META = {
     "RHYTHM_UNIFORM_FLOOR": (Severity.SOFT, "Chapter word counts lack rhythm variation; all chapters are too even."),
@@ -25,6 +29,9 @@ RHYTHM_RULE_META = {
     "RHYTHM_PACING_MISMATCH": (Severity.SOFT, "{label} is `{pacing_class}` in pacing plan but has {words} words."),
     "RHYTHM_EXPANDED_OVERSIZED": (Severity.INFO, "{label} is `expanded` and has {words} words; verify the extra length is source-supported."),
     "RHYTHM_EPILOGUE_OVERSIZED": (Severity.INFO, "{label} is `epilogue/teaser` but has {words} words."),
+    "CHAPTER_RANGE_TRIPWIRE": (Severity.SOFT, "{label} is outside planned range {range_label} with {words} words; review whether the extra length is earned."),
+    "CHAPTER_LONG_BLOCK": (Severity.SOFT, "{label} has a long uninterrupted block of {line_count} lines; review for reader fatigue or hidden scene breaks."),
+    "CHAPTER_BREAK_OPPORTUNITY": (Severity.INFO, "{label} has a likely break opportunity after the long block: {cue}."),
 }
 
 
@@ -60,6 +67,8 @@ class RhythmReport:
     under_1800: int
     over_2400: int
     pacing_classes: dict[str, str]
+    chapter_ranges: dict[str, tuple[int, int]]
+    review_states: dict[str, str]
 
     @property
     def status(self) -> str:
@@ -78,14 +87,84 @@ def slug_for_label(label: str) -> str:
 
 
 def parse_pacing_classes(book_folder: Path) -> dict[str, str]:
+    classes, _ = parse_pacing_metadata(book_folder)
+    return classes
+
+
+def parse_pacing_metadata(book_folder: Path) -> tuple[dict[str, str], dict[str, tuple[int, int]]]:
     path = book_folder / "chapter-pacing-plan.md"
     if not path.exists():
-        return {}
+        return {}, {}
     text = path.read_text(encoding="utf-8")
     classes: dict[str, str] = {}
-    for label, pacing_class in PACING_ROW_RE.findall(text):
-        classes[slug_for_label(label)] = pacing_class.strip()
-    return classes
+    ranges: dict[str, tuple[int, int]] = {}
+    for label, row in PACING_ROW_RE.findall(text):
+        parts = [part.strip() for part in row.split("|")]
+        if not parts:
+            continue
+        slug = slug_for_label(label)
+        classes[slug] = parts[0]
+        if len(parts) > 1:
+            range_match = re.search(r"(\d[\d,]*)\s*-\s*(\d[\d,]*)", parts[1])
+            if range_match:
+                low = int(range_match.group(1).replace(",", ""))
+                high = int(range_match.group(2).replace(",", ""))
+                ranges[slug] = (low, high)
+    return classes, ranges
+
+
+def parse_review_states(book_folder: Path) -> dict[str, str]:
+    states: dict[str, str] = {}
+    chapters_root = book_folder / "chapters"
+    if not chapters_root.exists():
+        return states
+    for review_path in chapters_root.glob("*/chapter-review.md"):
+        match = re.search(r"(?ims)^##\s+Decision\s*(.+?)\s*(?=^##\s+|\Z)", review_path.read_text(encoding="utf-8"))
+        if not match:
+            continue
+        decision = match.group(1).strip().splitlines()[0].strip().lower()
+        states[review_path.parent.name] = decision
+    return states
+
+
+def _chapter_path_for_slug(book_folder: Path, slug: str) -> Path | None:
+    if slug == "epilogue":
+        path = book_folder / "chapters" / "epilogue" / "epilogue.md"
+    else:
+        path = book_folder / "chapters" / slug / f"{slug}.md"
+    return path if path.exists() else None
+
+
+def _long_block_findings(book_folder: Path, slug: str, label: str) -> list[ManuscriptIssue]:
+    path = _chapter_path_for_slug(book_folder, slug)
+    if path is None:
+        return []
+    text = path.read_text(encoding="utf-8")
+    paragraphs = [paragraph for paragraph in re.split(r"\n\s*\n", text) if paragraph.strip()]
+    issues: list[ManuscriptIssue] = []
+    for index, paragraph in enumerate(paragraphs):
+        line_count = len([line for line in paragraph.splitlines() if line.strip()])
+        if line_count < 180:
+            continue
+        issues.append(_make_rhythm_issue(
+            "CHAPTER_LONG_BLOCK",
+            chapter=slug,
+            file=path,
+            label=label,
+            line_count=line_count,
+        ))
+        next_excerpt = " ".join(paragraphs[index + 1 : index + 3]) if index + 1 < len(paragraphs) else ""
+        cue_match = TRANSITION_CUE_RE.search(next_excerpt)
+        if cue_match:
+            issues.append(_make_rhythm_issue(
+                "CHAPTER_BREAK_OPPORTUNITY",
+                chapter=slug,
+                file=path,
+                label=label,
+                cue=cue_match.group(1),
+            ))
+        break
+    return issues
 
 
 def analyze(
@@ -107,7 +186,8 @@ def analyze(
     stdev = round(statistics.pstdev(values))
     under_1800 = sum(1 for value in values if value < 1800)
     over_2400 = sum(1 for value in values if value > 2400)
-    pacing_classes = parse_pacing_classes(book_folder)
+    pacing_classes, chapter_ranges = parse_pacing_metadata(book_folder)
+    review_states = parse_review_states(book_folder)
 
     issues: list[ManuscriptIssue] = []
     if all(value >= uniform_floor for value in values):
@@ -140,6 +220,7 @@ def analyze(
     for item in normal:
         slug = slug_for_label(item.label)
         pacing_class = pacing_classes.get(slug)
+        range_bounds = chapter_ranges.get(slug)
         if pacing_class in {"lean", "standard"} and item.words > 2200:
             issues.append(_make_rhythm_issue(
                 "RHYTHM_PACING_MISMATCH",
@@ -165,6 +246,16 @@ def analyze(
                 label=item.label,
                 words=item.words,
             ))
+        if range_bounds and (item.words < range_bounds[0] or item.words > range_bounds[1]):
+            issues.append(_make_rhythm_issue(
+                "CHAPTER_RANGE_TRIPWIRE",
+                chapter=slug,
+                file=None,
+                label=item.label,
+                words=item.words,
+                range_label=f"{range_bounds[0]}-{range_bounds[1]}",
+            ))
+        issues.extend(_long_block_findings(book_folder, slug, item.label))
 
     return RhythmReport(
         book_folder=book_folder,
@@ -178,6 +269,8 @@ def analyze(
         under_1800=under_1800,
         over_2400=over_2400,
         pacing_classes=pacing_classes,
+        chapter_ranges=chapter_ranges,
+        review_states=review_states,
     )
 
 
@@ -221,6 +314,11 @@ def render_report(report: RhythmReport) -> str:
         lines.extend(f"- {issue.message}" for issue in report.issues)
     else:
         lines.append("- No chapter rhythm warnings.")
+
+    if report.review_states:
+        lines.extend(["", "## Chapter Review", ""])
+        for slug, decision in sorted(report.review_states.items()):
+            lines.append(f"- {slug}: {decision}")
 
     lines.extend(["", "## Rebalance Candidates", ""])
     candidates = trim_candidates(report)

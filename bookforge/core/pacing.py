@@ -20,6 +20,10 @@ CLASS_RANGES = {
 }
 PACING_CLASS_RE = re.compile(r"(?im)^-\s+\*\*Pacing Class:\*\*\s+(.+?)\s*$")
 ELASTIC_RANGE_RE = re.compile(r"(?im)^-\s+\*\*Elastic Range:\*\*\s+(.+?)\s*$")
+BEAT_HEADING_RE = re.compile(r"(?im)^##\s+BEAT\s+\d+\s*:\s*(.+?)\s*$")
+BEAT_WEIGHT_RE = re.compile(r"(?im)^-\s+\*\*Beat Weight:\*\*\s+(.+?)\s*$")
+BEAT_DEVELOPMENT_FLOOR_RE = re.compile(r"(?im)^-\s+\*\*Beat Development Floor:\*\*\s+(.+?)\s*$")
+BEAT_MATTERS_RE = re.compile(r"(?im)^-\s+\*\*Why This Beat Matters:\*\*\s+(.+?)\s*$")
 
 MAJOR_TERMS = {
     "climax",
@@ -67,6 +71,14 @@ class ChapterPacing:
     elastic_range: str
     reason: str
     beat_count: int
+
+
+@dataclass(frozen=True)
+class BeatMetadata:
+    label: str
+    weight: str
+    development_floor: int | None
+    why_this_matters: str | None
 
 
 def read_optional(path: Path) -> str:
@@ -213,6 +225,36 @@ def explicit_scene_pacing(scene_text: str) -> tuple[str | None, str | None]:
     if range_match:
         elastic_range = range_match.group(1).split(";", 1)[0].strip()
     return pacing_class, elastic_range
+
+
+def _parse_floor(value: str | None) -> int | None:
+    if not value:
+        return None
+    match = re.search(r"(\d[\d,]*)", value)
+    if not match:
+        return None
+    return int(match.group(1).replace(",", ""))
+
+
+def extract_beat_metadata(scene_text: str) -> list[BeatMetadata]:
+    headings = list(BEAT_HEADING_RE.finditer(scene_text))
+    beats: list[BeatMetadata] = []
+    for index, heading in enumerate(headings):
+        start = heading.start()
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(scene_text)
+        section = scene_text[start:end]
+        weight_match = BEAT_WEIGHT_RE.search(section)
+        floor_match = BEAT_DEVELOPMENT_FLOOR_RE.search(section)
+        matters_match = BEAT_MATTERS_RE.search(section)
+        beats.append(
+            BeatMetadata(
+                label=heading.group(1).strip(),
+                weight=(weight_match.group(1).strip().lower() if weight_match else "standard"),
+                development_floor=_parse_floor(floor_match.group(1).strip() if floor_match else None),
+                why_this_matters=matters_match.group(1).strip() if matters_match else None,
+            )
+        )
+    return beats
 
 
 def build_plan(book_folder: Path, reference_analysis: Path) -> str:
