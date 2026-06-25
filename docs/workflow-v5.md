@@ -14,6 +14,7 @@
 - Refresh the context packet after changing `rulebook.md`, `mood-lock.md`, `chapter-summaries.md`, or the chapter `scene-breakdown.md`.
 - Use the compressed style lock for routine prompts: Literal Western prose; no AI echo words; no modern/clinical terms; no dialogue tags when action anchors are requested; behavior over thought; source-locked.
 - Validate context before style repair. Run style repair before length expansion.
+- Compiled chapters now require `chapter-review.md` before the loop can treat them as complete.
 - End agent passes with: Source Used, Mode, Changes Made, Risks, Next Action, and Stop/Continue.
 
 ## Reference-Guided Pacing
@@ -25,6 +26,7 @@
 - Use `chapter-pacing-plan.md` to prevent every chapter from landing around the same size.
 - Elastic ranges are planning guidance. `~1000` means a natural supported range such as roughly `900-1200`, not an exact target.
 - Never pad, force uniform chapter length, or invent unsupported story to hit a range.
+- Optional beat-level pacing fields such as `Beat Weight`, `Beat Development Floor`, and `Why This Beat Matters` are review tripwires, not draft-time quotas.
 
 ## Context Packet And Rolling Continuity
 
@@ -41,6 +43,7 @@
 - **Repair:** Fix validator, loop, source-drift, continuity, or beat-coverage issues only.
 - **Style:** Apply Western style and humanizer cleanup without changing story facts.
 - **Validation:** Compare draft against source files, rulebook, chapter summary, and scene breakdown.
+- **Chapter Review:** Read the compiled chapter start to finish, record slow spots, rushed spots, and break opportunities in `chapter-review.md`, and set decision to `ready`, `needs-rhythm-fix`, or `needs-beat-expansion`.
 - **Expansion:** Deepen approved beats after validation passes; never add unsupported story.
 - **Final:** Whole-book review, compilation, or cross-chapter checks.
 
@@ -82,11 +85,12 @@
 - **Microscopic Error Detection:** Once the chapter is drafted, run a highly detailed error-detection pass. The AI's only job here is to flag inconsistencies or grammatical issues and suggest solutions.
 - **Dialogue & Voice Pass:** Before compiling, run a pass specifically focused on dialogue. Ask the AI to ensure each character has a distinct "voice" or "dialect," which is vital for the authenticity of a Western manuscript.
 - **Compilation & Integration:** Use those suggested solutions as your next prompt. Have the AI apply the fixes and compile the individual scenes into one seamless, cohesive chapter. Note: don’t include word count instruction let the scene write itself.
-- **The Final AI Pass:** Run one last automated read-through on the compiled chapter to catch any final glaring errors.
+- **The Final AI Pass:** Run one last automated read-through on the compiled chapter to catch any final glaring errors, then write `chapter-review.md`.
 
 ## Phase 4: The Human Polish
 
 - **Manual Read-Through:** The author must do a final, comprehensive read-through. The AI will still make mistakes, and human intuition is required for pacing and emotional resonance.
+- **Required Compiled-Chapter Review:** Even when the final human polish happens later, the workflow now requires a chapter review artifact before the loop can mark the chapter complete.
 - **Manual Edits Only:** When you spot an error at this stage, change it manually. Do not feed the text back through the AI, or you risk flattening the established tone and losing the specific results you’ve built.
 
 ## The End Result

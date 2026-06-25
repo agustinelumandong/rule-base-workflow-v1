@@ -33,7 +33,7 @@ The system operates on a **5-layer model** to ensure narrative consistency and p
 ## 2. Core Concepts
 
 *   **Durable Identity vs. Current State**: Durable character details (who they are) live in `canon/entities/characters.yml`. Per-chapter mutable states (where they are, injuries, inventory) are calculated dynamically by a **folding engine** that replays chapter events from `canon/events/` into a single state snapshot (`canon/state/snapshot.yml`).
-*   **Staging-Priority Change Workflow**: Active writing is performed under `changes/chapter-NN/` using a **Proposal-Beat-Draft** lifecycle. It is validated before being promoted/compiled into the canonical `chapters/chapter-NN/` folder and event logs.
+*   **Staging-Priority Change Workflow**: Active writing is performed under `changes/chapter-NN/` using a **Proposal-Beat-Draft** lifecycle. It is validated, compiled into the canonical `chapters/chapter-NN/` folder, reviewed through `chapter-review.md`, and only then treated as ready for loop completion or promotion.
 *   **Swappable Persistent Memory Tier**: Manages semantic search and name alias resolution (`bf memory *`) using a swappable backend (Headroom or zero-dependency local embedding fallback).
 
 ---
@@ -64,6 +64,8 @@ Before committing, run validation and continuity checks on the chapter:
 ```bash
 bf validate --chapter chapter-NN
 ```
+
+Compiled chapter folders now require `chapter-review.md`. This read-through artifact records slow spots, rushed spots, break opportunities, and a final decision before the loop can treat the chapter as done.
 
 ### 5. Promote & Apply
 Once validation checks pass cleanly, apply the staging changes to the canonical directory:
@@ -109,6 +111,7 @@ books/<book-slug>/
     chapter-NN/             # Staging workspace for active chapter drafting
   chapters/
     chapter-NN/             # Canonical compiled chapter drafts
+      chapter-review.md     # Required compiled-chapter pacing/read-through review
 ```
 
 ---
@@ -119,4 +122,3 @@ Run the automated test suite to verify code correctness and validator performanc
 ```bash
 python -m pytest tests/
 ```
-

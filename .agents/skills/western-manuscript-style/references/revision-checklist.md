@@ -49,6 +49,7 @@ Use this checklist after drafting or when the user asks for cleanup, continuity 
 - `-ing` sentence openers are removed where possible.
 - Repeated Name/Pronoun sentence loops are broken up.
 - Internal monologue is removed when behavior-driven prose is requested.
+- Narrator-summary lines that explain meaning after behavior are cut or converted into action, silence, work, or direct speech.
 
 ## Final Polish
 

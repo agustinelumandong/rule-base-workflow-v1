@@ -18,3 +18,4 @@ Use this checklist during manual or model-assisted QA reviews to enforce Western
 ## 3. Atmospheric and Sensory Integration
 - [ ] **Environment Interaction:** Ensure the setting actively impacts the scene's events (heat slowing a chase, wind scattering track prints).
 - [ ] **Sensory Details:** Confirm the presence of grounded sensory elements (creak of saddle, scent of dry sagebrush).
+- [ ] **Behavior Before Meaning:** Confirm emotion, status, and relationship changes are shown through action, silence, work, or direct speech before any explanation. Flag narrator conclusions when the surrounding behavior already proves the point; phrases such as "that mattered," "that counted," "that meant," "respect showed," or "none of it made trust" are examples, not the full rule.

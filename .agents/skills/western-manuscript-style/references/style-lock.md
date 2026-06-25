@@ -100,7 +100,26 @@ No one spoke.
 - Avoid internal monologue when behavior-driven prose is requested.
 - Avoid phrases like `He felt`, `He realized`, or `He thought` when the user wants externalized tension.
 - Show principles and tension through action, posture, silence, choices, and what a character refuses to do.
+- Do not add a narrator conclusion after behavior has already shown the change. Lines such as `That mattered`, `That counted`, `That meant`, `Respect showed itself`, or `None of it made trust. It made use.` are examples, not the full rule; any line that explains meaning, status, motive, or relationship after shown behavior needs review.
+- Prefer replacing narrator conclusions with new observable behavior: who steps back, who stops shoving, who hands over better work, who refuses to smile, who keeps silent.
 - Every tracking deduction, route prediction, or behavioral judgment must show evidence first: track sign, terrain, horse condition, witness report, or prior knowledge. The reader must see why the character knows.
+
+Prefer:
+
+```text
+After the ring broke apart, the youngest boys watched him from farther off.
+Men who had once tested his shoulder with small shoves no longer did it without looking first.
+A woman handed him snare cord instead of the water bucket.
+No one smiled.
+```
+
+Avoid:
+
+```text
+After the ring broke apart, the village did not become kind.
+It became careful.
+Careful was worth more.
+```
 
 ## Continuity Discipline
 

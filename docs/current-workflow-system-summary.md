@@ -8,7 +8,7 @@ This repo is book-production system, not app. It turns one book source file into
 
 Main purpose: keep AI writing source-locked, Western-style, non-padded, and repeatable.
 
-Core idea: source first, plan second, draft third, validate before expansion, polish last.
+Core idea: source first, plan second, draft third, compiled-chapter review before completion, validate before expansion, polish last.
 
 ## Current Branch State
 
@@ -66,6 +66,7 @@ books/<book-slug>/
       scene-breakdown.md
       drafting-plan.md
       chapter-01.md
+      chapter-review.md
       continuity-out.md
     chapter-02/
       ...
@@ -91,7 +92,8 @@ Use source in this order:
 8. `chapter-pacing-plan.md`
 9. chapter `scene-breakdown.md`
 10. current chapter draft
-11. optional reference analysis under `references/<name>/analysis/`
+11. chapter `chapter-review.md`
+12. optional reference analysis under `references/<name>/analysis/`
 
 Reference books are rhythm guidance only. Never story source. Never copy prose, plot, characters, voice, scenes, or chapter structure.
 
@@ -110,12 +112,13 @@ If source fact missing, mark `UNKNOWN`. If missing fact blocks drafting, ask use
 9. Build chapter `context-packet.md`.
 10. Draft scene by scene into `chapter-XX.md`.
 11. Write or refresh `continuity-out.md`.
-12. Run context validator.
-13. Run length checker.
-14. Run loop controller.
-15. Repair context first, style second, expansion third.
-16. Compile final manuscript.
-17. Human/manual polish.
+12. Read the compiled chapter and write `chapter-review.md`.
+13. Run context validator.
+14. Run length checker.
+15. Run loop controller.
+16. Repair context first, style second, expansion third.
+17. Compile final manuscript.
+18. Human/manual polish.
 
 ## Planning Artifacts
 
@@ -1279,4 +1282,3 @@ Next Action:
 - Stop here, or next pass can be humanizer/style polish chapter by chapter.
 
 Stop/Continue: STOP.
-
