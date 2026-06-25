@@ -71,6 +71,7 @@ def discover_drafts(book_folder: Path) -> list[Path]:
 def clean_manuscript_text(text: str) -> str:
     # Post-process for final book layout (draft-only rendering)
     text = re.sub(r"(?m)^## Beat.*$\n*", "", text)
+    text = re.sub(r"(?m)^##+\s+Scene\s+\d+(?:\s*:.*)?$\n*", "", text)
     text = re.sub(r'([\"”])\s*—\s*', r'\1 ', text)
     return re.sub(r"\n{3,}", "\n\n", text).strip()
 
