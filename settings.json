@@ -3,7 +3,7 @@
     "banned_names": [
       "Silas",
       "Rafe",
-      "Voss",
+      "Voss"
     ],
     "allowed_names": []
   },
@@ -33,6 +33,61 @@
       "weeks later",
       "after some time"
     ],
+    "thought_over_behavior": {
+      "enabled": true,
+      "review_only": true,
+      "max_findings": 8,
+      "phrase_role": "reference_seeds",
+      "phrases": [
+        "that mattered",
+        "that counted",
+        "that meant",
+        "careful was worth",
+        "respect showed",
+        "none of it made",
+        "it made use",
+        "useful, dangerous",
+        "did not become kind",
+        "became careful",
+        "worth more",
+        "began to see",
+        "understood",
+        "realized"
+      ],
+      "meaning_markers": [
+        "meant",
+        "proved",
+        "showed",
+        "counted",
+        "mattered",
+        "changed"
+      ],
+      "abstract_labels": [
+        "respect",
+        "trust",
+        "fear",
+        "danger",
+        "kindness",
+        "useful",
+        "mercy",
+        "welcome"
+      ],
+      "explanation_shapes": [
+        "that was why",
+        "that was not",
+        "none of it",
+        "it made",
+        "made him",
+        "made her",
+        "made them",
+        "he understood",
+        "she understood",
+        "they understood",
+        "he realized",
+        "she realized",
+        "they realized"
+      ]
+    },
     "warn_short_sentence_runs": false,
     "banned_terms": [
       "no clean answer",
