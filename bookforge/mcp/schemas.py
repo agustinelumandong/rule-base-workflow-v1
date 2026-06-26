@@ -90,16 +90,20 @@ def project_kit_result(
     kit_path: str,
     active_files: list[str],
     stable_files: list[str],
+    workspace_name: str | None = None,
 ) -> ToolResult:
+    data = {
+        "provider": provider,
+        "kit_path": kit_path,
+        "active_files": active_files,
+        "stable_files": stable_files,
+    }
+    if workspace_name:
+        data["workspace_name"] = workspace_name
     return ToolResult(
         ok=True,
         tool="build_project_kit",
-        data={
-            "provider": provider,
-            "kit_path": kit_path,
-            "active_files": active_files,
-            "stable_files": stable_files,
-        },
+        data=data,
     )
 
 

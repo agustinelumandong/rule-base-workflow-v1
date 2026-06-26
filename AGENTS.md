@@ -102,3 +102,20 @@ When a book is finished, create `STATUS.md` with:
 - **Validation is the Gate**: Any validation failures (`bookforge-mcp_validate_scene`) must be resolved before applying changes.
 - **Pacing Guidance is Elastic**: Beat weights and chapter ranges are planning tripwires, not padding quotas. Use them to notice rushed or bloated treatment, never to force exact length.
 - **Locked Books Are Sacred**: Never modify a book with `STATUS.md` set to `LOCKED`. See Section 3.
+
+---
+
+## 5. Web Driver Fallback (Manual Mode)
+
+When browser-based automation is disabled (`use_web_driver: false`), the runner pipeline bypasses the provider web MCP browser calls and halts at a manual review state.
+
+### How it Works
+- **Generation Mode**:
+  - The runner builds the generation packet and project kit locally.
+  - It checks for the existence of `draft.md` in the scene changes directory.
+  - If `draft.md` **does not exist**, the runner transitions to `needs_manual_review` (stopped reason `manual_drafting_pending`). You or the operator must manually write the initial draft in that location.
+  - If `draft.md` **exists**, the runner automatically runs `validate_scene`. If validation passes, the scene is completed. If validation fails, the runner transitions to `needs_manual_review` (stopped reason `manual_review_pending`).
+- **Repair Mode**:
+  - The runner builds the patch packet and project kit locally.
+  - It immediately transitions to `needs_manual_review` (stopped reason `manual_repair_pending`). You or the operator must manually edit `draft.md` to address the validation issues.
+

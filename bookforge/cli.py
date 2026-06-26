@@ -1685,6 +1685,7 @@ def cmd_project_kit(args: argparse.Namespace) -> int:
             print(f"Error building project kit: {error}", file=sys.stderr)
             return 2
         print(f"Project kit built for provider '{provider}' at: {kit_dir}")
+        print(f"Default provider workspace: {projectkit_module.resolve_provider_workspace_name(book_folder)}")
         # List generated files
         for f in sorted(kit_dir.iterdir()):
             if f.is_file():

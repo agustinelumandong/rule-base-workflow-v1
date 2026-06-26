@@ -10,8 +10,8 @@ Use this skill when prose must come from the provider-web lane while BookForge r
 ## Core Rule
 
 - BookForge chooses the scene, builds the packet, saves the draft, and validates the result.
-- `provider-web-driver` is only the prose-generation transport.
-- The agent must not write story prose itself and must not write BookForge-managed files directly.
+- `provider-web-driver` is only the prose-generation transport when automated mode is active.
+- The agent must not write story prose itself and must not write BookForge-managed files directly, *unless* the automated web driver is bypassed (`use_web_driver: false`). In bypass mode, the agent/operator is explicitly permitted to write or edit `draft.md` directly in the active scene directory based on the generated generation or patch packets.
 
 ## When to Use
 
@@ -37,21 +37,29 @@ Load [references/scene-generation-loop.md](references/scene-generation-loop.md) 
 10. `validate_scene`
 11. If validation fails, `build_patch_packet`
 
+For ChatGPT projects, the workspace/project is created once and then reused. Each `provider_chat` call must run in a fresh chat session inside that same workspace rather than continuing the prior thread.
+
 ## Guardrails
 
 - Do not choose a different scene than the one returned by `get_active_scene`.
 - Do not replace BookForge packet text with an improvised prompt.
-- Do not manually edit `draft.md`, `validation.json`, `queue.yml`, `state/loop.json`, or canon files.
+- Do not manually edit `draft.md` (except in bypass mode when `use_web_driver: false` is active, where editing `draft.md` is expected), `validation.json`, `queue.yml`, `state/loop.json`, or canon files.
 - Do not summarize, rewrite, or "clean up" the provider prose before `save_draft` unless the user explicitly requests a separate revision pass.
-- Do not switch to CLI or local file writes when the user constrained the run to BookForge MCP and `provider-web-driver`.
+- Do not switch to CLI or local file writes when the user constrained the run to BookForge MCP and `provider-web-driver` (unless web driver is bypassed, in which case local editing of `draft.md` is required).
 - If the provider returns refusal text, meta commentary, or no usable prose, stop and report the provider result instead of inventing prose.
 
 ## Workspace Rules
 
 - Use the provider workspace name requested by the user.
-- For BookForge book workspaces, prefer `book/<book-slug>` unless the user names a different workspace.
-- Sync the stable kit files returned by `build_project_kit`.
+- For BookForge book workspaces, derive the default workspace from the book path:
+  - `books/<series>/<book>` -> `<series>/<book>`
+  - `books/<book>` -> `<book>`
+- For `books/longhunter-series/book-2`, use `longhunter-series/book-2` unless the user names a different workspace.
+- Create the workspace only once. After it exists, always reopen and reuse the same workspace name.
+- Treat ChatGPT project reuse and chat-session reuse as separate things: same workspace, fresh chat each prompt.
+- Sync the stable kit files returned by `build_project_kit`; this is normally one compiled source file to stay under provider source-count limits.
 - For this loop, the generation packet is normally sent as chat prompt text; do not assume the active packet file must be uploaded unless the user asks for that variant.
+- The active packet is one scene. Do not ask the provider to draft a full chapter in one response.
 
 ## Result Contract
 
@@ -70,5 +78,7 @@ If validation fails, also return:
 ## Common Failure Cases
 
 - `provider_open_workspace` returns not found: create the exact workspace, reopen, continue.
+- `provider_chat` or `provider_start_chat` reports `ACTIVE_CHAT_STILL_STREAMING`: wait for the same workspace session to finish `Thinking`, then retry the chat step. Do not create a new workspace and do not redirect the prompt into the previous still-running thread.
+- `provider_chat` or `provider_start_chat` reports `CHAT_SESSION_PROOF_FAILED`: the provider could not prove that `New chat` created a different thread. Do not send another prompt blindly; reopen the same workspace, re-establish a fresh chat, and retry only after proof succeeds.
 - Validation fails on word count or rule checks: build the patch packet and report it.
 - Provider output drifts from packet intent: do not repair it manually in the same generation loop unless the user asks for a patch/revision loop.

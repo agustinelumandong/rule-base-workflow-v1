@@ -101,19 +101,9 @@ def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], 
 
 
 def _required_book_file_issues(book_folder: Path) -> tuple[list[str], list[object]]:
-    result = context_validator.validate_required_book_files(book_folder)
-    if isinstance(result, tuple) and len(result) == 2 and all(isinstance(item, list) for item in result):
-        passes, failures = result
-        issues = [
-            ManuscriptIssue(
-                severity=Severity.HARD,
-                category=IssueCategory.CONTEXT,
-                message=failure,
-            )
-            for failure in failures
-        ]
-        return passes, issues
-    return [], list(result)
+    """Preserve validator issue severity so soft book warnings do not block the loop."""
+    passes, _failures = context_validator.validate_required_book_files(book_folder)
+    return passes, list(context_validator.validate_required_book_file_issues(book_folder))
 
 
 def run_loop_check(

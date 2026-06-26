@@ -8,7 +8,7 @@ BOOK_PATH="$1"
 
 if [ -z "$BOOK_PATH" ]; then
   echo "Usage: $0 <book-path>"
-  echo "Example: $0 books/longhunter-series/whispering-ash"
+  echo "Example: $0 books/longhunter-series/book-1"
   exit 1
 fi
 

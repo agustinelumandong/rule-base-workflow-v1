@@ -12,7 +12,7 @@ from bookforge.mcp import tools as mcp_tools
 INSTRUCTIONS = (
     "BookForge is the source-of-truth production system for novel generation. "
     "Use tools to inspect queue, build packets, validate drafts, and create/apply patches. "
-    "Do not generate long-form prose through Codex. Long prose must come from provider-web lane. "
+    "Long prose should come from provider-web lane, or be drafted directly in local manual review mode when use_web_driver: false is active. "
     "In readonly mode, do not attempt draft or patch writes."
 )
 
@@ -57,6 +57,8 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {
                 "provider": {"type": "string", "description": "Provider: chatgpt, claude, gemini, generic.", "default": "chatgpt"},
+                "workspace_name": {"type": "string", "description": "Optional provider workspace override."},
+                "workspace": {"type": "string", "description": "Alias for workspace_name."},
             },
         },
     },

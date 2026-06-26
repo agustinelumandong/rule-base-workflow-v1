@@ -6,7 +6,10 @@ import shutil
 from pathlib import Path
 
 from bookforge.core.scene import (
+    bootstrap_scene_manifests_from_breakdowns,
+    estimate_scene_target_words,
     parse_scene_id,
+    parse_scene_breakdown_scenes,
     init_scene_manifest,
     load_scene_manifest,
     save_scene_manifest,
@@ -88,6 +91,80 @@ class TestSceneManifests(unittest.TestCase):
         self.assertEqual(scenes[0].scene_id, "scene-01")
         self.assertEqual(scenes[1].scene_id, "scene-02")
 
+    def test_parse_scene_breakdown_scenes_captures_nested_beats(self):
+        text = (
+            "# Breakdown\n\n"
+            "## Scene 1: Cabin Check\n\n"
+            "### BEAT: Jake checks the cabin\n"
+            "- Wall holds.\n\n"
+            "### BEAT: Perimeter walk\n"
+            "- Brush screen intact.\n\n"
+            "## Scene 2: Discovery\n\n"
+            "### BEAT: Finds tracks\n"
+            "- Mud preserves sign.\n"
+        )
+
+        scenes = parse_scene_breakdown_scenes(text)
+
+        self.assertEqual([scene.scene_id for scene in scenes], ["scene-01", "scene-02"])
+        self.assertEqual(scenes[0].required_beats, ["Jake checks the cabin", "Perimeter walk"])
+        self.assertEqual(scenes[1].required_beats, ["Finds tracks"])
+
+    def test_estimate_scene_target_words_splits_chapter_target_by_beat_weight(self):
+        (self.tmp_dir / "chapter-pacing-plan.md").write_text(
+            "| Chapter | Pacing Class | Elastic Range | Beat Count | Reason | Expansion Permission |\n"
+            "| --- | --- | --- | ---: | --- | --- |\n"
+            "| Chapter 1 | expanded | source suggests ~3,000 words from `3,000 words` | 4 | test | test |\n",
+            encoding="utf-8",
+        )
+        scenes = parse_scene_breakdown_scenes(
+            "## Scene 1: One\n\n"
+            "### BEAT: A\n\n"
+            "## Scene 2: Two\n\n"
+            "### BEAT: B\n"
+            "### BEAT: C\n"
+            "### BEAT: D\n"
+        )
+
+        targets = estimate_scene_target_words(self.tmp_dir, "chapter-01", scenes)
+
+        self.assertEqual(targets["scene-01"], 750)
+        self.assertEqual(targets["scene-02"], 2250)
+        self.assertEqual(sum(targets.values()), 3000)
+
+    def test_bootstrap_scene_manifests_from_breakdowns_creates_manifests_with_targets(self):
+        chapter_dir = self.tmp_dir / "chapters" / "chapter-01"
+        chapter_dir.mkdir(parents=True, exist_ok=True)
+        (self.tmp_dir / "chapter-pacing-plan.md").write_text(
+            "| Chapter | Pacing Class | Elastic Range | Beat Count | Reason | Expansion Permission |\n"
+            "| --- | --- | --- | ---: | --- | --- |\n"
+            "| Chapter 1 | expanded | source suggests ~3,000 words from `3,000 words` | 4 | test | test |\n",
+            encoding="utf-8",
+        )
+        (chapter_dir / "scene-breakdown.md").write_text(
+            "## Scene 1: Cabin Check\n\n"
+            "### BEAT: Jake checks the cabin\n\n"
+            "## Scene 2: Discovery\n\n"
+            "### BEAT: Finds tracks\n"
+            "### BEAT: Reads gait\n"
+            "### BEAT: Finds camp\n",
+            encoding="utf-8",
+        )
+
+        created = bootstrap_scene_manifests_from_breakdowns(self.tmp_dir)
+
+        self.assertEqual(created, 2)
+        first = load_scene_manifest(
+            self.tmp_dir / "changes" / "chapter-01" / "scenes" / "scene-01" / "manifest.yml",
+            self.tmp_dir,
+        )
+        second = load_scene_manifest(
+            self.tmp_dir / "changes" / "chapter-01" / "scenes" / "scene-02" / "manifest.yml",
+            self.tmp_dir,
+        )
+        self.assertEqual(first.required_beats, ["Jake checks the cabin"])
+        self.assertEqual(second.required_beats, ["Finds tracks", "Reads gait", "Finds camp"])
+        self.assertEqual(first.target_words + second.target_words, 3000)
 
     def test_validate_scene(self):
         from bookforge.core.validators.orchestration import validate_scene

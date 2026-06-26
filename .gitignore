@@ -32,3 +32,5 @@ env/
 scratch/
 research_cache/
 scratch_*.py
+
+node_modules

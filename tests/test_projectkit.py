@@ -7,8 +7,10 @@ from pathlib import Path
 import yaml
 
 from bookforge.core.projectkit import (
+    COMPILED_SOURCE_FILENAME,
     build_project_kit,
     project_kit_folder,
+    render_compiled_project_source,
     render_project_instructions,
     render_story_bible,
     render_character_states,
@@ -23,6 +25,7 @@ from bookforge.core.projectkit import (
     sync_active_and_archive_packets,
     PROVIDERS,
 )
+from bookforge.core.workspace import resolve_provider_workspace_name
 from bookforge.core.queue import build_queue, update_queue_scene
 from bookforge.core.scene import init_scene_manifest
 from bookforge.core.canon.io import save_yaml_file, get_events_dir, get_entities_dir, get_state_dir
@@ -63,11 +66,27 @@ class TestProjectKit(unittest.TestCase):
         result = project_kit_folder(self.tmp_dir, "chatgpt")
         self.assertEqual(result, self.tmp_dir / "project-kits" / "chatgpt")
 
+    def test_resolve_provider_workspace_name_for_series_book(self):
+        self.assertEqual(
+            resolve_provider_workspace_name(Path("books/longhunter-series/book-2")),
+            "longhunter-series/book-2",
+        )
+
+    def test_resolve_provider_workspace_name_for_leaf_book(self):
+        self.assertEqual(resolve_provider_workspace_name(Path("books/my-book")), "my-book")
+
+    def test_resolve_provider_workspace_name_preserves_override(self):
+        self.assertEqual(
+            resolve_provider_workspace_name(Path("books/longhunter-series/book-2"), "custom/workspace"),
+            "custom/workspace",
+        )
+
     def test_render_project_instructions_chatgpt(self):
         text = render_project_instructions(self.tmp_dir, "chatgpt")
         self.assertIn("BookForge Provider-Web Writing Lane", text)
         self.assertIn("chatgpt", text.lower())
         self.assertIn("Prefer the active scene packet", text)
+        self.assertIn("one scene only", text)
 
     def test_render_project_instructions_claude(self):
         text = render_project_instructions(self.tmp_dir, "claude")
@@ -243,21 +262,28 @@ class TestProjectKit(unittest.TestCase):
         self.assertTrue(kit_dir.exists())
         self.assertEqual(kit_dir, project_kit_folder(self.tmp_dir, "chatgpt"))
 
-        expected_files = [
-            "00_project_instructions.md",
-            "01_story_bible_compiled.md",
-            "02_character_states.md",
-            "03_timeline_compiled.md",
-            "04_style_rules.md",
-            "05_hard_guardrails.md",
-            "06_world_reality_rules.md",
-            "07_current_outline.md",
-            "08_previous_chapter_summaries.md",
-            "09_unresolved_hooks.md",
-            "10_generation_queue.md",
-        ]
-        for fname in expected_files:
-            self.assertTrue((kit_dir / fname).exists(), f"Missing: {fname}")
+        stable_files = sorted(p.name for p in kit_dir.iterdir() if p.is_file() and p.name[0].isdigit())
+        self.assertEqual(stable_files, [COMPILED_SOURCE_FILENAME])
+        compiled = (kit_dir / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
+        self.assertIn("Default Provider Workspace", compiled)
+        self.assertIn("## Source: 10_generation_queue.md", compiled)
+        self.assertIn("chapter-01/scene-01", compiled)
+
+    def test_compiled_project_source_contains_stable_sections(self):
+        text = render_compiled_project_source(self.tmp_dir, "chatgpt")
+        self.assertIn("## Source: 00_project_instructions.md", text)
+        self.assertIn("## Source: 01_story_bible_compiled.md", text)
+        self.assertIn("## Source: 10_generation_queue.md", text)
+
+    def test_project_kit_build_removes_old_split_stable_files(self):
+        kit_dir = project_kit_folder(self.tmp_dir, "chatgpt")
+        kit_dir.mkdir(parents=True, exist_ok=True)
+        (kit_dir / "01_story_bible_compiled.md").write_text("old", encoding="utf-8")
+
+        build_project_kit(self.tmp_dir, "chatgpt")
+
+        self.assertFalse((kit_dir / "01_story_bible_compiled.md").exists())
+        self.assertTrue((kit_dir / COMPILED_SOURCE_FILENAME).exists())
 
     def test_active_folder_contains_only_active_scene_packet(self):
         init_scene_manifest(self.tmp_dir, "chapter-01", "scene-01", 3000)
@@ -330,7 +356,7 @@ class TestProjectKit(unittest.TestCase):
         )
 
         kit_dir = build_project_kit(self.tmp_dir, "chatgpt")
-        reality = (kit_dir / "06_world_reality_rules.md").read_text(encoding="utf-8")
+        reality = (kit_dir / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
         self.assertIn("winchester", reality.lower())
         self.assertIn("accepted", reality)
 
@@ -353,7 +379,7 @@ class TestProjectKit(unittest.TestCase):
         )
 
         kit_dir = build_project_kit(self.tmp_dir, "chatgpt")
-        reality = (kit_dir / "06_world_reality_rules.md").read_text(encoding="utf-8")
+        reality = (kit_dir / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
         self.assertNotIn("pending item", reality.lower())
 
     def test_rejected_research_excluded(self):
@@ -375,7 +401,7 @@ class TestProjectKit(unittest.TestCase):
         )
 
         kit_dir = build_project_kit(self.tmp_dir, "chatgpt")
-        reality = (kit_dir / "06_world_reality_rules.md").read_text(encoding="utf-8")
+        reality = (kit_dir / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
         self.assertNotIn("rejected item", reality.lower())
 
     def test_generation_queue_markdown_matches_queue_yml(self):
@@ -385,14 +411,14 @@ class TestProjectKit(unittest.TestCase):
         update_queue_scene(self.tmp_dir, "chapter-01/scene-01", status="validation_passed")
 
         kit_dir = build_project_kit(self.tmp_dir, "chatgpt")
-        queue_md = (kit_dir / "10_generation_queue.md").read_text(encoding="utf-8")
+        queue_md = (kit_dir / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
         self.assertIn("chapter-01/scene-01", queue_md)
         self.assertIn("validation_passed", queue_md)
 
     def test_provider_specific_instructions_render(self):
         for provider in PROVIDERS:
             kit_dir = build_project_kit(self.tmp_dir, provider)
-            instructions = (kit_dir / "00_project_instructions.md").read_text(encoding="utf-8")
+            instructions = (kit_dir / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
             self.assertIn("BookForge Provider-Web Writing Lane", instructions)
             if provider != "generic":
                 self.assertIn(provider, instructions.lower())
@@ -419,8 +445,8 @@ class TestProjectKit(unittest.TestCase):
         self.assertTrue(kit_chatgpt.exists())
         self.assertTrue(kit_claude.exists())
 
-        instructions_chatgpt = (kit_chatgpt / "00_project_instructions.md").read_text(encoding="utf-8")
-        instructions_claude = (kit_claude / "00_project_instructions.md").read_text(encoding="utf-8")
+        instructions_chatgpt = (kit_chatgpt / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
+        instructions_claude = (kit_claude / COMPILED_SOURCE_FILENAME).read_text(encoding="utf-8")
         self.assertIn("chatgpt", instructions_chatgpt.lower())
         self.assertIn("claude", instructions_claude.lower())
 

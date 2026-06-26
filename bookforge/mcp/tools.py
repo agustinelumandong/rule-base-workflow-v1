@@ -235,8 +235,10 @@ def build_generation_packet(book_folder: Path, args: dict) -> ToolResult:
 
 def build_project_kit(book_folder: Path, args: dict) -> ToolResult:
     from bookforge.core.projectkit import build_project_kit as _build, project_kit_folder, PROVIDERS
+    from bookforge.core.workspace import resolve_provider_workspace_name
 
     provider = args.get("provider", "chatgpt")
+    workspace_name = resolve_provider_workspace_name(book_folder, args.get("workspace_name") or args.get("workspace"))
     if provider not in PROVIDERS:
         return error_result(
             "build_project_kit",
@@ -254,17 +256,14 @@ def build_project_kit(book_folder: Path, args: dict) -> ToolResult:
     if active_dir.exists():
         active_files = sorted(str(p.relative_to(kit_dir)) for p in active_dir.iterdir() if p.is_file())
 
-    stable_files = sorted(
-        str(p.relative_to(kit_dir))
-        for p in kit_dir.iterdir()
-        if p.is_file() and p.name[0].isdigit()
-    )
+    stable_files = sorted(str(p.relative_to(kit_dir)) for p in kit_dir.iterdir() if p.is_file() and p.name[0].isdigit())
 
     return project_kit_result(
         provider=provider,
         kit_path=str(kit_dir),
         active_files=active_files,
         stable_files=stable_files,
+        workspace_name=workspace_name,
     )
 
 

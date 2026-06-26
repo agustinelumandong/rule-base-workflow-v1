@@ -14,8 +14,10 @@ from bookforge.core.queue import load_queue, build_queue
 from bookforge.core.research_cache import ResearchCacheEntry
 from bookforge.core.characters import load_character_profiles
 from bookforge.core.scanner import source_path
+from bookforge.core.workspace import resolve_provider_workspace_name
 
 PROVIDERS = ("chatgpt", "claude", "gemini", "generic")
+COMPILED_SOURCE_FILENAME = "00_bookforge_project_source.md"
 
 PROVIDER_INSTRUCTIONS = {
     "chatgpt": (
@@ -48,11 +50,13 @@ def _load_snapshot(book_folder: Path) -> dict:
 
 
 def render_project_instructions(book_folder: Path, provider: str) -> str:
+    workspace_name = resolve_provider_workspace_name(book_folder)
     lines = [
         "# BookForge Provider-Web Writing Lane",
         "",
         "You are the prose generator only.",
         "Use the project files and the active scene packet.",
+        "The active packet is for one scene only; do not draft a full chapter in one response.",
         "Do not invent canon.",
         "Do not perform research.",
         "Do not validate facts.",
@@ -62,6 +66,12 @@ def render_project_instructions(book_folder: Path, provider: str) -> str:
         "BookForge is the source of truth.",
         "If the packet conflicts with older project context, obey the active packet.",
         "If a detail is missing, leave it implicit rather than inventing new canon.",
+        "",
+        "---",
+        "",
+        "## Workspace",
+        "",
+        f"- **Default Provider Workspace:** `{workspace_name}`",
         "",
         "---",
         "",
@@ -473,6 +483,42 @@ def render_generation_queue(book_folder: Path) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def stable_project_sources(book_folder: Path, provider: str) -> dict[str, str]:
+    return {
+        "00_project_instructions.md": render_project_instructions(book_folder, provider),
+        "01_story_bible_compiled.md": render_story_bible(book_folder),
+        "02_character_states.md": render_character_states(book_folder),
+        "03_timeline_compiled.md": render_timeline(book_folder),
+        "04_style_rules.md": render_style_rules(book_folder),
+        "05_hard_guardrails.md": render_hard_guardrails(book_folder),
+        "06_world_reality_rules.md": render_world_reality_rules(book_folder),
+        "07_current_outline.md": render_current_outline(book_folder),
+        "08_previous_chapter_summaries.md": render_previous_chapter_summaries(book_folder),
+        "09_unresolved_hooks.md": render_unresolved_hooks(book_folder),
+        "10_generation_queue.md": render_generation_queue(book_folder),
+    }
+
+
+def render_compiled_project_source(book_folder: Path, provider: str) -> str:
+    lines = [
+        "# BookForge Project Source",
+        "",
+        "This single file combines the stable BookForge project sources for provider upload.",
+        "Use the active scene packet for the current drafting instruction.",
+        "",
+    ]
+    for filename, content in stable_project_sources(book_folder, provider).items():
+        lines.extend([
+            "---",
+            "",
+            f"## Source: {filename}",
+            "",
+            content.rstrip(),
+            "",
+        ])
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def _find_active_scene(queue_data: dict) -> str | None:
     """Return the scene_key of the active scene, or None."""
     scenes = queue_data.get("scenes", [])
@@ -563,22 +609,14 @@ def build_project_kit(book_folder: Path, provider: str) -> Path:
     # Ensure queue is built
     build_queue(book_folder)
 
-    files = {
-        "00_project_instructions.md": render_project_instructions(book_folder, provider),
-        "01_story_bible_compiled.md": render_story_bible(book_folder),
-        "02_character_states.md": render_character_states(book_folder),
-        "03_timeline_compiled.md": render_timeline(book_folder),
-        "04_style_rules.md": render_style_rules(book_folder),
-        "05_hard_guardrails.md": render_hard_guardrails(book_folder),
-        "06_world_reality_rules.md": render_world_reality_rules(book_folder),
-        "07_current_outline.md": render_current_outline(book_folder),
-        "08_previous_chapter_summaries.md": render_previous_chapter_summaries(book_folder),
-        "09_unresolved_hooks.md": render_unresolved_hooks(book_folder),
-        "10_generation_queue.md": render_generation_queue(book_folder),
-    }
+    for path in kit_dir.iterdir():
+        if path.is_file() and path.name[0].isdigit() and path.name != COMPILED_SOURCE_FILENAME:
+            path.unlink()
 
-    for filename, content in files.items():
-        (kit_dir / filename).write_text(content, encoding="utf-8")
+    (kit_dir / COMPILED_SOURCE_FILENAME).write_text(
+        render_compiled_project_source(book_folder, provider),
+        encoding="utf-8",
+    )
 
     # Sync active/archive packets
     sync_active_and_archive_packets(book_folder, provider)

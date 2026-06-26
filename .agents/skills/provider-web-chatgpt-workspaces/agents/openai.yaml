@@ -1,0 +1,4 @@
+interface:
+  display_name: "Provider Web ChatGPT Workspaces"
+  short_description: "Manage ChatGPT projects via provider-web-driver"
+  default_prompt: "Use $provider-web-chatgpt-workspaces to list ChatGPT projects, open one, or create it if missing using provider-web-driver only."

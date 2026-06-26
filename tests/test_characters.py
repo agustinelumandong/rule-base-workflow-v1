@@ -89,7 +89,7 @@ class TestCharacterScaffold(unittest.TestCase):
             import os
 
             os.chdir(self.tmp)
-            book = Path("books/whispering-ash")
+            book = Path("books/longhunter-series/book-1")
             book.mkdir(parents=True)
             (book / "phase-0.md").write_text(
                 """# Book
@@ -101,7 +101,7 @@ class TestCharacterScaffold(unittest.TestCase):
 """,
                 encoding="utf-8",
             )
-            args = Namespace(book_folder="books/whispering-ash", carry_from=None, agents=None, git=False)
+            args = Namespace(book_folder="books/longhunter-series/book-1", carry_from=None, agents=None, git=False)
             self.assertEqual(cmd_init(args), 0)
             self.assertTrue((book / "characters/main/jake-moses.md").exists())
         finally:

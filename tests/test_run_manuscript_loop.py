@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 from bookforge.core import loop
 
@@ -227,6 +228,33 @@ class ManuscriptLoopTests(unittest.TestCase):
 
         self.assertEqual(status, "NEEDS_BOOK_REPAIR")
         self.assertIn("Book-level hard issues", reason)
+
+    def test_run_loop_check_treats_direct_rulebook_edit_deprecation_as_soft_warning(self):
+        loop = load_loop()
+        length_state = self.length_state(total_words=30000)
+        soft_issue = loop.ManuscriptIssue(
+            severity=loop.Severity.SOFT,
+            category=loop.IssueCategory.CONTEXT,
+            message="Direct editing of rulebook.md is deprecated.",
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            with (
+                mock.patch("bookforge.core.loop.runner.build_length_state", return_value=length_state),
+                mock.patch("bookforge.core.loop.runner.context_validator.validate_required_book_files", return_value=([], [soft_issue.message])),
+                mock.patch("bookforge.core.loop.runner.context_validator.validate_required_book_file_issues", return_value=(soft_issue,)),
+                mock.patch("bookforge.core.loop.runner.context_validator.parse_phase_chapters", return_value={}),
+                mock.patch("bookforge.core.loop.runner.context_validator.discover_chapters", return_value=[]),
+                mock.patch("bookforge.core.loop.runner.narrative_quality.analyze", return_value=SimpleNamespace(issues=[])),
+                mock.patch("bookforge.core.loop.runner.check_chapter_rhythm.analyze", side_effect=ValueError("no rhythm data")),
+                mock.patch("bookforge.core.loop.runner.save_persistent_repairs"),
+            ):
+                status, reason, report = loop.run_loop_check(book_folder)
+
+        self.assertEqual(status, "DONE_WITH_WARNINGS")
+        self.assertIn("soft warnings", reason)
+        self.assertIn("Direct editing of rulebook.md is deprecated.", report)
 
     def test_choose_rebalance_chapter_uses_rhythm_trim_candidate(self):
         loop = load_loop()

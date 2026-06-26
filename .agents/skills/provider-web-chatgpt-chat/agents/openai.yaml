@@ -1,0 +1,4 @@
+interface:
+  display_name: "Provider Web ChatGPT Chat"
+  short_description: "Send prompts and capture ChatGPT responses live"
+  default_prompt: "Use $provider-web-chatgpt-chat to send a prompt to ChatGPT through provider-web-driver, wait, and return the captured response."

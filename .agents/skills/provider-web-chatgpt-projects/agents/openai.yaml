@@ -1,0 +1,4 @@
+interface:
+  display_name: "Provider Web ChatGPT Projects"
+  short_description: "Run ChatGPT project workflows via provider-web-driver"
+  default_prompt: "Use $provider-web-chatgpt-projects to list ChatGPT projects, open or create a target project, send a prompt, wait, and return the captured response."

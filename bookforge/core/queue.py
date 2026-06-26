@@ -6,7 +6,13 @@ import re
 from pathlib import Path
 from bookforge.core.canon.io import load_yaml_file, save_yaml_file
 from bookforge.core.validators.format import discover_chapters, chapter_sort_key
-from bookforge.core.scene import discover_scenes, manifest_path, load_scene_manifest, parse_scene_id
+from bookforge.core.scene import (
+    bootstrap_scene_manifests_from_breakdowns,
+    discover_scenes,
+    manifest_path,
+    load_scene_manifest,
+    parse_scene_id,
+)
 
 def get_queue_path(book_folder: Path) -> Path:
     """Returns the path to the queue file for a given book."""
@@ -14,6 +20,8 @@ def get_queue_path(book_folder: Path) -> Path:
 
 def build_queue(book_folder: Path) -> Path:
     """Discovers all chapters and scenes in the book and compiles the queue."""
+    bootstrap_scene_manifests_from_breakdowns(book_folder)
+
     # Load existing queue if it exists to preserve status, attempts, etc.
     existing_queue = load_queue(book_folder)
     existing_scenes = {s["scene_key"]: s for s in existing_queue.get("scenes", [])}
@@ -32,14 +40,13 @@ def build_queue(book_folder: Path) -> Path:
         if not scenes and chapter.scene_breakdown.exists():
             try:
                 content = chapter.scene_breakdown.read_text(encoding="utf-8")
-                # Parse headers like "## Scene 1" or "### Scene 02"
+                # Accept either scene headings or validator-aligned beat headings.
                 for line in content.splitlines():
                     if line.startswith("## ") or line.startswith("### "):
                         title = line.lstrip("#").strip()
-                        # Extract a scene id
-                        match = re.search(r"(?i)scene\s*[:\-]?\s*(\d+|\w+)", title)
+                        match = re.match(r"(?i)^(scene|beat)\s*[:\-]?\s*(\d+)\b", title)
                         if match:
-                            num_str = match.group(1).zfill(2)
+                            num_str = match.group(2).zfill(2)
                             sc_id = f"scene-{num_str}"
                             # Create a dummy scene object or dict representation
                             from dataclasses import dataclass
@@ -315,4 +322,3 @@ def get_next_command(scene: dict) -> tuple[str, str]:
         cmd = "# No recommendation available."
         
     return desc, cmd
-

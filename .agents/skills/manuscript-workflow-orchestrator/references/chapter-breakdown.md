@@ -136,17 +136,26 @@ Use this shape for every beat:
 
 ## `chapters/chapter-XX/scene-breakdown.md`
 
-For each chapter, list scenes with:
+`bf validate` expects chapter breakdowns to be beat-structured, not loose scene lists.
+Build each chapter file from one or more `## BEAT N: ...` sections and keep the
+required headings exactly aligned with the validator contract:
 
-- Scene number.
-- POV.
-- Location.
-- Scene purpose.
-- Pacing class and elastic range when useful.
+- `## BEAT N: [Beat Title]`
+- `### Source Context Lock`
+- `### Beat Instructions`
+- `### Context Match Check`
+
+Inside those sections, carry forward the source-grounded planning details that
+used to live in scene bullets:
+
+- POV when source-supported.
+- Location or movement anchor when source-supported.
+- Scene/beat purpose.
 - Opening action or pressure.
 - Conflict.
 - Required story facts.
 - Emotional/thematic beat.
 - Exit hook or transition.
+- Optional pacing guidance when useful.
 
 If source detail is too thin, mark missing values as `UNKNOWN` rather than inventing.

@@ -150,6 +150,12 @@ class TestMCPServer(unittest.TestCase):
             self.assertIn("inputSchema", schema)
             self.assertEqual(schema["inputSchema"]["type"], "object")
 
+    def test_project_kit_schema_exposes_workspace_override(self):
+        schema = next(tool for tool in TOOL_SCHEMAS if tool["name"] == "build_project_kit")
+        properties = schema["inputSchema"]["properties"]
+        self.assertIn("workspace_name", properties)
+        self.assertIn("workspace", properties)
+
 
 if __name__ == "__main__":
     unittest.main()

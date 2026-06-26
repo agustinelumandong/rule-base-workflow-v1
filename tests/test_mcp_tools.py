@@ -245,6 +245,31 @@ class TestMCPTools(unittest.TestCase):
         self.assertTrue(result.ok)
         self.assertEqual(result.data["target_words"], 1100)
 
+    def test_build_project_kit_returns_derived_workspace_name(self):
+        book_dir = Path("tests/temp_mcp_books/books/longhunter-series/book-2")
+        if book_dir.parent.parent.parent.exists():
+            shutil.rmtree(book_dir.parent.parent.parent)
+        book_dir.mkdir(parents=True, exist_ok=True)
+        (book_dir / "chapter-summaries.md").write_text("# Chapter Summaries", encoding="utf-8")
+        (book_dir / "rulebook.md").write_text("# Rulebook", encoding="utf-8")
+        (book_dir / "mood-lock.md").write_text("# Mood Lock", encoding="utf-8")
+        (book_dir / "phase-0.md").write_text("# Phase 0", encoding="utf-8")
+        try:
+            from bookforge.mcp.tools import build_project_kit
+            result = build_project_kit(book_dir, {"provider": "chatgpt"})
+            self.assertTrue(result.ok)
+            self.assertEqual(result.data["workspace_name"], "longhunter-series/book-2")
+            self.assertEqual(result.data["stable_files"], ["00_bookforge_project_source.md"])
+        finally:
+            if book_dir.parent.parent.parent.exists():
+                shutil.rmtree(book_dir.parent.parent.parent)
+
+    def test_build_project_kit_preserves_workspace_override(self):
+        from bookforge.mcp.tools import build_project_kit
+        result = build_project_kit(self.tmp_dir, {"provider": "chatgpt", "workspace_name": "custom/workspace"})
+        self.assertTrue(result.ok)
+        self.assertEqual(result.data["workspace_name"], "custom/workspace")
+
     def test_project_kit_generation_state_active_contains_only_generation_packet(self):
         self._init_scene()
         update_queue_scene(self.tmp_dir, "chapter-01/scene-01", status="generation_packet_ready")

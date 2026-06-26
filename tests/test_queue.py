@@ -133,6 +133,62 @@ class TestQueue(unittest.TestCase):
         # Next eligible scene (scene-02) becomes runnable.
         self.assertTrue(verify_scene_runnable(self.tmp_dir, "chapter-01/scene-02"))
 
+    def test_build_queue_falls_back_to_validator_aligned_beat_breakdown(self):
+        chapter_dir = self.tmp_dir / "chapters" / "chapter-01"
+        chapter_dir.mkdir(parents=True, exist_ok=True)
+        (self.tmp_dir / "phase-0.md").write_text("# Outline\n\n## Chapter 01\nText\n", encoding="utf-8")
+        (chapter_dir / "scene-breakdown.md").write_text(
+            "# Scene Breakdown\n\n"
+            "## BEAT 1: Arrival\n\n"
+            "### Source Context Lock\n- **Source Anchor:** Chapter 1.\n\n"
+            "### Beat Instructions\n- **Action:** Ride in.\n\n"
+            "### Context Match Check\n- Matches source.\n\n"
+            "## BEAT 2: Confrontation\n\n"
+            "### Source Context Lock\n- **Source Anchor:** Chapter 1.\n\n"
+            "### Beat Instructions\n- **Action:** Face the sheriff.\n\n"
+            "### Context Match Check\n- Matches source.\n",
+            encoding="utf-8",
+        )
+
+        build_queue(self.tmp_dir)
+
+        queue = load_queue(self.tmp_dir)
+        self.assertEqual(
+            [scene["scene_key"] for scene in queue["scenes"]],
+            ["chapter-01/scene-01", "chapter-01/scene-02"],
+        )
+
+    def test_build_queue_bootstraps_scene_manifests_from_scene_breakdown(self):
+        chapter_dir = self.tmp_dir / "chapters" / "chapter-01"
+        chapter_dir.mkdir(parents=True, exist_ok=True)
+        (self.tmp_dir / "chapter-pacing-plan.md").write_text(
+            "| Chapter | Pacing Class | Elastic Range | Beat Count | Reason | Expansion Permission |\n"
+            "| --- | --- | --- | ---: | --- | --- |\n"
+            "| Chapter 1 | expanded | source suggests ~3,000 words from `3,000 words` | 4 | test | test |\n",
+            encoding="utf-8",
+        )
+        (chapter_dir / "scene-breakdown.md").write_text(
+            "## Scene 1: Cabin Check\n\n"
+            "### BEAT: Jake checks the cabin\n\n"
+            "## Scene 2: Discovery\n\n"
+            "### BEAT: Finds tracks\n"
+            "### BEAT: Reads gait\n"
+            "### BEAT: Finds camp\n",
+            encoding="utf-8",
+        )
+
+        build_queue(self.tmp_dir)
+
+        queue = load_queue(self.tmp_dir)
+        self.assertEqual(
+            [scene["scene_key"] for scene in queue["scenes"]],
+            ["chapter-01/scene-01", "chapter-01/scene-02"],
+        )
+        self.assertEqual(sum(scene["target_words"] for scene in queue["scenes"]), 3000)
+        self.assertTrue(
+            (self.tmp_dir / "changes" / "chapter-01" / "scenes" / "scene-01" / "manifest.yml").exists()
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

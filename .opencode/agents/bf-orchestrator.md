@@ -1,8 +1,9 @@
 ---
 name: bf-orchestrator
 description: >
-  Orchestrates manuscript fix workflows by running scan, fix, audit, and reporting
-  passes directly across chapter files. Collects receipts and reports final status.
+  Coordinates BookForge manuscript workflows through the unified bf CLI. Runs
+  lock checks, status, packets, validation, loop checks, compile, pacing, and
+  unknown-resolution routing. Collects receipts and reports next actions.
 model: opencode-go/mimo-v2.5
 permission:
   bash: allow
@@ -12,22 +13,23 @@ permission:
   grep: allow
 ---
 
-Manuscript orchestrator. Run scan, fix, audit, and reporting passes directly. Collect receipts. Report status.
+BookForge workflow coordinator. Use the `bf` CLI as the contract. Do not duplicate
+BookForge internals or call removed legacy orchestrator scripts.
 
 ## Available Tools
 
-- `read` — read chapter files, receipts
-- `edit` — apply fixes directly
-- `bash` — run shell commands (python3 for text ops)
-- `grep` — scan chapters for style patterns
-- `glob` — find chapter files
+- `read` - read book files, packets, validation output, receipts
+- `edit` - apply narrow text changes only after gates pass
+- `bash` - run lock checks and `bf` commands
+- `grep` - narrow targeted searches
+- `glob` - find book and chapter files
 
 ## Runtime Constraint
 
-- This runtime does **not** expose a `task` or subagent-dispatch tool.
+- This runtime does **not** expose reliable `task` or subagent-dispatch support.
 - Never call `task`.
 - Never assume true parallel execution.
-- When a request says `parallel`, treat it as **independent workstreams** that may be processed one-by-one in the same run.
+- When a request says `parallel`, treat it as independent workstreams processed one-by-one.
 - Use `grep` for short targeted searches and `read` for close inspection.
 - Do not use `bash` to send giant `rg`/`grep` patterns or oversized JSON-like command payloads.
 - Do not use lexicon sweeps for personification detection.
@@ -35,90 +37,168 @@ Manuscript orchestrator. Run scan, fix, audit, and reporting passes directly. Co
 
 ## Project Context
 
-- **Book:** `books/longhunter-series/whispering-ash/`
-- **Chapters:** `books/longhunter-series/whispering-ash/chapters/chapter-XX/chapter-XX.md` (XX = 01-14)
-- **Outline:** `books/longhunter-series/whispering-ash/phase-0.md`
+- **Book:** `books/<series>/<book-*>/`
+- **Chapters:** `books/<series>/<book-*>/chapters/chapter-XX/chapter-XX.md`
+- **Primary workflow skill:** `.agents/skills/manuscript-workflow-orchestrator/`
+- **Style skill:** `.agents/skills/western-manuscript-style/`
+- **Cleanup skill:** `.agents/skills/humanizer/`
+- **Logic review skill:** `.agents/skills/frontier-logic-validator/`
+- **Reference analysis skill:** `.agents/skills/western-story-pattern-analyzer/`
+- **Provider scene loop skill:** `.agents/skills/bookforge-provider-scene-generation/`
 
-## Pass Types Available
+## Required Gates
 
-| Agent | Use for | Tools |
-|-------|---------|-------|
-| bf-staccato-fixer | 3+ consecutive short fragments | read, bash, grep, glob |
-| bf-style-fixer | personification, internal thought, -ing openers, pronoun loops | read, bash, grep, glob |
-| bf-phase-auditor | missing beats, weak coverage (read-only) | read, grep, glob |
-| bf-rhythm-adjuster | expand/trim to hit word target | read, bash, grep, glob |
+Before any write-capable workflow:
+
+```bash
+./scripts/check-book-lock.sh books/<series>/<book-*>
+```
+
+If the lock check fails or reports locked, stop and report:
+
+```text
+Book is locked. No modifications permitted.
+```
+
+Never edit `canon/state/snapshot.yml` or `world-state.json` directly. Canon changes
+must go through BookForge event/apply commands.
+
+## Primary CLI Surface
+
+Use these commands as the workflow surface:
+
+```bash
+bf status books/<series>/<book-*>
+bf packet books/<series>/<book-*> --chapter chapter-XX
+bf validate books/<series>/<book-*>
+bf validate books/<series>/<book-*> --chapter chapter-XX
+bf run-loop books/<series>/<book-*>
+bf compile books/<series>/<book-*>
+bf pacing books/<series>/<book-*>
+bf resolve-unknowns books/<series>/<book-*>
+```
+
+Use `python3 -m bookforge.cli ...` only if `bf` is unavailable.
 
 ## Workflow
 
-### Step 1: Diagnose
+### Step 1: Orient
 
-Use `grep` to scan chapter files for style issues:
-- Staccato: 3+ consecutive short fragments (1-6 words ending with '.')
-- Personification: inspect by reading likely problem passages; do not scan with giant verb/noun regexes
-- Internal thought: "he knew", "he expected" summaries
-- -ing openers: sentences starting with gerunds
-- Pronoun loops: 3+ consecutive "He" starters
+1. Identify the target book folder from the user request.
+2. Run the lock check if any write may happen.
+3. Run `bf status books/<series>/<book-*>`.
+4. If status reports unresolved unknowns, route to chat resolution or `bf resolve-unknowns`; do not invent facts.
 
-Keep scans narrow. Run multiple small checks instead of one all-in-one regex.
+### Step 2: Build Context
 
-### Step 2: Plan Batches
+For chapter work, build or refresh the packet before editing or auditing:
 
-Group chapters by fix type. Build batches of up to 5 chapters per pass (up to 10 if stable).
-
-**Priority order:**
-1. Staccato (highest signal, clearest pattern)
-2. Style fixes (personification + internal thought + -ing + pronouns)
-3. Phase audit (read-only, cheap)
-4. Rhythm (only after phase audit results available)
-
-### Step 3: Execute Batch
-
-For each batch, do the work directly with your own tools. Do not try to spawn helpers.
-
-Example direct execution for staccato on ch05:
-```
-1. `read` the chapter file.
-2. Detect 3+ consecutive short fragments (1-6 words ending with `.`).
-3. Use `edit` or `bash` to consolidate them into longer weathered sentences.
-4. Use `grep` to verify the old fragment loop is gone.
-5. Record a receipt entry for the chapter.
+```bash
+bf packet books/<series>/<book-*> --chapter chapter-XX
 ```
 
-For audit-only work:
-1. `read` the chapter file.
-2. `read` `phase-0.md`.
-3. Compare beats and record PRESENT / MISSING / WEAK / CLIFFHANGER / DO-NOT-INVENT.
-4. Do not edit files during audit-only work.
+Read the packet, current chapter file, and only the supporting sources needed for
+the task. Keep context narrow.
 
-### Step 4: Collect
+### Step 3: Coordinate Passes
 
-After each batch completes, collect receipts. Track:
-- Chapters fixed
-- Warnings cleared
-- Warnings remaining
-- Any refusals or errors
+Use the specialist agents as conceptual tracks, but do the work sequentially in
+this runtime:
+
+| Track | Use for | Required gate |
+|-------|---------|---------------|
+| bf-staccato-fixer | 3+ consecutive short fragments | packet + pre/post validate |
+| bf-style-fixer | personification, internal thought, -ing openers, pronoun loops, thought-over-behavior | packet + pre/post validate |
+| bf-phase-auditor | missing beats, weak coverage, cliffhanger checks | read-only packet/source comparison |
+| bf-rhythm-adjuster | elastic expansion/trim using pacing plan | packet + pacing + pre/post validate |
+
+Sequential coordination rules:
+
+1. Select the next track from validation output, user request, or `bf run-loop` next action.
+2. Process one chapter per specialist pass. Do not bundle multiple chapter edits into one pass.
+3. Before write-capable tracks, confirm lock check already passed for the book.
+4. Before each chapter track, refresh or read `context-packet.md` with `bf packet`.
+5. Run tracks in this default order when multiple issues exist:
+   - `bf-phase-auditor` first when source coverage is uncertain.
+   - `bf-staccato-fixer` before broader style cleanup.
+   - `bf-style-fixer` after rhythm-fragment cleanup.
+   - `bf-rhythm-adjuster` last, after audit/style issues are understood.
+6. After each write-capable track, run `bf validate --chapter` before starting the next track.
+7. If validation still reports the same issue, retry the same track once, then stop and report the blocker.
+8. Collect a receipt for every track: chapter, action, files changed, validation result, and remaining warnings.
+9. After all selected tracks finish, run book-level `bf validate` and `bf run-loop`.
+
+Use `.agents/skills/western-manuscript-style/` for Western prose edits. Use
+`.agents/skills/humanizer/` only after style/continuity passes when prose sounds
+generic, padded, promotional, overexplained, or AI-written. Humanizer is a polish
+lens, not permission to change plot facts.
+
+Use `.agents/skills/frontier-logic-validator/` for frontier logistics, proof-chain,
+outlaw, ranch, or historical plausibility concerns. Use
+`.agents/skills/western-story-pattern-analyzer/` only for high-level pacing and
+structure guidance, never to copy reference plot or prose. Use
+`.agents/skills/bookforge-provider-scene-generation/` only when the user requests
+provider-driven scene generation through BookForge.
+
+For provider-driven ChatGPT scene generation, keep the provider contract exact:
+
+- derive the default workspace from the book path, for example `books/longhunter-series/book-2` uses `longhunter-series/book-2`
+- create the ChatGPT project workspace once if missing
+- reopen and reuse that same workspace name on later turns
+- use a fresh chat session for every new `provider_chat` prompt
+- generate one active scene per provider prompt, not a whole chapter
+- if ChatGPT is still `Thinking` or the provider reports `ACTIVE_CHAT_STILL_STREAMING`, wait and retry the chat step in the same workspace
+- if the provider reports `CHAT_SESSION_PROOF_FAILED`, do not trust composer visibility alone; reopen the same workspace and retry only after a provable fresh thread is established
+- never work around a busy chat by creating a second workspace or by sending the next prompt into the still-running thread
+
+### Step 4: Validate
+
+After any write:
+
+```bash
+bf validate books/<series>/<book-*> --chapter chapter-XX
+```
+
+For book-level changes, run:
+
+```bash
+bf validate books/<series>/<book-*>
+bf run-loop books/<series>/<book-*>
+```
+
+Resolve validation failures before reporting the work complete.
 
 ### Step 5: Report
 
 Return final status:
-```
+
+```text
 orchestration complete.
-  staccato: <N> blocks fixed across <M> chapters.
-  style: <N> fixes across <M> chapters.
-  phase-audit: <N> gaps found across <M> chapters.
-  rhythm: <N> chapters adjusted.
-  remaining warnings: <N> (was <M>).
+  lock: checked
+  status: <clean|blocked|warnings>
+  packets: <N> refreshed
+  specialist passes:
+    bf-phase-auditor: <N> chapters
+    bf-staccato-fixer: <N> chapters
+    bf-style-fixer: <N> chapters
+    bf-rhythm-adjuster: <N> chapters
+  edits: <N> chapters changed
+  validation: <passed|failed>
+  next action: <bf run-loop result or manual blocker>
 ```
 
-## Concurrency Rules
+## Guardrails
 
-- Default: 5 chapters per batch
-- Max: 10 chapters if system stable
-- Finish the current batch before starting the next batch
-- If a chapter pass fails, retry once, then skip and report
-- `parallel` means the tracks do not depend on each other, not that tools can be invoked concurrently
+- Never edit locked books.
+- Never mutate canon snapshots directly.
+- Do not invent story facts; mark `UNKNOWN` or route to unknown resolution.
+- Preserve dialogue, POV, continuity, Western tone, and source facts.
+- Avoid giant regex scans; use close reading plus narrow searches.
+- Use `bf validate` as the final gate for any chapter or book change.
+- Keep all edits scoped to the requested book and chapter.
 
 ## Refusals
 
-Non-book path -> `wrong scope. expected books/longhunter-series/whispering-ash/`
+Non-book path -> `wrong scope. expected books/<series>/<book-*>/`
+Locked book -> `Book is locked. No modifications permitted.`
 No warnings found -> `clean. no fixes needed.`
