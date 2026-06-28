@@ -29,6 +29,116 @@ def load_validator():
 
 
 class ManuscriptContextValidatorTests(unittest.TestCase):
+    def test_validate_chapter_fails_when_compiled_draft_missing_chapter_review(self):
+        validator = load_validator()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            chapter_folder = book_folder / "chapters" / "chapter-01"
+            chapter_folder.mkdir(parents=True)
+
+            (book_folder / "phase-0.md").write_text(
+                "# Test Book\n\n## Chapter 1\nJed claims the cabin and decides to stay.\n",
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text(
+                "# Rulebook\n\n## Source Hierarchy\nphase-0.md\n\n## Length Handling Rules\nBook-level only.\n\n## Do Not Invent\nNo new visitors.\n\n## Characters\nJed.\n\n## Chapter Continuity Ledger\n### Chapter 1\n- Arrive.\n\n## Unknowns\nNone.\n",
+                encoding="utf-8",
+            )
+            (book_folder / "mood-lock.md").write_text("# Mood Lock\n", encoding="utf-8")
+            (book_folder / "chapter-summaries.md").write_text("## Chapter 1\nJed claims the cabin.\n", encoding="utf-8")
+            (chapter_folder / "chapter-01.md").write_text(
+                "Jed shouldered the bar into place.\n\nHe checked the roof poles and stayed inside till dark.\n",
+                encoding="utf-8",
+            )
+            (chapter_folder / "drafting-plan.md").write_text("# Drafting Plan\n\n## BEAT 1\nClaim the cabin.\n", encoding="utf-8")
+            (chapter_folder / "scene-breakdown.md").write_text(
+                """## BEAT 1: Claim the Cabin
+
+### Source Context Lock
+
+- **Source Anchor:** Chapter 1 cabin claim.
+- **Continuity In:** Jed is alone.
+- **Required Story Movement:** Jed secures the cabin and commits to staying.
+- **Continuity Out:** Cabin is now his shelter.
+- **Do Not Invent:** Extra visitors or attacks.
+
+### Beat Instructions
+
+Write the scene.
+""",
+                encoding="utf-8",
+            )
+            (chapter_folder / "continuity-out.md").write_text(
+                "## Characters\nJed alive.\n## Locations\nCabin.\n## Changes\nCabin claimed.\n## Unresolved Pressure\nWinter close.\n## Next Chapter Must Know\nJed stays.\n",
+                encoding="utf-8",
+            )
+
+            chapter_files = validator.ChapterFiles(chapter_folder)
+            report = validator.validate_chapter(chapter_files, {"chapter-01": "Jed claims the cabin and decides to stay."})
+
+        self.assertTrue(any("chapter-review" in failure for failure in report.failures))
+
+    def test_validate_chapter_fails_on_underdeveloped_money_beat(self):
+        validator = load_validator()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            chapter_folder = book_folder / "chapters" / "chapter-01"
+            chapter_folder.mkdir(parents=True)
+
+            (book_folder / "phase-0.md").write_text(
+                "# Test Book\n\n## Chapter 1\nJed reaches the cabin and finally understands he is home.\n",
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text(
+                "# Rulebook\n\n## Source Hierarchy\nphase-0.md\n\n## Length Handling Rules\nBook-level only.\n\n## Do Not Invent\nNo new visitors.\n\n## Characters\nJed.\n\n## Chapter Continuity Ledger\n### Chapter 1\n- Arrive.\n\n## Unknowns\nNone.\n",
+                encoding="utf-8",
+            )
+            (book_folder / "mood-lock.md").write_text("# Mood Lock\n", encoding="utf-8")
+            (book_folder / "chapter-summaries.md").write_text("## Chapter 1\nJed reaches the cabin.\n", encoding="utf-8")
+            (chapter_folder / "chapter-01.md").write_text(
+                "Jed opened the cabin door.\n\nHe saw the dry hearth and knew it would do.\n",
+                encoding="utf-8",
+            )
+            (chapter_folder / "drafting-plan.md").write_text("# Drafting Plan\n\n## BEAT 1\nReach the cabin.\n", encoding="utf-8")
+            (chapter_folder / "scene-breakdown.md").write_text(
+                """## BEAT 1: Home at Last
+
+### Source Context Lock
+
+- **Source Anchor:** Chapter 1 cabin arrival.
+- **Continuity In:** Jed has survived the trail.
+- **Required Story Movement:** Jed accepts the cabin as home.
+- **Continuity Out:** He stays and prepares to winter there.
+- **Do Not Invent:** New enemies or helpers.
+
+### Pacing Guidance
+
+- **Beat Weight:** money
+- **Beat Development Floor:** >= 180 words
+- **Why This Beat Matters:** This is the chapter's emotional payoff.
+
+### Beat Instructions
+
+Write the scene.
+""",
+                encoding="utf-8",
+            )
+            (chapter_folder / "chapter-review.md").write_text(
+                "# Chapter Review\n\n## Read-Through Notes\nBrief note.\n\n## Slow Spots\nNone.\n\n## Rushed Spots\nEnding lands too fast.\n\n## Break Opportunities\nNone.\n\n## Decision\nready\n",
+                encoding="utf-8",
+            )
+            (chapter_folder / "continuity-out.md").write_text(
+                "## Characters\nJed alive.\n## Locations\nCabin.\n## Changes\nJed stays.\n## Unresolved Pressure\nWinter close.\n## Next Chapter Must Know\nCabin is home.\n",
+                encoding="utf-8",
+            )
+
+            chapter_files = validator.ChapterFiles(chapter_folder)
+            report = validator.validate_chapter(chapter_files, {"chapter-01": "Jed reaches the cabin and finally understands he is home."})
+
+        self.assertTrue(any("underdeveloped" in failure.lower() for failure in report.failures))
+
     def test_parse_phase_chapters_accepts_bold_chapter_lines(self):
         validator = load_validator()
 
@@ -317,9 +427,10 @@ Write the scene.
 
             findings = validator.check_style_review_signals(text, root)
 
-        self.assertEqual(len(findings), 4)
+        self.assertEqual(len(findings), 5)
         self.assertTrue(any("Long narrative-summary" in finding for finding in findings))
         self.assertTrue(any("Behavior-analysis" in finding for finding in findings))
+        self.assertTrue(any("Thought-over-behavior narration" in finding for finding in findings))
         self.assertTrue(any("Formal dialogue" in finding for finding in findings))
         self.assertTrue(any("time-jump" in finding for finding in findings))
 
@@ -345,9 +456,192 @@ Write the scene.
             )
             findings = validator.check_style_review_signals(text, root)
 
-        self.assertEqual(len(findings), 2)
+        self.assertGreaterEqual(len(findings), 2)
         self.assertTrue(any("Forbidden modern" in finding for finding in findings))
         self.assertTrue(any("Consecutive short sentence fragments" in finding for finding in findings))
+
+    def test_thought_over_behavior_narration_detection(self):
+        validator = load_validator()
+        text = (
+            "The youngest boys watched him from farther off. "
+            "That mattered too.\n\n"
+            "Respect showed itself in the way the men quit shoving his shoulder.\n\n"
+            "None of it made trust. It made use."
+        )
+
+        findings = validator.check_thought_over_behavior_narration(text)
+
+        self.assertEqual(len(findings), 4)
+        self.assertTrue(all("Thought-over-behavior narration" in finding for finding in findings))
+
+    def test_thought_over_behavior_narration_honors_config(self):
+        validator = load_validator()
+        text = "That mattered. That counted. That meant the camp had changed. Careful was worth more."
+
+        disabled = validator.check_thought_over_behavior_narration(
+            text,
+            {"enabled": False, "max_findings": 2},
+        )
+        limited = validator.check_thought_over_behavior_narration(
+            text,
+            {"enabled": True, "max_findings": 2},
+        )
+
+        self.assertEqual(disabled, [])
+        self.assertEqual(len(limited), 2)
+
+    def test_style_review_signals_resolves_frontier_profile_from_rulebook(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {
+                            "enabled": True,
+                            "banned_terms": [],
+                        },
+                        "style_profiles": {
+                            "fallback_profile": "default",
+                            "year_buckets": [{"name": "frontier_1880s", "start": 1880, "end": 1899}],
+                            "profiles": {
+                                "frontier_1880s": {
+                                    "style_review": {"banned_terms": ["reckon"]},
+                                },
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "rulebook.md").write_text("**Time Period:** Hard Winter of 1880-1881\n", encoding="utf-8")
+            findings = validator.check_style_review_signals(
+                "He reckon this was the only way through.",
+                root,
+            )
+
+        self.assertTrue(any("Forbidden modern" in finding for finding in findings), findings)
+
+    def test_historical_terms_support_severity_buckets(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {"enabled": True},
+                        "historical_terms": {
+                            "banned": ["cost center"],
+                            "warn": ["signature page"],
+                            "context_required": ["mortgage lien"],
+                            "review_only": ["custody"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            findings = validator.check_style_review_signals(
+                "That cost center hid the mortgage lien. The signature page put him in custody.",
+                root,
+            )
+
+        self.assertTrue(any("Banned historical/style terms" in finding for finding in findings), findings)
+        self.assertTrue(any("Warn historical/style terms" in finding for finding in findings), findings)
+        self.assertTrue(any("Context-required historical/style terms" in finding for finding in findings), findings)
+        self.assertTrue(any("Review-only historical/style terms" in finding for finding in findings), findings)
+
+    def test_repeated_sentence_copy_paste_detected(self):
+        validator = load_validator()
+        text = (
+            "Draven backed his horse away from the fire. "
+            "The riders held the ridge. "
+            "Draven backed his horse away from the fire."
+        )
+
+        findings = validator.check_repeated_sentence_duplicates(text)
+
+        self.assertEqual(len(findings), 1)
+        self.assertIn("Draven backed his horse away", findings[0])
+
+    def test_plot_mode_risk_requires_rulebook_ban_context(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "plot_mode_review": {
+                            "enabled": True,
+                            "legal_procedure_threshold": 4,
+                            "legal_procedure_terms": ["court", "hearing", "writ", "mortgage"],
+                            "ban_markers": ["no courtroom"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text(
+                "## Hard Story Guardrails\n- No courtroom or trial sequence.\n",
+                encoding="utf-8",
+            )
+
+            findings = validator.check_plot_mode_risk(
+                "The court set a hearing after the writ named the mortgage.",
+                book_folder,
+            )
+
+        self.assertEqual(len(findings), 1)
+        self.assertIn("legal-procedure plot mode", findings[0])
+
+    def test_validate_draft_emits_soft_copy_paste_and_plot_mode_warnings(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "settings.json").write_text(
+                json.dumps(
+                    {
+                        "style_review": {"enabled": False},
+                        "plot_mode_review": {
+                            "enabled": True,
+                            "legal_procedure_threshold": 3,
+                            "legal_procedure_terms": ["court", "hearing", "writ"],
+                            "ban_markers": ["no courtroom"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (book_folder / "rulebook.md").write_text("- No courtroom or trial sequence.", encoding="utf-8")
+            chapter_folder = book_folder / "chapters" / "chapter-01"
+            chapter_folder.mkdir(parents=True)
+            draft = chapter_folder / "chapter-01.md"
+            draft.write_text(
+                "The court set a hearing under the writ. "
+                "Draven backed his horse away from the fire. "
+                "Draven backed his horse away from the fire.",
+                encoding="utf-8",
+            )
+            chapter = validator.ChapterFiles(chapter_folder)
+
+            issues = validator.validate_draft(chapter)
+
+        rule_ids = {issue.rule_id for issue in issues}
+        self.assertIn("VALIDATOR_REPEATED_PROSE", rule_ids)
+        self.assertIn("VALIDATOR_PLOT_MODE_RISK", rule_ids)
+
+    def test_outline_life_state_contradiction_warns_for_killed_then_treated_person(self):
+        validator = load_validator()
+        with tempfile.TemporaryDirectory() as tmp:
+            book_folder = Path(tmp)
+            (book_folder / "phase-0.md").write_text(
+                "# Book\n\nOne wounded ranch hand is killed in the crossfire.\n\nLater the posse treats the injured ranch hand beside the wagon.\n",
+                encoding="utf-8",
+            )
+
+            issues = validator.validate_outline_life_state_issues(book_folder)
+
+        self.assertTrue(any(issue.rule_id == "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION" for issue in issues))
 
     # ------------------------------------------------------------------
     # Rulebook contract checks

@@ -13,30 +13,43 @@ BANNED_TEXAS_SLANG = ["y'all", "howdy", "partner", "reckon", "drawl"]
 DISCOURAGED_DIALOGUE_TAGS = ["said", "asked", "shouted", "replied", "whispered", "muttered", "cried", "exclaimed"]
 
 
-def validate_dialogue_style(draft_text: str) -> tuple[list[str], list[str]]:
+def validate_dialogue_style(
+    draft_text: str,
+    settings_start: Path | None = None,
+) -> tuple[list[str], list[str]]:
     """Validates dialogue rules: em dash spacing, dialogue tag avoidance, and slang.
-    
+
     Returns (failures, warnings).
     """
-    failures = []
-    warnings = []
-    
-    # 1. Check for Texas slang
-    for slang in BANNED_TEXAS_SLANG:
+    failures: list[str] = []
+    warnings: list[str] = []
+
+    try:
+        from bookforge.core import validator as validator_module
+
+        _, _, _, voice_settings = validator_module.resolve_style_profile(settings_start)
+        if "banned_slang" in voice_settings:
+            raw_banned_slang = voice_settings.get("banned_slang")
+            if isinstance(raw_banned_slang, list):
+                banned_slang = [str(item).strip().lower() for item in raw_banned_slang if str(item).strip()]
+            else:
+                banned_slang = [s.lower() for s in BANNED_TEXAS_SLANG]
+        else:
+            banned_slang = [s.lower() for s in BANNED_TEXAS_SLANG]
+    except Exception:
+        banned_slang = [s.lower() for s in BANNED_TEXAS_SLANG]
+
+    for slang in banned_slang:
         pattern = re.compile(rf"\b{re.escape(slang)}\b", re.IGNORECASE)
         if pattern.search(draft_text):
             warnings.append(f"Slang Warning: Found discouraged Texas slang '{slang}' in draft.")
 
-    # 2. Parse dialogues and check tag / em dash anchor formatting
-    # Regex to find quotes and the immediately following text up to the end of the sentence or next quote
     quote_matches = list(re.finditer(r'"([^"]+)"\s*(.*?)(?="|\.|\n|$)', draft_text))
-    
+
     for match in quote_matches:
         quote_content = match.group(1)
         following_text = match.group(2).strip()
-        
-        # Check for discouraged dialogue tags right after quote
-        # e.g., "Get on the horse," said Harlan.
+
         for tag in DISCOURAGED_DIALOGUE_TAGS:
             tag_pattern = re.compile(rf"\b{re.escape(tag)}\b", re.IGNORECASE)
             if tag_pattern.match(following_text):
@@ -44,7 +57,6 @@ def validate_dialogue_style(draft_text: str) -> tuple[list[str], list[str]]:
                     f"Dialogue Tag Warning: Discouraged dialogue tag '{tag}' used directly after dialogue: '\"{quote_content[:15]}...\" {following_text[:15]}'"
                 )
 
-        # Check for em dash spacing if an em dash is used.
         if "--" in following_text or "—" in following_text:
             if "--" in following_text:
                 failures.append(
@@ -60,73 +72,66 @@ def validate_dialogue_style(draft_text: str) -> tuple[list[str], list[str]]:
 
 def validate_pov_locking(draft_text: str, pov_character: str, all_characters: list[str]) -> list[str]:
     """Checks for POV head-hopping (other characters' internal states/feelings).
-    
+
     Returns list of failures.
     """
-    failures = []
+    failures: list[str] = []
     if not pov_character:
         return failures
-        
+
     pov_lower = pov_character.lower()
     other_chars = [c for c in all_characters if c.lower() != pov_lower]
-    
-    # Verbs indicating internal state
+
     internal_state_verbs = [
-        "felt", "realized", "thought", "knew", "believed", 
-        "remembered", "wished", "wanted", "hoped", "sensed", 
-        "wondered", "decided", "understood"
+        "felt", "realized", "thought", "knew", "believed",
+        "remembered", "wished", "wanted", "hoped", "sensed",
+        "wondered", "decided", "understood",
     ]
-    
+
     for char in other_chars:
-        # Match "Darin felt...", "Darin realized..."
         pattern = re.compile(
             rf"\b{re.escape(char)}\b.*?\b(" + "|".join(internal_state_verbs) + r")\b",
-            re.IGNORECASE | re.DOTALL
+            re.IGNORECASE | re.DOTALL,
         )
-        # Scan sentence by sentence to keep context localized
         sentences = re.split(r"(?<=[.!?])\s+", draft_text)
-        for idx, sentence in enumerate(sentences):
+        for sentence in sentences:
             if pattern.search(sentence):
                 failures.append(
                     f"POV Head-Hopping Failure: Internal state of non-POV character '{char}' is described in: '{sentence.strip()}' (Locked POV: {pov_character.capitalize()})."
                 )
-                
+
     return failures
 
 
 def validate_sentence_openers(draft_text: str) -> tuple[list[str], list[str]]:
     """Enforces rules against -ing openers and repeated pronoun/name loops.
-    
+
     Returns (failures, warnings).
     """
-    failures = []
-    warnings = []
-    
+    failures: list[str] = []
+    warnings: list[str] = []
+
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", draft_text) if s.strip()]
-    
-    # 1. -ing opener check
-    # Match sentences starting with a word ending in 'ing' followed by a space
+
     for sentence in sentences:
         first_word_match = re.match(r"^([a-zA-Z]+)ing\b", sentence)
         if first_word_match:
             word = first_word_match.group(0)
-            # Filter out common non-gerund starters like "During"
             exclusions = {
                 "during", "bring", "ring", "sing", "thing", "spring",
                 "morning", "evening", "nothing", "something", "everything", "anything",
                 "king", "wing", "sling", "string", "cling", "fling", "sting", "swing", "wring",
                 "lightning", "awning", "ceiling", "lining", "sterling", "cunning", "darling",
-                "sibling", "sapling", "farthing", "inkling", "shilling", "herring", "pudding"
+                "sibling", "sapling", "farthing", "inkling", "shilling", "herring", "pudding",
             }
             if word.lower() not in exclusions:
                 failures.append(
                     f"Sentence Opener Failure: Discouraged '-ing' word opener in: '{sentence[:50]}...'"
                 )
 
-    # 2. Repeated pronoun/name loop (same start for 3 or more consecutive sentences)
     loop_count = 1
     last_starter = None
-    
+
     for sentence in sentences:
         words = sentence.split()
         if not words:
@@ -134,7 +139,7 @@ def validate_sentence_openers(draft_text: str) -> tuple[list[str], list[str]]:
         first_word = re.sub(r"[^a-zA-Z]+", "", words[0]).lower()
         if not first_word:
             continue
-            
+
         if first_word == last_starter:
             loop_count += 1
             if loop_count >= 3:
