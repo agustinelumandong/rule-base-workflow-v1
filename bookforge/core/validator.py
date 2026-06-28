@@ -87,6 +87,13 @@ FORBIDDEN_CONFLICT_PATTERNS = {
 PROJECT_RULE_BANNED_NAME_LABELS = {"voss"}
 
 DEFAULT_SETTINGS: dict[str, Any] = {
+    "operator_prose_guard": {
+        "enabled": True,
+        "mode": "advisory",
+        "output_token_cap": 500,
+        "operator_personas": ["extractor", "reviewer", "planner"],
+        "prose_actions": ["draft", "draft_prose", "expand"],
+    },
     "name_policy": {
         "banned_names": [],
         "allowed_names": [],
@@ -118,7 +125,62 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "weeks later",
             "after some time",
         ],
-        "warn_short_sentence_runs": False,
+        "warn_short_sentence_runs": True,
+        "thought_over_behavior": {
+            "enabled": True,
+            "review_only": True,
+            "max_findings": 8,
+            "phrase_role": "reference_seeds",
+            "phrases": [
+                "that mattered",
+                "that counted",
+                "that meant",
+                "careful was worth",
+                "respect showed",
+                "none of it made",
+                "it made use",
+                "useful, dangerous",
+                "did not become kind",
+                "became careful",
+                "worth more",
+                "began to see",
+                "understood",
+                "realized",
+            ],
+            "meaning_markers": [
+                "meant",
+                "proved",
+                "showed",
+                "counted",
+                "mattered",
+                "changed",
+            ],
+            "abstract_labels": [
+                "respect",
+                "trust",
+                "fear",
+                "danger",
+                "kindness",
+                "useful",
+                "mercy",
+                "welcome",
+            ],
+            "explanation_shapes": [
+                "that was why",
+                "that was not",
+                "none of it",
+                "it made",
+                "made him",
+                "made her",
+                "made them",
+                "he understood",
+                "she understood",
+                "they understood",
+                "he realized",
+                "she realized",
+                "they realized",
+            ],
+        },
         "banned_terms": [
             "no clean answer",
             "tactical position",
@@ -129,6 +191,104 @@ DEFAULT_SETTINGS: dict[str, Any] = {
             "move fast",
             "stay focused",
             "legalese",
+            "cost center",
+            "synergy",
+            "bandwidth",
+            "stakeholder",
+            "deliverable",
+            "action item",
+            "team player",
+            "circle back",
+            "move the needle",
+            "low-hanging fruit",
+            "deep dive",
+            "take offline",
+            "game changer",
+            "paradigm",
+            "disruption",
+        ],
+    },
+    "historical_terms": {
+        "banned": ["cost center"],
+        "warn": [],
+        "context_required": [
+            "appeal",
+            "civil judgment",
+            "cooperation will be recorded",
+            "custody",
+            "exhibit",
+            "foreclosure petition",
+            "mortgage lien",
+            "sequestration",
+            "writ",
+        ],
+        "review_only": [
+            "bank packet",
+            "bond",
+            "court",
+            "hearing",
+            "petition",
+            "signature page",
+            "warrant",
+            "witness list",
+        ],
+    },
+    "style_profiles": {
+        "fallback_profile": "default",
+        "year_buckets": [
+            {"name": "frontier_1880s", "start": 1880, "end": 1899},
+            {"name": "frontier_transition_1900s", "start": 1900, "end": 1912},
+        ],
+        "profiles": {
+            "default": {
+                "voice": {
+                    "banned_slang": ["y'all", "howdy", "partner", "reckon", "drawl"],
+                },
+            },
+            "frontier_1880s": {
+                "voice": {
+                    "banned_slang": ["y'all", "howdy", "partner", "reckon", "drawl"],
+                },
+            },
+            "frontier_transition_1900s": {
+                "voice": {
+                    "banned_slang": ["y'all", "drawl", "reckon"],
+                },
+            },
+        },
+    },
+    "plot_mode_review": {
+        "enabled": True,
+        "review_only": True,
+        "legal_procedure_threshold": 6,
+        "ban_markers": [
+            "no courtroom",
+            "no courtrooms",
+            "no trial",
+            "no trial scene",
+            "no legal-procedure",
+            "no legal procedure",
+        ],
+        "legal_procedure_terms": [
+            "appeal",
+            "bond",
+            "civil judgment",
+            "court",
+            "courtroom",
+            "custody",
+            "exhibit",
+            "foreclosure",
+            "hearing",
+            "judge",
+            "legal",
+            "lien",
+            "mortgage",
+            "petition",
+            "sequestration",
+            "trial",
+            "warrant",
+            "witness list",
+            "writ",
         ],
     },
 }
@@ -219,10 +379,20 @@ RULE_META: dict[str, RuleMeta] = {
     "VALIDATOR_EMPTY_CONTINUITY_OUT": RuleMeta("VALIDATOR_EMPTY_CONTINUITY_OUT", Severity.SOFT, IssueCategory.CONTINUITY),
     "VALIDATOR_WEAK_SOURCE_COVERAGE": RuleMeta("VALIDATOR_WEAK_SOURCE_COVERAGE", Severity.SOFT, IssueCategory.CONTEXT),
     "VALIDATOR_WEAK_BEAT_COVERAGE": RuleMeta("VALIDATOR_WEAK_BEAT_COVERAGE", Severity.SOFT, IssueCategory.CONTEXT),
+    "CHAPTER_REVIEW_MISSING": RuleMeta("CHAPTER_REVIEW_MISSING", Severity.HARD, IssueCategory.RHYTHM),
+    "CHAPTER_REVIEW_NOT_READY": RuleMeta("CHAPTER_REVIEW_NOT_READY", Severity.HARD, IssueCategory.RHYTHM),
+    "BEAT_UNDERDEVELOPED": RuleMeta("BEAT_UNDERDEVELOPED", Severity.HARD, IssueCategory.RHYTHM),
+    "CHAPTER_RANGE_TRIPWIRE": RuleMeta("CHAPTER_RANGE_TRIPWIRE", Severity.SOFT, IssueCategory.RHYTHM),
+    "CHAPTER_LONG_BLOCK": RuleMeta("CHAPTER_LONG_BLOCK", Severity.SOFT, IssueCategory.RHYTHM),
+    "CHAPTER_BREAK_OPPORTUNITY": RuleMeta("CHAPTER_BREAK_OPPORTUNITY", Severity.INFO, IssueCategory.RHYTHM),
     "VALIDATOR_NO_MATCHING_SOURCE": RuleMeta("VALIDATOR_NO_MATCHING_SOURCE", Severity.HARD, IssueCategory.CONTEXT),
     "VALIDATOR_POV_VIOLATION": RuleMeta("VALIDATOR_POV_VIOLATION", Severity.HARD, IssueCategory.STYLE),
     "VALIDATOR_SENTENCE_OPENER_ISSUE": RuleMeta("VALIDATOR_SENTENCE_OPENER_ISSUE", Severity.SOFT, IssueCategory.STYLE),
     "VALIDATOR_STYLE_REVIEW_SIGNAL": RuleMeta("VALIDATOR_STYLE_REVIEW_SIGNAL", Severity.SOFT, IssueCategory.STYLE),
+    "VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED": RuleMeta("VALIDATOR_DIRECT_RULEBOOK_EDIT_DEPRECATED", Severity.SOFT, IssueCategory.CONTEXT),
+    "VALIDATOR_REPEATED_PROSE": RuleMeta("VALIDATOR_REPEATED_PROSE", Severity.SOFT, IssueCategory.STYLE),
+    "VALIDATOR_PLOT_MODE_RISK": RuleMeta("VALIDATOR_PLOT_MODE_RISK", Severity.SOFT, IssueCategory.NARRATIVE),
+    "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION": RuleMeta("VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION", Severity.SOFT, IssueCategory.CONTINUITY),
 }
 
 
@@ -233,10 +403,11 @@ def _make_issue(
     file: Path | None = None,
     line: int | None = None,
     span: str | None = None,
+    severity: Severity | None = None,
 ) -> ManuscriptIssue:
     meta = RULE_META.get(rule_id, RuleMeta(rule_id, Severity.INFO, IssueCategory.CONTEXT))
     return ManuscriptIssue(
-        severity=meta.severity,
+        severity=severity if severity is not None else meta.severity,
         category=meta.category,
         chapter=chapter,
         file=file,
@@ -257,6 +428,8 @@ class ChapterFiles:
     draft: Path
     scene_breakdown: Path
     drafting_plan: Path
+    continuity_out: Path
+    chapter_review: Path
 
     def __init__(
         self,
@@ -266,6 +439,8 @@ class ChapterFiles:
         draft: Path | None = None,
         scene_breakdown: Path | None = None,
         drafting_plan: Path | None = None,
+        continuity_out: Path | None = None,
+        chapter_review: Path | None = None,
     ):
         if isinstance(slug, Path) and label is None and folder is None:
             folder = slug
@@ -281,14 +456,80 @@ class ChapterFiles:
                 match = re.match(r"chapter-(\d+)", slug_value)
                 label = f"Chapter {int(match.group(1)):02d}" if match else slug_value.replace("-", " ").title()
 
+        fallback_folder = None
+        if "changes" in folder.parts:
+            parts = list(folder.parts)
+            try:
+                idx = parts.index("changes")
+                parts[idx] = "chapters"
+                fallback_folder = Path(*parts)
+            except ValueError:
+                pass
+
         if draft is None:
-            draft_name = "epilogue.md" if slug_value == "epilogue" else f"{slug_value}.md"
-            draft = folder / draft_name
-            legacy_draft = folder / "draft.md"
-            if not draft.exists() and legacy_draft.exists():
-                draft = legacy_draft
-        scene_breakdown = scene_breakdown or folder / "scene-breakdown.md"
-        drafting_plan = drafting_plan or folder / "drafting-plan.md"
+            draft_options = ["draft.md", f"{slug_value}.md", "epilogue.md" if slug_value == "epilogue" else f"{slug_value}.md"]
+            draft = folder / draft_options[0]
+            found = False
+            for opt in draft_options:
+                p = folder / opt
+                if p.exists():
+                    draft = p
+                    found = True
+                    break
+            if not found and fallback_folder:
+                for opt in draft_options:
+                    p = fallback_folder / opt
+                    if p.exists():
+                        draft = p
+                        break
+
+        if scene_breakdown is None:
+            proposal_path = folder / "proposal.md"
+            scene_bd_path = folder / "scene-breakdown.md"
+            if proposal_path.exists():
+                scene_breakdown = proposal_path
+            elif scene_bd_path.exists():
+                scene_breakdown = scene_bd_path
+            elif fallback_folder:
+                fallback_proposal = fallback_folder / "proposal.md"
+                fallback_scene_bd = fallback_folder / "scene-breakdown.md"
+                scene_breakdown = fallback_proposal if fallback_proposal.exists() else fallback_scene_bd
+            else:
+                scene_breakdown = proposal_path
+
+        if drafting_plan is None:
+            beats_path = folder / "beats.md"
+            drafting_plan_path = folder / "drafting-plan.md"
+            if beats_path.exists():
+                drafting_plan = beats_path
+            elif drafting_plan_path.exists():
+                drafting_plan = drafting_plan_path
+            elif fallback_folder:
+                fallback_beats = fallback_folder / "beats.md"
+                fallback_drafting_plan = fallback_folder / "drafting-plan.md"
+                drafting_plan = fallback_beats if fallback_beats.exists() else fallback_drafting_plan
+            else:
+                drafting_plan = beats_path
+
+        if continuity_out is None:
+            continuity_out_path = folder / "continuity-out.md"
+            if continuity_out_path.exists():
+                continuity_out = continuity_out_path
+            elif fallback_folder:
+                fallback_continuity = fallback_folder / "continuity-out.md"
+                continuity_out = fallback_continuity if fallback_continuity.exists() else continuity_out_path
+            else:
+                continuity_out = continuity_out_path
+
+        if chapter_review is None:
+            chapter_review_path = folder / "chapter-review.md"
+            if chapter_review_path.exists():
+                chapter_review = chapter_review_path
+            elif fallback_folder:
+                fallback_review = fallback_folder / "chapter-review.md"
+                chapter_review = fallback_review if fallback_review.exists() else chapter_review_path
+            else:
+                chapter_review = chapter_review_path
 
         object.__setattr__(self, "slug", slug_value)
         object.__setattr__(self, "label", label)
@@ -296,6 +537,8 @@ class ChapterFiles:
         object.__setattr__(self, "draft", draft)
         object.__setattr__(self, "scene_breakdown", scene_breakdown)
         object.__setattr__(self, "drafting_plan", drafting_plan)
+        object.__setattr__(self, "continuity_out", continuity_out)
+        object.__setattr__(self, "chapter_review", chapter_review)
 
 
 @dataclass
@@ -312,6 +555,14 @@ class ChapterReport:
         if self.warnings:
             return "WARN"
         return "PASS"
+
+
+@dataclass(frozen=True)
+class BeatMetadata:
+    label: str
+    weight: str | None
+    development_floor: int | None
+    why_this_matters: str | None
 
 
 def read_text(path: Path) -> str:
@@ -331,6 +582,23 @@ def find_project_root(start: Path | None = None) -> Path:
         ):
             return candidate
     return Path.cwd().resolve()
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _read_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value.strip())
+        except ValueError:
+            return None
+    return None
 
 
 def _deep_merge_settings(defaults: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -359,6 +627,135 @@ def load_project_settings(start: Path | None = None) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise RuntimeError(f"Invalid settings.json: {settings_path}: root value must be an object")
     return _deep_merge_settings(DEFAULT_SETTINGS, loaded)
+
+
+_TIME_PERIOD_FIELD_RE = re.compile(
+    r"(?im)^\s*(?:[-*]\s*)?(?:\*{0,2})?"
+    r"(time period|era|period)"
+    r"(?:\*{0,2})?\s*[:/\-]?\s*(.+)$"
+)
+_YEAR_RE = re.compile(r"\b(?:19[0-9]{2}|18[0-9]{2})\b")
+_DECADE_RE = re.compile(r"\b((?:18|19)\d)0s\b", re.IGNORECASE)
+
+
+def _extract_time_period_text(rulebook_text: str) -> str:
+    try:
+        match = re.search(r"\*\*(Time Period|Era|Period)[:/]?\*\*\s*(.+)", rulebook_text, re.IGNORECASE)
+        if match:
+            return match.group(2).split("\n")[0].strip()
+    except Exception:
+        pass
+
+    for line in rulebook_text.splitlines():
+        match = _TIME_PERIOD_FIELD_RE.match(line)
+        if match:
+            return match.group(2).split("\n")[0].strip()
+    return ""
+
+
+def _extract_year_from_text(value: str) -> int | None:
+    if not value:
+        return None
+    normalized = value.strip()
+    match = _YEAR_RE.search(normalized)
+    if match:
+        return _read_int(match.group(0))
+    decade_match = _DECADE_RE.search(normalized)
+    if decade_match:
+        return _read_int(f"{decade_match.group(1)}0")
+    return None
+
+
+def _extract_book_year_from_rulebook(rulebook_text: str) -> int | None:
+    return _extract_year_from_text(_extract_time_period_text(rulebook_text))
+
+
+def _extract_book_year_from_source_text(source_text: str) -> int | None:
+    match = re.search(r"(?i)Period:\s*.*?(\d{4})", source_text)
+    if match:
+        year = _read_int(match.group(1))
+        if year is not None:
+            return year
+    return _extract_year_from_text(source_text)
+
+
+def _extract_book_year_from_book_folder(project_root: Path) -> int | None:
+    try:
+        rulebook_path = project_root / "rulebook.md"
+        if rulebook_path.exists():
+            rulebook_text = rulebook_path.read_text(encoding="utf-8")
+            year = _extract_book_year_from_rulebook(rulebook_text)
+            if year is not None:
+                return year
+    except OSError:
+        pass
+
+    try:
+        from bookforge.core.scanner import source_path
+
+        source = source_path(project_root)
+        if source and source.exists():
+            source_text = source.read_text(encoding="utf-8")
+            year = _extract_book_year_from_source_text(source_text)
+            if year is not None:
+                return year
+    except Exception:
+        pass
+
+    return None
+
+
+def resolve_style_profile(
+    settings_start: Path | None = None,
+) -> tuple[str, dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Resolve era profile + merged style/historical/voice settings."""
+    settings = load_project_settings(settings_start)
+    project_root = find_project_root(settings_start)
+
+    style_profiles = _as_dict(settings.get("style_profiles"))
+    year_buckets = style_profiles.get("year_buckets")
+    if not isinstance(year_buckets, list):
+        year_buckets = []
+    profiles = _as_dict(style_profiles.get("profiles"))
+    fallback_profile = "default"
+    configured_fallback = style_profiles.get("fallback_profile")
+    if isinstance(configured_fallback, str) and configured_fallback.strip():
+        fallback_profile = configured_fallback.strip()
+    if fallback_profile not in profiles:
+        fallback_profile = "default"
+
+    book_year = _extract_book_year_from_book_folder(project_root)
+    profile_name = fallback_profile
+    if isinstance(book_year, int):
+        for bucket in year_buckets:
+            if not isinstance(bucket, dict):
+                continue
+            name = bucket.get("name")
+            if not isinstance(name, str) or not name.strip():
+                continue
+            start = _read_int(bucket.get("start"))
+            end = _read_int(bucket.get("end"))
+            if start is None:
+                continue
+            if end is None:
+                end = start
+            if start > end:
+                start, end = end, start
+            if start <= book_year <= end:
+                profile_name = name.strip()
+                break
+
+    if profile_name not in profiles:
+        profile_name = "default"
+
+    base_style = _as_dict(settings.get("style_review"))
+    base_historical = _as_dict(settings.get("historical_terms"))
+    profile_settings = _as_dict(profiles.get(profile_name))
+    resolved_style_review = _deep_merge_settings(base_style, _as_dict(profile_settings.get("style_review")))
+    resolved_historical_terms = _deep_merge_settings(base_historical, _as_dict(profile_settings.get("historical_terms")))
+    voice_settings = _as_dict(profile_settings.get("voice"))
+
+    return profile_name, resolved_style_review, resolved_historical_terms, voice_settings
 
 
 def contains_any(text: str, words: list[str], case_sensitive: bool = False) -> list[str]:
@@ -405,36 +802,27 @@ def chapter_sort_key(path: Path) -> tuple[int, str]:
 
 
 def discover_chapters(book_folder: Path) -> list[ChapterFiles]:
-    chapters_root = book_folder / "chapters"
-    if not chapters_root.exists():
-        return []
-    chapters = []
-    for chapter_dir in sorted(chapters_root.iterdir(), key=chapter_sort_key):
-        if not chapter_dir.is_dir():
-            continue
-        slug = chapter_dir.name
-        if slug == "epilogue":
-            label = "Epilogue"
-            draft_name = "epilogue.md"
-        else:
-            match = re.match(r"chapter-(\d+)", slug)
-            if match:
-                label = f"Chapter {int(match.group(1)):02d}"
-                draft_name = f"{slug}.md"
-            else:
-                label = slug.replace("-", " ").title()
-                draft_name = f"{slug}.md"
+    slugs = set()
+    changes_dir = book_folder / "changes"
+    if changes_dir.exists():
+        for path in changes_dir.iterdir():
+            if path.is_dir() and not path.name.startswith("."):
+                slugs.add(path.name)
 
-        chapters.append(
-            ChapterFiles(
-                slug=slug,
-                label=label,
-                folder=chapter_dir,
-                draft=chapter_dir / draft_name,
-                scene_breakdown=chapter_dir / "scene-breakdown.md",
-                drafting_plan=chapter_dir / "drafting-plan.md",
-            )
-        )
+    chapters_dir = book_folder / "chapters"
+    if chapters_dir.exists():
+        for path in chapters_dir.iterdir():
+            if path.is_dir() and not path.name.startswith("."):
+                slugs.add(path.name)
+
+    chapters = []
+    for slug in sorted(slugs, key=lambda s: chapter_sort_key(Path(s))):
+        changes_path = changes_dir / slug
+        chapters_path = chapters_dir / slug
+        if changes_path.exists():
+            chapters.append(ChapterFiles(changes_path))
+        else:
+            chapters.append(ChapterFiles(chapters_path))
     return chapters
 
 
@@ -618,11 +1006,298 @@ def _as_string_list(value: Any) -> list[str]:
     return [str(item).strip().lower() for item in value if str(item).strip()]
 
 
+def _normalize_sentence(sentence: str) -> str:
+    words = re.findall(r"\b[A-Za-z']+\b", sentence.lower())
+    return " ".join(words)
+
+
+def check_repeated_sentence_duplicates(text: str) -> list[str]:
+    """Find likely copy-paste sentence duplicates without flagging tiny refrains."""
+    findings: list[str] = []
+    seen: dict[str, str] = {}
+    for sentence in SENTENCE_SPLIT_RE.split(text.strip()):
+        clean = sentence.strip()
+        normalized = _normalize_sentence(clean)
+        if len(normalized.split()) < 5:
+            continue
+        if normalized in seen:
+            findings.append(f"Repeated sentence likely copy-paste: {seen[normalized][:120]}")
+            if len(findings) >= 5:
+                break
+            continue
+        seen[normalized] = clean
+    return findings
+
+
+def _as_string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip().lower() for item in value if str(item).strip()]
+
+
+def _term_hits(text_lower: str, terms: list[str]) -> list[str]:
+    hits: list[str] = []
+    for term in terms:
+        pattern = rf"\b{re.escape(term)}\b" if re.search(r"\w", term) else re.escape(term)
+        if re.search(pattern, text_lower):
+            hits.append(term)
+    return sorted(set(hits))
+
+
+def check_plot_mode_risk(text: str, book_folder: Path | None = None) -> list[str]:
+    """Warn when a banned plot mode appears to dominate the draft."""
+    settings = load_project_settings(book_folder)
+    review_settings = settings.get("plot_mode_review", {})
+    if not isinstance(review_settings, dict) or not review_settings.get("enabled", True):
+        return []
+
+    if book_folder is None:
+        return []
+    rulebook_path = Path(book_folder) / "rulebook.md"
+    if not rulebook_path.exists():
+        return []
+
+    rulebook_text = rulebook_path.read_text(encoding="utf-8").lower()
+    ban_markers = _as_string_list(review_settings.get("ban_markers"))
+    if not any(marker in rulebook_text for marker in ban_markers):
+        return []
+
+    terms = _as_string_list(review_settings.get("legal_procedure_terms"))
+    text_lower = text.lower()
+    hits = _term_hits(text_lower, terms)
+    threshold = review_settings.get("legal_procedure_threshold", 6)
+    if not isinstance(threshold, int) or threshold < 1:
+        threshold = 6
+    if len(hits) < threshold:
+        return []
+
+    return [
+        "Draft appears to lean into legal-procedure plot mode despite rulebook guardrails; "
+        f"review before rewriting. Terms: {', '.join(hits[:10])}."
+    ]
+
+
+def check_similes_and_metaphors(text: str) -> list[str]:
+    narrative = re.sub(r'"[^"]*"', "", text)
+    sentences = SENTENCE_SPLIT_RE.split(narrative)
+    simile_pat = re.compile(
+        r"\b(as\s+if|as\s+though|like\s+(?:a|an|the|my|his|her|its|our|their|your|some|any|wet|old|dry|cold|hot|dark|bright|thin|thick|sharp|hard|soft|wild|dead|living|slow|fast|heavy|light|\w+))\b",
+        re.IGNORECASE,
+    )
+    non_similes = {
+        "like to", "like it", "like this", "like that", "like these", "like those",
+        "like so", "like me", "like us", "like you", "like him", "like her", "like them",
+        "would like", "should like", "could like", "does like", "did like", "do like",
+        "nothing like", "anything like", "something like", "not like to", "don't like",
+        "feel like", "feels like", "felt like", "seemed like", "seems like", "seem like",
+        "look like", "looks like", "looked like",
+    }
+
+    findings: list[str] = []
+    for sentence in sentences:
+        sentence_clean = sentence.strip()
+        if not sentence_clean:
+            continue
+        for match in simile_pat.finditer(sentence_clean):
+            matched_str = match.group(1).lower()
+            is_non_simile = False
+            if matched_str.startswith("like"):
+                like_start = match.start()
+                sentence_lower = sentence_clean.lower()
+                pre_text = sentence_lower[:like_start + 4]
+                for non_simile in non_similes:
+                    if non_simile.endswith("like") and pre_text.endswith(non_simile):
+                        is_non_simile = True
+                        break
+                if not is_non_simile:
+                    post_text = sentence_lower[like_start:]
+                    for non_simile in non_similes:
+                        if non_simile.startswith("like") and post_text.startswith(non_simile):
+                            next_char_idx = len(non_simile)
+                            if next_char_idx >= len(post_text) or not post_text[next_char_idx].isalnum():
+                                is_non_simile = True
+                                break
+            if not is_non_simile:
+                snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+                findings.append(f"Simile/Metaphor detected in narrative: '{snippet}' (found '{match.group(1)}')")
+                break
+    return findings
+
+
+def check_personification_of_objects(text: str) -> list[str]:
+    narrative = re.sub(r'"[^"]*"', "", text)
+    sentences = SENTENCE_SPLIT_RE.split(narrative)
+    inanimate_nouns = (
+        r"land|wind|dust|night|sun|sky|shadow|shadows|darkness|fire|smoke|stone|rock|paper|wood|wagon|wheel|carriage|train|"
+        r"saddle|scabbard|bullet|lead|iron|steel|leather|rope|water|river|creek|mud|snow|trail|road|arroyo|valley|ridge|cliff|"
+        r"mountain|hill|slope|wonder|fear|pain|silence|danger|memory|memories|thought|time|hour|hours|minute|minutes|day|"
+        r"days|week|weeks|season|seasons|year|years|truth|lie|lies|voice|sound|word|words|name|names|blood|bloodstain|heat|"
+        r"cold|winter|summer|spring|autumn|fall|weather|colt|rifle|gun|revolver|pistol|carbine|winchester|"
+        r"habit|name|paper|room|door|window|fence|gate|wall|floor|ground|dirt|clay|sand|grass|brush|mesquite|cedar|pine|"
+        r"oak|elm|cottonwood|sky|cloud|storm|rain|frost|ice|wind|breeze|gust|heat|cold|chill|warmth|"
+        r"distance|miles|mile|league|day|night|dawn|dusk|twilight|sunrise|sunset|moon|stars|constellation"
+    )
+    agency_verbs = (
+        r"speak|speaks|spoke|speaking|talk|talks|talked|talking|whisper|whispers|whispered|whispering|tell|tells|told|telling|"
+        r"say|says|said|saying|want|wants|wanted|wanting|wish|wishes|wished|wishing|hope|hopes|hoped|hoping|know|knows|knew|"
+        r"knowing|think|thinks|thought|thinking|believe|believes|believed|believing|wonder|wonders|wondered|wondering|waste|"
+        r"wastes|wasted|wasting|watch|watches|watched|watching|creep|creeps|crept|creeping|breathe|breathes|breathed|breathing|"
+        r"listen|listens|listened|listening|stare|stares|stared|staring|gaze|gazes|gazed|gazing|move|moves|moved|moving|stretch|"
+        r"stretches|stretched|stretching|chase|chases|chased|chasing|put|puts|putting|hold|holds|held|holding|reach|reaches|reached|reaching|"
+        r"cry|cries|cried|crying|laugh|laughs|laughed|laughing|weep|weeps|wept|weeping|call|calls|called|calling|scream|screams|screamed|screaming|"
+        r"bite|bites|bit|biting|scratch|scratches|scratched|scratching|fight|fights|fought|fighting|kill|kills|killed|killing|"
+        r"run|runs|ran|running|walk|walks|walked|walking|climb|climbs|climbed|climbing|wait|waits|waited|waiting|sleep|sleeps|slept|sleeping|dream|dreams|dreamed|dreaming"
+    )
+    personification_pat = re.compile(
+        rf"\b({inanimate_nouns})\b(?:\s+(?:did\s+not|had|was|were|could|would|should|will|can|might)\b)?(?:\s+[a-z]+ly\b)?\s+\b({agency_verbs})\b",
+        re.IGNORECASE,
+    )
+    metaphor_pat = re.compile(
+        rf"\b(colt|rifle|gun|revolver|pistol|carbine|winchester)\b(?:\s+(?:was|were|is|are)\b)?\s+(?:a|an)\s+\b(curse|warning|blessing|promise|threat|enemy|friend|companion|partner)\b",
+        re.IGNORECASE,
+    )
+
+    findings: list[str] = []
+    for sentence in sentences:
+        sentence_clean = sentence.strip()
+        if not sentence_clean:
+            continue
+        match = personification_pat.search(sentence_clean)
+        if match:
+            snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+            findings.append(
+                f"Personification of inanimate object/concept '{match.group(1)}' with action '{match.group(2)}': '{snippet}'"
+            )
+            continue
+        metaphor_match = metaphor_pat.search(sentence_clean)
+        if metaphor_match:
+            snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+            findings.append(
+                f"Metaphorical/figurative description of weapon '{metaphor_match.group(1)}' as '{metaphor_match.group(2)}': '{snippet}'"
+            )
+    return findings
+
+
+def check_abstract_internalization(text: str) -> list[str]:
+    narrative = re.sub(r'"[^"]*"', "", text)
+    sentences = SENTENCE_SPLIT_RE.split(narrative)
+    subjects = r"he|she|they|jed|branton|harlan|tex|creed|lask|eleanor"
+    internal_verbs = (
+        r"knew|known|know|believed|believe|wondered|wonder|resolved|resolve|decided|decide|"
+        r"expected|expect|doubted|doubt|suspected|suspect|predicted|predict|"
+        r"sensed|sense|remembered|remember|forgot|forgotten|forget|wished|wish|hoped|hope|"
+        r"recalled|recall|imagined|imagine|feared|fear"
+    )
+    internal_pat = re.compile(
+        rf"\b({subjects})\b"
+        rf"(?:\s+(?:had|was|were|did|could|would|should|will|can|might)\b)?"
+        rf"(?:\s+(?:not|never)\b)?"
+        rf"(?:\s+[a-z]+ly\b)?"
+        rf"\s+\b({internal_verbs})\b",
+        re.IGNORECASE,
+    )
+
+    findings: list[str] = []
+    for sentence in sentences:
+        sentence_clean = sentence.strip()
+        if not sentence_clean:
+            continue
+        match = internal_pat.search(sentence_clean)
+        if match:
+            snippet = sentence_clean[:80] + "..." if len(sentence_clean) > 80 else sentence_clean
+            findings.append(
+                f"Abstract internalization / thought-summary detected for '{match.group(1)}' with '{match.group(2)}': '{snippet}'"
+            )
+    return findings
+
+
+def _strip_dialogue(text: str) -> str:
+    return re.sub(r'"[^"]*"', "", text)
+
+
+def check_thought_over_behavior_narration(
+    text: str,
+    config: dict[str, Any] | None = None,
+) -> list[str]:
+    """Flag narrator-summary lines that explain meaning after behavior."""
+    review_config = _as_dict(config)
+    if not review_config.get("enabled", True):
+        return []
+
+    max_findings = _read_int(review_config.get("max_findings"))
+    if max_findings is None or max_findings < 1:
+        max_findings = 8
+
+    phrases = _as_string_list(review_config.get("phrases")) or _as_string_list(
+        DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["phrases"]
+    )
+    meaning_markers = _as_string_list(review_config.get("meaning_markers")) or _as_string_list(
+        DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["meaning_markers"]
+    )
+    abstract_labels = _as_string_list(review_config.get("abstract_labels")) or _as_string_list(
+        DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["abstract_labels"]
+    )
+    explanation_shapes = _as_string_list(review_config.get("explanation_shapes")) or _as_string_list(
+        DEFAULT_SETTINGS["style_review"]["thought_over_behavior"]["explanation_shapes"]
+    )
+
+    def has_configured_hit(sentence_lower: str, terms: list[str]) -> bool:
+        for term in terms:
+            pattern = rf"(?<!\w){re.escape(term)}(?!\w)"
+            if re.search(pattern, sentence_lower):
+                return True
+        return False
+
+    def is_summary_shape(sentence_lower: str, word_count: int) -> bool:
+        if word_count > 24:
+            return False
+        has_marker = has_configured_hit(sentence_lower, meaning_markers)
+        has_label = has_configured_hit(sentence_lower, abstract_labels)
+        if has_configured_hit(sentence_lower, explanation_shapes):
+            return True
+        if has_marker and has_label:
+            return True
+        if has_marker and re.match(r"(?:that|this|it|none|everything|anything)\b", sentence_lower):
+            return True
+        if has_marker and re.search(r"\b(?:after that|because of it|around him|around her|around them)\b", sentence_lower):
+            return True
+        if has_label and re.search(r"\b(?:came|went|held|stayed|grew|became|made)\b", sentence_lower):
+            return True
+        return False
+
+    findings: list[str] = []
+    narrative = _strip_dialogue(text)
+    for sentence in SENTENCE_SPLIT_RE.split(narrative):
+        excerpt = " ".join(sentence.strip().split())
+        if not excerpt:
+            continue
+        excerpt_lower = excerpt.lower()
+        word_count = len(re.findall(r"\b[A-Za-z']+\b", excerpt))
+        if has_configured_hit(excerpt_lower, phrases) or is_summary_shape(excerpt_lower, word_count):
+            findings.append(
+                "Thought-over-behavior narration: line explains meaning/status after behavior; "
+                f"consider replacing with action, silence, work, or direct speech: '{excerpt[:120]}'"
+            )
+        if len(findings) >= max_findings:
+            break
+
+    return findings
+
+
 def check_style_review_signals(text: str, settings_start: Path | None = None) -> list[str]:
-    settings = load_project_settings(settings_start)
-    style_settings = settings.get("style_review", {})
+    try:
+        _, style_settings, historical_terms, _ = resolve_style_profile(settings_start)
+    except Exception:
+        settings = load_project_settings(settings_start)
+        style_settings = settings.get("style_review", {})
+        historical_terms = _as_dict(settings.get("historical_terms"))
+
+    style_settings = _as_dict(style_settings)
     if not isinstance(style_settings, dict) or not style_settings.get("enabled", True):
         return []
+    if not isinstance(historical_terms, dict):
+        historical_terms = {}
+    historical_terms = _as_dict(historical_terms)
 
     findings: list[str] = []
     max_summary_words = style_settings.get("max_summary_words_without_dialogue", 120)
@@ -676,6 +1351,24 @@ def check_style_review_signals(text: str, settings_start: Path | None = None) ->
             + ", ".join(sorted(set(banned_terms))[:8])
             + "."
         )
+
+    findings.extend(
+        check_thought_over_behavior_narration(
+            text,
+            _as_dict(style_settings.get("thought_over_behavior")),
+        )
+    )
+
+    severity_labels = (
+        ("banned", "Banned historical/style terms"),
+        ("warn", "Warn historical/style terms"),
+        ("context_required", "Context-required historical/style terms"),
+        ("review_only", "Review-only historical/style terms"),
+    )
+    for key, label in severity_labels:
+        hits = _term_hits(text_lower, _as_string_list(historical_terms.get(key)))
+        if hits:
+            findings.append(f"{label} found; verify timeline and genre fit: {', '.join(hits[:8])}.")
 
     if style_settings.get("warn_short_sentence_runs", False):
         sentences = SENTENCE_SPLIT_RE.split(text)
@@ -810,6 +1503,53 @@ def _ledger_has_chapter_entry(ledger_section: str, chapter_slug: str) -> bool:
     return bool(re.search(pattern, ledger_section))
 
 
+KILLED_PERSON_RE = re.compile(
+    r"\b(?:one|a|the)\s+([a-z][a-z\s-]{2,60}?)\s+(?:is|was)\s+killed\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize_person_descriptor(value: str) -> str:
+    descriptor = re.sub(r"\b(?:same|exact|badly|seriously|wounded|injured|dead)\b", "", value.lower())
+    descriptor = re.sub(r"\s+", " ", descriptor).strip(" .,:;")
+    return descriptor
+
+
+def validate_outline_life_state_issues(book_folder: Path) -> tuple[ManuscriptIssue, ...]:
+    """Catch obvious outline cases where the same described person dies then acts later."""
+    from bookforge.core.scanner import source_path
+
+    src = source_path(book_folder)
+    if not src or not src.exists():
+        return ()
+
+    text = src.read_text(encoding="utf-8")
+    text_lower = text.lower()
+    issues: list[ManuscriptIssue] = []
+
+    for match in KILLED_PERSON_RE.finditer(text_lower):
+        descriptor = _normalize_person_descriptor(match.group(1))
+        if len(descriptor.split()) < 2:
+            continue
+        later_text = text_lower[match.end():]
+        escaped = re.escape(descriptor)
+        later_patterns = [
+            rf"\binjured\s+{escaped}\b",
+            rf"\btreats?\s+(?:the\s+)?(?:injured\s+)?{escaped}\b",
+            rf"\b{escaped}\b.{0,100}\b(?:names?|speaks?|confesses?|reveals?|testif(?:y|ies))\b",
+        ]
+        if any(re.search(pattern, later_text, re.DOTALL) for pattern in later_patterns):
+            issues.append(_make_issue(
+                "VALIDATOR_OUTLINE_LIFE_STATE_CONTRADICTION",
+                f"Outline may treat the same described person as killed and later active: `{descriptor}`.",
+                file=src,
+                span=descriptor,
+            ))
+            break
+
+    return tuple(issues)
+
+
 def validate_continuity_out_issues(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
     issues: list[ManuscriptIssue] = []
     if not chapter.draft.exists():
@@ -817,7 +1557,7 @@ def validate_continuity_out_issues(chapter: ChapterFiles) -> tuple[ManuscriptIss
     draft_text = chapter.draft.read_text(encoding="utf-8")
     if not draft_text.strip():
         return tuple(issues)
-    continuity_path = chapter.folder / "continuity-out.md"
+    continuity_path = chapter.continuity_out
     if not continuity_path.exists():
         issues.append(_make_issue(
             "VALIDATOR_MISSING_CONTINUITY_OUT",
@@ -844,7 +1584,7 @@ def validate_continuity_out(chapter: ChapterFiles) -> tuple[list[str], list[str]
         and chapter.draft.read_text(encoding="utf-8").strip()
         and not warnings
     ):
-        passes.append("`continuity-out.md` present and non-empty.")
+        passes.append("`continuity-out.md` is present and non-empty.")
     return passes, warnings
 
 
@@ -859,6 +1599,8 @@ def validate_required_book_file_issues(book_folder: Path) -> tuple[ManuscriptIss
             "Missing or empty outline source file (e.g. phase-0.md or phase-0/*.md).",
             file=src,
         ))
+    else:
+        issues.extend(validate_outline_life_state_issues(book_folder))
 
     for relative_path in REQUIRED_BOOK_FILES:
         path = book_folder / relative_path
@@ -980,6 +1722,109 @@ def validate_scene_breakdown(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ..
     return tuple(issues)
 
 
+def _read_chapter_review(chapter: ChapterFiles) -> tuple[str | None, str | None]:
+    if not chapter.chapter_review.exists():
+        return None, None
+
+    text = read_text(chapter.chapter_review)
+    match = re.search(r"(?ims)^##\s+Decision\s*(.+?)\s*(?=^##\s+|\Z)", text)
+    if not match:
+        return text, None
+    decision = match.group(1).strip().splitlines()[0].strip().lower()
+    return text, decision
+
+
+def _beat_window(text: str, phrase: str) -> tuple[int, int] | None:
+    phrase_terms = [term for term in key_terms(phrase) if len(term) > 3]
+    if not phrase_terms:
+        return None
+
+    paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", text) if paragraph.strip()]
+    for index, paragraph in enumerate(paragraphs):
+        paragraph_terms = key_terms(paragraph)
+        overlap = len(set(phrase_terms).intersection(paragraph_terms))
+        if overlap >= max(1, min(2, len(phrase_terms))):
+            start = max(0, index - 1)
+            end = min(len(paragraphs), index + 2)
+            window_text = "\n\n".join(paragraphs[start:end])
+            return len(window_text.split()), overlap
+    return None
+
+
+def extract_beat_metadata(scene_text: str) -> list[BeatMetadata]:
+    beats: list[BeatMetadata] = []
+    matches = list(re.finditer(r"(?im)^##\s+BEAT\s+\d+\s*:\s*(.+?)\s*$", scene_text))
+    for index, match in enumerate(matches):
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(scene_text)
+        body = scene_text[start:end]
+        label = match.group(1).strip()
+
+        weight_match = re.search(r"(?im)^\s*-\s+\*\*Beat Weight:\*\*\s+(.+?)\s*$", body)
+        floor_match = re.search(r"(?im)^\s*-\s+\*\*Beat Development Floor:\*\*\s+>=?\s*(\d+)\s*words?\s*$", body)
+        why_match = re.search(r"(?im)^\s*-\s+\*\*Why This Beat Matters:\*\*\s+(.+?)\s*$", body)
+
+        beats.append(
+            BeatMetadata(
+                label=label,
+                weight=weight_match.group(1).strip().lower() if weight_match else None,
+                development_floor=int(floor_match.group(1)) if floor_match else None,
+                why_this_matters=why_match.group(1).strip() if why_match else None,
+            )
+        )
+    return beats
+
+
+def validate_chapter_pacing(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
+    issues: list[ManuscriptIssue] = []
+    if not chapter.draft.exists() or not chapter.draft.name.startswith(chapter.slug):
+        return tuple(issues)
+
+    review_text, decision = _read_chapter_review(chapter)
+    if review_text is None:
+        issues.append(_make_issue(
+            "CHAPTER_REVIEW_MISSING",
+            f"Compiled chapter is missing required `chapter-review.md` at `{chapter.chapter_review}`.",
+            chapter=chapter.slug,
+            file=chapter.chapter_review,
+        ))
+        return tuple(issues)
+
+    if decision and decision != "ready":
+        issues.append(_make_issue(
+            "CHAPTER_REVIEW_NOT_READY",
+            f"`chapter-review.md` decision is `{decision}`, so the compiled chapter is not ready.",
+            chapter=chapter.slug,
+            file=chapter.chapter_review,
+        ))
+
+    scene_text = read_text(chapter.scene_breakdown) if chapter.scene_breakdown.exists() else ""
+    draft_text = read_text(chapter.draft)
+    for beat in extract_beat_metadata(scene_text):
+        phrase = beat.why_this_matters or beat.label
+        window = _beat_window(draft_text, phrase)
+        if window is None:
+            issues.append(_make_issue(
+                "BEAT_UNDERDEVELOPED",
+                f"Beat `{beat.label}` is underdeveloped or missing from the compiled chapter.",
+                chapter=chapter.slug,
+                file=chapter.draft,
+            ))
+            continue
+        window_words, _ = window
+        if beat.development_floor and window_words < beat.development_floor:
+            severity = Severity.HARD if beat.weight == "money" else Severity.SOFT
+            issues.append(_make_issue(
+                "BEAT_UNDERDEVELOPED",
+                f"Beat `{beat.label}` is underdeveloped: found about {window_words} words near the beat, below floor {beat.development_floor}.",
+                chapter=chapter.slug,
+                file=chapter.draft,
+                severity=severity,
+            ))
+
+    return tuple(issues)
+
+
 def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
     issues: list[ManuscriptIssue] = []
     if not chapter.draft.exists():
@@ -1074,18 +1919,7 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
     }
 
     book_folder = chapter.folder.parent.parent
-    from bookforge.core.scanner import source_path
-    phase_0_path = source_path(book_folder)
-    book_year = 1880
-    if phase_0_path and phase_0_path.exists():
-        p0_text = phase_0_path.read_text(encoding="utf-8")
-        match = re.search(r"(?i)Period:\s*.*?(\d{4})", p0_text)
-        if match:
-            book_year = int(match.group(1))
-        else:
-            match_general = re.search(r"\b(18\d{2}|1900)\b", p0_text)
-            if match_general:
-                book_year = int(match_general.group(1))
+    book_year = _extract_book_year_from_book_folder(book_folder) or 1880
 
     text_lower = text.lower()
     for word, invention_year in HISTORICAL_DICTIONARY.items():
@@ -1107,6 +1941,33 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
             chapter=chapter.slug,
             file=chapter.draft,
             span=phrase,
+        ))
+
+    figurative_findings = check_similes_and_metaphors(text)
+    for finding in figurative_findings:
+        issues.append(_make_issue(
+            "VALIDATOR_STYLE_REVIEW_SIGNAL",
+            finding,
+            chapter=chapter.slug,
+            file=chapter.draft,
+        ))
+
+    personification_findings = check_personification_of_objects(text)
+    for finding in personification_findings:
+        issues.append(_make_issue(
+            "VALIDATOR_STYLE_REVIEW_SIGNAL",
+            finding,
+            chapter=chapter.slug,
+            file=chapter.draft,
+        ))
+
+    abstract_internalization_findings = check_abstract_internalization(text)
+    for finding in abstract_internalization_findings:
+        issues.append(_make_issue(
+            "VALIDATOR_STYLE_REVIEW_SIGNAL",
+            finding,
+            chapter=chapter.slug,
+            file=chapter.draft,
         ))
 
     found_dialogue_tags = dialogue_tags(text)
@@ -1156,6 +2017,24 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
             file=chapter.draft,
         ))
 
+    repeated_sentences = check_repeated_sentence_duplicates(text)
+    for finding in repeated_sentences:
+        issues.append(_make_issue(
+            "VALIDATOR_REPEATED_PROSE",
+            finding,
+            chapter=chapter.slug,
+            file=chapter.draft,
+        ))
+
+    plot_mode_risks = check_plot_mode_risk(text, book_folder)
+    for finding in plot_mode_risks:
+        issues.append(_make_issue(
+            "VALIDATOR_PLOT_MODE_RISK",
+            finding,
+            chapter=chapter.slug,
+            file=chapter.draft,
+        ))
+
     review_signals = check_style_review_signals(text, chapter.draft)
     for signal in review_signals:
         issues.append(_make_issue(
@@ -1184,7 +2063,7 @@ def validate_draft(chapter: ChapterFiles) -> tuple[ManuscriptIssue, ...]:
         except Exception:
             pass
 
-    v_failures, v_warnings = voice_module.validate_dialogue_style(text)
+    v_failures, v_warnings = voice_module.validate_dialogue_style(text, chapter.draft)
     for failure in v_failures:
         issues.append(_make_issue(
             "VALIDATOR_DIALOGUE_STYLE",
@@ -1358,6 +2237,13 @@ def validate_chapter(chapter: ChapterFiles, phase_sections: dict[str, str]) -> C
         else:
             report.warnings.append(issue.message)
 
+    pacing_issues = validate_chapter_pacing(chapter)
+    for issue in pacing_issues:
+        if issue.severity == Severity.HARD:
+            report.failures.append(issue.message)
+        else:
+            report.warnings.append(issue.message)
+
     continuity_issues = validate_continuity_out_issues(chapter)
     for issue in continuity_issues:
         if issue.severity == Severity.HARD:
@@ -1380,6 +2266,7 @@ def collect_all_issues(book_folder: Path) -> tuple[ManuscriptIssue, ...]:
         all_issues.extend(validate_scene_breakdown(chapter))
         all_issues.extend(validate_draft(chapter))
         all_issues.extend(validate_source_alignment(chapter, phase_sections))
+        all_issues.extend(validate_chapter_pacing(chapter))
         all_issues.extend(validate_continuity_out_issues(chapter))
 
     return tuple(all_issues)
