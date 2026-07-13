@@ -96,16 +96,59 @@ When a book is finished, create `STATUS.md` with:
 
 ---
 
-## 4. Constraints & Guardrails
+## 4. Spoon-Feeding Prevention (Narrator Explanation Cuts)
+
+**Rule**: Cut any sentence that tells the reader what to think about action already shown through physical evidence.
+
+### What "Spoon-Feeding" Means
+
+After showing tracks, camp layout, supplies, and movement, the narrator explains the conclusion. This kills tension and insults the reader.
+
+### Trigger Phrases to Scan
+
+| Pattern | Example | Why It's Spoon-Feeding |
+|---------|---------|----------------------|
+| "They had…" | "They had been watching." | Explains what tracks already show |
+| "He knew…" / "He saw…" | "Jake saw it as they had seen it." | Labels realization instead of showing |
+| "That meant…" | "That meant he was with them." | Explains what evidence proves |
+| "The kind…" | "The kind of place a man could hold." | Lectures after showing |
+| "A man could…" | "A man could hold it against three." | Explains tactics after showing them |
+| "Not enough…" | "Not enough food. Not enough powder." | Repeats what supply count already proves |
+| "He was…" | "He was leading them." | Labels motive/status already shown |
+
+### Example Fix
+
+**Bad** (spoon-feeding):
+```
+McCrea slept between the warriors.
+Not as a prisoner. Not as a guide who kept his distance. He had slept in the center of the camp, close to the fire, among them. His boot prints mingled with the moccasin tracks around the fire ring, stepping over the same stones, crossing the same ash. He was with them. He was leading them.
+```
+
+**Good** (trusts the reader):
+```
+McCrea slept between the warriors.
+
+His boot prints crossed the ash near the fire ring and turned toward the river with theirs. No drag mark. No scuffle. No sign of a bound man. His heel had pressed deep beside the pemmican wrappers, close to the warmest stones.
+```
+
+### Enforcement
+
+- All fix agents must scan for trigger phrases before making edits
+- Cut sentences that restate what physical evidence already communicates
+- Do NOT cut every plain sentence — only those that tell the reader what to think
+- Preserve essential narrative transitions and pacing breaks
+
+## 5. Constraints & Guardrails
 - **No Direct Canon Mutations**: Never manually edit files in `canon/state/snapshot.yml`. All canon updates must be applied via bookforge-mcp tools.
 - **Zero-Trust Input**: Never guess details or invent story facts. If facts are unknown, query them via `bookforge-mcp_query_research_cache`.
 - **Validation is the Gate**: Any validation failures (`bookforge-mcp_validate_scene`) must be resolved before applying changes.
 - **Pacing Guidance is Elastic**: Beat weights and chapter ranges are planning tripwires, not padding quotas. Use them to notice rushed or bloated treatment, never to force exact length.
 - **Locked Books Are Sacred**: Never modify a book with `STATUS.md` set to `LOCKED`. See Section 3.
+- **Spoon-Feeding Prevention**: Cut narrator explanations that restate what physical evidence already shows. See Section 4.
 
 ---
 
-## 5. Web Driver Fallback (Manual Mode)
+## 6. Web Driver Fallback (Manual Mode)
 
 When browser-based automation is disabled (`use_web_driver: false`), the runner pipeline bypasses the provider web MCP browser calls and halts at a manual review state.
 

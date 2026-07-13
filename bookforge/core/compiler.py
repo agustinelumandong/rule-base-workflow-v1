@@ -46,7 +46,10 @@ def discover_drafts(book_folder: Path) -> list[Path]:
         raise RuntimeError("Missing chapters folder.")
 
     draft_paths = sorted(
-        chapters_root.glob("chapter-*/chapter-*.md"),
+        [
+            p for p in chapters_root.glob("chapter-*/chapter-*.md")
+            if "review" not in p.name.lower()
+        ],
         key=chapter_sort_key,
     )
 
@@ -70,16 +73,16 @@ def discover_drafts(book_folder: Path) -> list[Path]:
 
 def clean_manuscript_text(text: str) -> str:
     # Post-process for final book layout (draft-only rendering)
-    text = re.sub(r"(?m)^## Beat.*$\n*", "", text)
-    text = re.sub(r"(?m)^##+\s+Scene\s+\d+(?:\s*:.*)?$\n*", "", text)
-    text = re.sub(r'([\"”])\s*—\s*', r'\1 ', text)
+    text = re.sub(r"(?m)^##? Beat.*$\n*", "", text)
+    text = re.sub(r"(?m)^#+\s+Scene\s+\d+(?:\s*:.*)?$\n*", "", text)
+    text = re.sub(r'([\""\u201d])\s*—\s*', r'\1 ', text)
     return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def chapter_title(text: str, fallback: str) -> str:
     for line in text.splitlines():
         stripped = line.strip()
-        if stripped.startswith("# "):
+        if stripped.startswith("# ") and not re.match(r"# Scene\s+\d+", stripped):
             return stripped[2:].strip()
     return fallback
 
@@ -101,11 +104,14 @@ def compile_manuscript(book_folder: Path, output_path: Path, include_title: bool
 
     for path in draft_paths:
         text = path.read_text(encoding="utf-8").strip()
-        parts.append(text)
+        fallback = "Epilogue" if path.name == "epilogue.md" else path.parent.name.replace("-", " ").title()
+        chapter_heading = chapter_title(text, fallback)
+        cleaned = clean_manuscript_text(text)
+        if not cleaned.lstrip().startswith("# "):
+            cleaned = f"# {chapter_heading}\n\n{cleaned}"
+        parts.append(cleaned)
 
     manuscript = "\n\n---\n\n".join(parts).rstrip() + "\n"
-
-    manuscript = clean_manuscript_text(manuscript) + "\n"
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(manuscript, encoding="utf-8")

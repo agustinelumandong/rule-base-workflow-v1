@@ -63,6 +63,8 @@ Use `python3 -m bookforge.cli ...` only if `bf` is unavailable.
 Find and consolidate 3+ consecutive short declarative fragments into longer,
 weathered sentences. This is a rhythm cleanup pass, not a rewrite pass.
 
+**Secondary job:** Remove spoon-feeding narrator explanations that restate what physical evidence already shows. Scan for trigger phrases ("They had…", "He knew…", "He saw…", "That meant…", "The kind…", "A man could…", "Not enough…", "He was…") and cut sentences that tell the reader what to think about action already shown.
+
 ## Detection Rule
 
 Flag 3+ consecutive non-dialogue sentences with 1-6 words each, ending with `.`
@@ -130,6 +132,7 @@ PYEOF
 ```text
 chapter-XX.md: <N> staccato blocks fixed.
   L<start>-<end>: <before snippet> -> <after snippet>
+  spoon-feeding: <M> cuts applied
 verified: lock checked; packet read; bf validate before/after <passed|failed>
 ```
 

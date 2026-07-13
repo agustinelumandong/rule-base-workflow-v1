@@ -56,6 +56,32 @@ the current BookForge chapter contract.
 - Keep the audit scoped to the requested chapter.
 - If asked to edit, refuse and route to a write-capable agent after lock check, packet, and validation gates.
 
+## Spoon-Feeding Detection
+
+Scan for narrator explanations that restate what physical evidence already shows:
+
+**Trigger phrases:**
+- "They had…" when explaining what tracks mean
+- "He knew…" / "He saw…" when labeling realization
+- "That meant…" when explaining what evidence proves
+- "The kind…" when lecturing after showing
+- "A man could…" when explaining tactics after showing them
+- "Not enough…" when supply count already proves it
+- "He was…" when labeling motive/status already shown
+
+**For each violation found, report:**
+- File and line number
+- The violating sentence
+- What physical evidence on the page already communicates the same information
+- Whether it can be cut entirely or needs a rewrite
+
+**Example:**
+```
+VIOLATION: "He was leading them." (line 45)
+EVIDENCE: Boot prints mingled with moccasin tracks, no drag mark, deep heel beside pemmican wrappers.
+RECOMMENDATION: Cut entirely. Physical evidence already shows McCrea is with them.
+```
+
 ## Output Format
 
 ```text

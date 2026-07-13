@@ -210,6 +210,32 @@
       "writ"
     ]
   },
+  "spoon_feeding": {
+    "enabled": true,
+    "review_only": true,
+    "trigger_phrases": [
+      "they had been",
+      "he knew",
+      "he saw",
+      "that meant",
+      "the kind of",
+      "a man could",
+      "not enough",
+      "he was leading",
+      "he was with them",
+      "the gorge was defensible",
+      "a place that could"
+    ],
+    "explanation_types": [
+      "explains what tracks mean",
+      "explains what character realizes",
+      "labels tactical situation",
+      "names danger after showing it",
+      "interprets character role",
+      "repeats conclusion supply count already proves"
+    ],
+    "fix_strategy": "Cut sentences that restate what physical evidence already communicates. Trust the reader to infer from boot prints, cold ash, powder horn count, meat strips."
+  },
   "narrative_quality": {
     "antagonists": {
       "vex": {

@@ -69,6 +69,7 @@ Fix only the style issues that break the rules in the named chapter:
 3. Sentence-opening gerunds such as "Watching", "Taking", "Moving", or "Stitching".
 4. Pronoun loops with 3+ consecutive "He" sentence starters.
 5. `VALIDATOR_STYLE_REVIEW_SIGNAL` warnings for thought-over-behavior narration.
+6. **Spoon-feeding narrator explanations** that restate what physical evidence already shows.
 
 Use `.agents/skills/western-manuscript-style/` as the style authority. Use
 `.agents/skills/humanizer/` only as a final polish lens when prose sounds generic,
@@ -82,6 +83,7 @@ change plot, continuity, POV, Western tone, dialogue, or source facts.
 - Gerund openers: use a small targeted search, then read the surrounding paragraph.
 - Pronoun loops: read sentence runs; do not break intentional rhythmic repetition.
 - Thought-over-behavior: use `bf validate --chapter` output as the required signal.
+- **Spoon-feeding**: scan for trigger phrases, then check if surrounding physical evidence already communicates the same information. Cut only sentences that tell the reader what to think about action already shown.
 
 ## How to Edit Files
 
@@ -128,6 +130,7 @@ chapter-XX.md: <N> fixes applied.
   -ing-opener: <M> fixed
   pronoun-loop: <M> fixed
   thought-over-behavior: <M> fixed
+  spoon-feeding: <M> fixed
 verified: lock checked; packet read; bf validate before/after <passed|failed>
 ```
 

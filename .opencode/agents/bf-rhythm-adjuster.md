@@ -89,6 +89,7 @@ Use only source-supported material:
 - Combine duplicate action beats.
 - Remove filler such as "it was", "there was", or redundant seeing/filtering.
 - Compress environment while keeping the strongest image.
+- **Remove spoon-feeding narrator explanations** that restate what physical evidence already shows.
 
 ## Workflow
 
