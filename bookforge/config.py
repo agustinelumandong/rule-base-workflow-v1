@@ -5,3 +5,4 @@ from pathlib import Path
 # Paths relative to execution directory
 DEFAULT_TEMPLATES_DIR = Path(".agents/skills/manuscript-workflow-orchestrator/references")
 DEFAULT_BOOK_EXAMPLE_DIR = Path("books/book-example")
+BUNDLED_TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"

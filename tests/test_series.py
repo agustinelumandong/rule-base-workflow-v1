@@ -5,8 +5,12 @@ import json
 import unittest
 import tempfile
 import shutil
+import subprocess
+import sys
+import zipfile
 from pathlib import Path
 
+from bookforge import config
 from bookforge.core import series
 
 
@@ -139,6 +143,134 @@ class TestSeriesContinuity(unittest.TestCase):
         self.assertIn("- Darin Mayweather is alive.", rulebook_content)
         self.assertIn("- Darin arrived at the ranch.", rulebook_content)
         self.assertIn("- Darin needs ammunition.", rulebook_content)
+
+
+class TestSeriesWorkspace(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.empty_series_dir = Path(self.temp_dir.name) / "the-calling"
+        self.empty_series_dir.mkdir()
+        self.uninitialized_dir = Path(self.temp_dir.name) / "uninitialized"
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_initialize_series_workspace_creates_only_series_files(self):
+        created = series.initialize_series_workspace(self.empty_series_dir)
+
+        for name in (
+            "series.json",
+            "series-bible.md",
+            "series-research-pack.md",
+            "settings.json",
+            "AGENTS.md",
+        ):
+            self.assertTrue((self.empty_series_dir / name).exists())
+        self.assertTrue((self.empty_series_dir / "books").is_dir())
+        self.assertTrue((self.empty_series_dir / "proposed").is_dir())
+        self.assertFalse((self.empty_series_dir / "books" / "book-1").exists())
+        self.assertIn("Created series workspace", created[0])
+
+        agents = (self.empty_series_dir / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "Approved canon paths: series-bible.md, settings.json, and each book's phase-0.md and rulebook.md.",
+            agents,
+        )
+        self.assertIn("Research is approved reference material, not canon.", agents)
+
+        initialized = series.initialize_series_workspace(self.empty_series_dir)
+        self.assertEqual(
+            initialized,
+            [f"Series workspace already initialized: {self.empty_series_dir}"],
+        )
+
+    def test_initialize_series_workspace_rejects_unowned_nonempty_folder(self):
+        (self.empty_series_dir / "notes.md").write_text("keep", encoding="utf-8")
+        with self.assertRaises(FileExistsError):
+            series.initialize_series_workspace(self.empty_series_dir)
+
+    def test_initialize_book_in_series_creates_book_below_books_dir(self):
+        series.initialize_series_workspace(self.empty_series_dir)
+        series.initialize_book_in_series(self.empty_series_dir, "book-1")
+        book = self.empty_series_dir / "books" / "book-1"
+
+        for name in (
+            "phase-0.md",
+            "rulebook.md",
+            "mood-lock.md",
+            "chapter-summaries.md",
+        ):
+            self.assertTrue((book / name).exists())
+        self.assertTrue((book / "chapters").is_dir())
+        self.assertEqual(
+            json.loads((self.empty_series_dir / "series.json").read_text(encoding="utf-8"))["books"],
+            ["book-1"],
+        )
+
+    def test_initialize_book_in_series_rejects_bad_slug_and_missing_series(self):
+        with self.assertRaises(ValueError):
+            series.initialize_book_in_series(self.empty_series_dir, "Book 1")
+        with self.assertRaises(FileNotFoundError):
+            series.initialize_book_in_series(self.uninitialized_dir, "book-1")
+
+    def test_initialize_book_in_series_validates_series_data_before_scaffolding(self):
+        series.initialize_series_workspace(self.empty_series_dir)
+
+        for series_data, error, book_slug in (
+            ("{", json.JSONDecodeError, "book-1"),
+            (json.dumps({"books": {}}), ValueError, "book-2"),
+        ):
+            with self.subTest(series_data=series_data):
+                (self.empty_series_dir / "series.json").write_text(series_data, encoding="utf-8")
+                with self.assertRaises(error):
+                    series.initialize_book_in_series(self.empty_series_dir, book_slug)
+                self.assertFalse((self.empty_series_dir / "books" / book_slug).exists())
+
+    def test_bundled_templates_include_book_scaffold_files(self):
+        for name in (
+            "phase-0.md",
+            "rulebook.md",
+            "mood-lock.md",
+            "chapter-summaries.md",
+        ):
+            self.assertTrue((config.BUNDLED_TEMPLATES_DIR / name).is_file())
+
+    def test_distribution_includes_book_templates(self):
+        project_root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as dist_dir:
+            build_dir = Path(dist_dir) / "build"
+            subprocess.run(
+                [
+                    sys.executable,
+                    "setup.py",
+                    "egg_info",
+                    "--egg-base",
+                    dist_dir,
+                    "build",
+                    "--build-base",
+                    str(build_dir),
+                    "bdist_wheel",
+                    "--bdist-dir",
+                    str(build_dir),
+                    "--dist-dir",
+                    dist_dir,
+                ],
+                cwd=project_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            wheel = next(Path(dist_dir).glob("bookforge-*.whl"))
+            with zipfile.ZipFile(wheel) as archive:
+                names = archive.namelist()
+
+        for name in (
+            "phase-0.md",
+            "rulebook.md",
+            "mood-lock.md",
+            "chapter-summaries.md",
+        ):
+            self.assertIn(f"bookforge/templates/{name}", names)
 
 
 if __name__ == "__main__":

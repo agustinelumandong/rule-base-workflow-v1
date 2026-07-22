@@ -8,7 +8,70 @@ import re
 import shutil
 from pathlib import Path
 
+from bookforge import config
 from bookforge.core import validator as context_validator
+
+
+def is_series_workspace(series_folder: Path) -> bool:
+    """Return whether a folder has BookForge series ownership."""
+    return (series_folder / "series.json").is_file()
+
+
+def initialize_series_workspace(series_folder: Path) -> list[str]:
+    """Create the minimal files required for a BookForge series workspace."""
+    if is_series_workspace(series_folder):
+        return [f"Series workspace already initialized: {series_folder}"]
+
+    if series_folder.exists() and any(series_folder.iterdir()):
+        raise FileExistsError(f"Refusing to initialize nonempty folder: {series_folder}")
+
+    series_folder.mkdir(parents=True, exist_ok=True)
+    (series_folder / "series.json").write_text(
+        json.dumps({"name": series_folder.name.replace("-", " ").title(), "books": []}),
+        encoding="utf-8",
+    )
+    (series_folder / "series-bible.md").write_text("# Series Bible\n", encoding="utf-8")
+    (series_folder / "series-research-pack.md").write_text("# Series Research Pack\n", encoding="utf-8")
+    (series_folder / "settings.json").write_text("{}\n", encoding="utf-8")
+    (series_folder / "AGENTS.md").write_text(
+        "Approved canon paths: series-bible.md, settings.json, and each book's phase-0.md and rulebook.md.\n"
+        "Research is approved reference material, not canon.\n"
+        "AI canon suggestions belong in proposed/.\n"
+        "Chapter drafts are editable.\n",
+        encoding="utf-8",
+    )
+    (series_folder / "books").mkdir()
+    (series_folder / "proposed").mkdir()
+    return [f"Created series workspace: {series_folder}"]
+
+
+def initialize_book_in_series(series_folder: Path, book_slug: str) -> list[str]:
+    """Create a blank book scaffold in an initialized series workspace."""
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", book_slug):
+        raise ValueError(f"Invalid book slug: {book_slug}")
+    if not is_series_workspace(series_folder):
+        raise FileNotFoundError(f"Series workspace not found: {series_folder}")
+
+    series_json_path = series_folder / "series.json"
+    series_data = json.loads(series_json_path.read_text(encoding="utf-8"))
+    if not isinstance(series_data, dict):
+        raise ValueError(f"Invalid series data: {series_json_path}")
+    books = series_data.setdefault("books", [])
+    if not isinstance(books, list):
+        raise ValueError(f"Invalid books list: {series_json_path}")
+
+    book_folder = series_folder / "books" / book_slug
+    if book_folder.exists() and any(book_folder.iterdir()):
+        raise FileExistsError(f"Refusing to initialize nonempty book folder: {book_folder}")
+
+    book_folder.mkdir(parents=True, exist_ok=True)
+    for name in ("phase-0.md", "rulebook.md", "mood-lock.md", "chapter-summaries.md"):
+        shutil.copyfile(config.BUNDLED_TEMPLATES_DIR / name, book_folder / name)
+    (book_folder / "chapters").mkdir()
+
+    books.append(book_slug)
+    series_json_path.write_text(json.dumps(series_data), encoding="utf-8")
+    return [f"Created book scaffold: {book_folder}"]
 
 
 def get_series_info(book_folder: Path) -> dict[str, str] | None:

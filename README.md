@@ -44,9 +44,22 @@ cd rule-base-workflow-v1
 code .
 ```
 
-### 3. Pick a book folder
+### 3. Create a series workspace
 
-Start with `books/tex-cade/` or copy it to create your own book workspace.
+For a new series, use this normal workflow:
+
+```bash
+mkdir my-series
+cd my-series
+bookforge init
+bookforge book-init book-1
+```
+
+`bookforge init` creates the series canon and settings files, `AGENTS.md`, plus
+the `books/` and `proposed/` directories. `bookforge book-init book-1` creates
+one book scaffold under `books/`. Automatically saved chapter prose is an
+editable, non-canon AI draft. Canon suggestions are stored in `proposed/` and
+require your approval before they become canon.
 
 ### 4. Review the workflow docs
 

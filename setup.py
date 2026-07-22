@@ -12,7 +12,7 @@ setup(
         ],
     },
     package_data={
-        "bookforge": ["prompts/**/*.md"],
+        "bookforge": ["prompts/**/*.md", "templates/*.md"],
     },
     python_requires=">=3.8",
 )

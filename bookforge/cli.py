@@ -6,11 +6,9 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-import shutil
 
 from bookforge.core import validator as context_validator
 from bookforge.core import loop as loop_controller
-from bookforge.core import compiler as compiler_module
 from bookforge.core import scanner as scanner_module
 from bookforge.core import rhythm as rhythm_module
 from bookforge.core import chain as chain_module
@@ -21,68 +19,23 @@ from bookforge.core import persona as persona_module
 from bookforge.core import repair as repair_module
 from bookforge.core import relationship as relationship_module
 from bookforge.core import research as research_module
-from bookforge import config
-
-
 def cmd_init(args: argparse.Namespace) -> int:
-    book_folder = Path(args.book_folder)
-    if book_folder.exists() and any(book_folder.iterdir()):
-        print(f"Error: Directory '{book_folder}' already exists and is not empty.", file=sys.stderr)
+    try:
+        for message in series_module.initialize_series_workspace(Path.cwd()):
+            print(message)
+    except (FileExistsError, FileNotFoundError, ValueError) as error:
+        print(f"Error: {error}", file=sys.stderr)
         return 1
+    return 0
 
-    book_folder.mkdir(parents=True, exist_ok=True)
-    
-    # 1. Copy shared series resources first if book is nested in a series folder
-    copied_resources = series_module.copy_shared_series_resources(book_folder)
-    for res in copied_resources:
-        print(res)
 
-    # Source files to create
-    template_files = {
-        "phase-0.md": "phase-0.md",
-        "rulebook.md": "rulebook.md",
-        "mood-lock.md": "mood-lock.md",
-        "chapter-summaries.md": "chapter-summaries.md"
-    }
-
-    src_templates_dir = config.DEFAULT_TEMPLATES_DIR
-    book_example_dir = config.DEFAULT_BOOK_EXAMPLE_DIR
-
-    for filename, dest_name in template_files.items():
-        dest_path = book_folder / dest_name
-        # Skip if file was already created by shared series resources
-        if dest_path.exists():
-            continue
-
-        # 1. Try to copy from default example first
-        src_example = book_example_dir / filename
-        if src_example.exists():
-            shutil.copy2(src_example, dest_path)
-            print(f"Created: {dest_path} (copied from example)")
-            continue
-
-        # 2. Try to copy from templates
-        src_template = src_templates_dir / filename
-        if src_template.exists():
-            shutil.copy2(src_template, dest_path)
-            print(f"Created: {dest_path} (copied from template)")
-            continue
-
-        # 3. Fallback stub
-        dest_path.write_text(f"# {book_folder.name.replace('-', ' ').title()}\n\nStub file for {filename}.\n", encoding="utf-8")
-        print(f"Created: {dest_path} (fallback stub)")
-
-    # 2. Perform continuity carry-forward from a completed book if requested
-    if hasattr(args, "carry_from") and args.carry_from:
-        carry_from_path = Path(args.carry_from)
-        carry_msg = series_module.carry_forward_book_continuity(carry_from_path, book_folder)
-        print(carry_msg)
-
-    # Create chapters structure stub
-    chapters_dir = book_folder / "chapters"
-    chapters_dir.mkdir(exist_ok=True)
-    
-    print(f"\nSuccessfully initialized book pipeline in: '{book_folder}'")
+def cmd_book_init(args: argparse.Namespace) -> int:
+    try:
+        for message in series_module.initialize_book_in_series(Path.cwd(), args.book_slug):
+            print(message)
+    except (FileExistsError, FileNotFoundError, ValueError) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
     return 0
 
 
@@ -172,6 +125,8 @@ def cmd_run_loop(args: argparse.Namespace) -> int:
 
 
 def cmd_compile(args: argparse.Namespace) -> int:
+    from bookforge.core import compiler as compiler_module
+
     book_folder = Path(args.book_folder)
     if not book_folder.exists():
         print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
@@ -449,7 +404,7 @@ def cmd_nlm(args: argparse.Namespace) -> int:
 
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="BookForge: A Production-Ready Manuscript Workflow Pipeline",
         prog="bookforge"
@@ -457,9 +412,11 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", required=False)
 
     # init
-    parser_init = subparsers.add_parser("init", help="Initialize a new book structure")
-    parser_init.add_argument("book_folder", help="Path to book folder (e.g. books/my-book)")
-    parser_init.add_argument("--carry-from", help="Optional path to completed prior book in the series")
+    subparsers.add_parser("init", help="Initialize the current directory as a series workspace")
+    parser_book_init = subparsers.add_parser(
+        "book-init", help="Initialize a book in the current series workspace"
+    )
+    parser_book_init.add_argument("book_slug")
 
     # status
     parser_status = subparsers.add_parser("status", help="Show pipeline diagnostics and validations")
@@ -566,13 +523,14 @@ def main() -> int:
     parser_nlm_gen_out = nlm_subparsers.add_parser("generate-outline", help="Create a unique notebook, upload sources, and query to generate outline")
     parser_nlm_gen_out.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if not args.command:
         args.command = "tui"
 
     commands = {
         "init": cmd_init,
+        "book-init": cmd_book_init,
         "status": cmd_status,
         "run-loop": cmd_run_loop,
         "compile": cmd_compile,
