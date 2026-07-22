@@ -31,13 +31,61 @@ def read_title(book_folder: Path) -> str | None:
     return None
 
 
+<<<<<<< Updated upstream
+=======
+def read_book_metadata(book_folder: Path) -> tuple[str | None, str | None, str | None]:
+    """Return series title, book title, and display book number from phase-0.md."""
+    from bookforge.core.scanner import source_path
+
+    phase_path = source_path(book_folder)
+    if not phase_path:
+        return None, None, None
+
+    text = phase_path.read_text(encoding="utf-8")
+    heading = next(
+        (line[2:].strip() for line in text.splitlines() if line.startswith("# ")),
+        None,
+    )
+    series_from_heading: str | None = None
+    book_title = heading
+    if heading and ":" in heading:
+        series_from_heading, book_title = (part.strip() for part in heading.split(":", 1))
+    match = re.search(r"(?im)^book\s+(\d+)\s+of\s+(.+?)\s*$", text)
+    if not match:
+        return series_from_heading, book_title, None
+    series_title = series_from_heading or match.group(2).strip()
+    if series_title.lower().endswith(" series"):
+        series_title = series_title[:-7].rstrip()
+    return series_title, book_title, f"Book {int(match.group(1))}"
+
+
+def chapter_titles(book_folder: Path) -> dict[int, str]:
+    """Read source-approved chapter titles from chapter-summaries.md."""
+    summaries_path = book_folder / "chapter-summaries.md"
+    if not summaries_path.exists():
+        return {}
+
+    titles: dict[int, str] = {}
+    pattern = re.compile(
+        r"(?im)^\s*(?:#{1,6}\s*)?(?:\*\*)?(?:ch-|chapter\s+)(\d{1,3})\s*(?::|—|–)\s*(.+?)(?:\*\*)?\s*$"
+    )
+    for match in pattern.finditer(summaries_path.read_text(encoding="utf-8")):
+        titles[int(match.group(1))] = match.group(2).strip().rstrip("*").strip()
+    return titles
+
+
+>>>>>>> Stashed changes
 def discover_drafts(book_folder: Path) -> list[Path]:
     chapters_root = book_folder / "chapters"
     if not chapters_root.exists():
         raise RuntimeError("Missing chapters folder.")
 
     draft_paths = sorted(
-        chapters_root.glob("chapter-*/chapter-*.md"),
+        (
+            path
+            for path in chapters_root.glob("chapter-*/chapter-*.md")
+            if re.fullmatch(r"chapter-\d+\.md", path.name)
+        ),
         key=chapter_sort_key,
     )
 
@@ -90,6 +138,86 @@ def compile_manuscript(book_folder: Path, output_path: Path, include_title: bool
     return len(draft_paths), len(manuscript.split())
 
 
+<<<<<<< Updated upstream
+=======
+def compile_docx(book_folder: Path, output_path: Path, include_title: bool) -> tuple[int, int]:
+    """Compile chapter drafts into a manuscript-formatted DOCX file."""
+    draft_paths = discover_drafts(book_folder)
+    document = Document()
+    normal_style = document.styles["Normal"]
+    normal_style.font.name = "Times New Roman"
+    normal_style.font.size = Pt(12)
+    normal_style.paragraph_format.line_spacing = 1
+    normal_style.paragraph_format.first_line_indent = Inches(0)
+
+    rendered_text: list[str] = []
+    if include_title:
+        series_title, book_title, book_number = read_book_metadata(book_folder)
+        for text, size in ((series_title, 18), (book_title, 24), (book_number, 14)):
+            if not text:
+                continue
+            title_paragraph = document.add_paragraph()
+            title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = title_paragraph.add_run(text)
+            run.bold = True
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(size)
+            rendered_text.append(text)
+        document.add_page_break()
+
+    titles = chapter_titles(book_folder)
+    for index, path in enumerate(draft_paths):
+        if index > 0:
+            document.add_page_break()
+
+        chapter_match = re.search(r"chapter-(\d+)", path.name)
+        chapter_number = int(chapter_match.group(1)) if chapter_match else None
+        heading_text = (
+            f"Chapter {chapter_number}: {titles[chapter_number]}"
+            if chapter_number in titles
+            else f"Chapter {chapter_number}" if chapter_number else None
+        )
+        if heading_text:
+            heading = document.add_paragraph()
+            heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            run = heading.add_run(heading_text)
+            run.bold = True
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(16)
+            rendered_text.append(heading_text)
+
+        source_heading_consumed = False
+        for line in path.read_text(encoding="utf-8").splitlines():
+            stripped_line = line.strip()
+            if not stripped_line or stripped_line == "---":
+                continue
+
+            if not source_heading_consumed and (
+                line.startswith("# ")
+                or re.fullmatch(r"Chapter\s+\d+(?::\s*.+)?", stripped_line)
+            ):
+                source_heading_consumed = True
+                continue
+
+            body = document.add_paragraph(line)
+            body.paragraph_format.line_spacing = 1
+            body.paragraph_format.first_line_indent = Inches(0)
+            rendered_text.append(stripped_line)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    document.save(output_path)
+    return len(draft_paths), len(" ".join(rendered_text).split())
+
+
+def validate_output_extension(output_path: Path, output_format: str) -> None:
+    expected_suffix = {"markdown": ".md", "docx": ".docx"}[output_format]
+    if output_path.suffix != expected_suffix:
+        raise RuntimeError(
+            f"Output path must use the {expected_suffix} extension for {output_format} format."
+        )
+
+
+>>>>>>> Stashed changes
 def main() -> int:
     import argparse
     import sys

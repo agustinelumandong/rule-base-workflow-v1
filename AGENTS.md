@@ -16,6 +16,7 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   - Present the completed outline to the user for explicit approval before moving on to rulebook generation or the writing stage.
 - Before drafting, use the available outline, series bible, character details, setting details, tone requirements, and chapter breakdown as source material.
 - Before approving a sequel outline or rulebook, check prior books' major character names. Avoid giving a new emotionally important character the same first name as a prior major character unless the reuse is intentional and documented in the rulebook.
+- **Banned names for NEW characters in NEW books only.** Names below are already used by prior major/minor characters in the series. Do not reuse them for new characters unless it is the same returning person. Same person coming back (e.g., Vargas from Book 1 appearing in Book 3) is fine. Full list: `settings.json` > `name_policy.banned_names`.
 - Plan before drafting: break chapters into beats or scenes before writing full prose.
 - Include both plot beats and emotional or thematic beats so the story does not become only mechanical action.
 - For rescue, hostage, family-duty, or revenge plots, include at least one source-supported quiet humanizing beat before the rescue or climax when possible. This can be a short memory, campfire exchange, duty confession, or plain physical keepsake; do not turn it into a speech or invented backstory.
@@ -126,6 +127,12 @@ Use these rules when helping with manuscript planning, drafting, editing, or wor
   python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>
   ```
 - Use the context validator before the length checker. Fix `FAIL` results before continuing; treat `WARN` results as review or expansion targets.
+- **NEW: Run the chapter preflight checklist before submitting any chapter draft for review.** The checklist catches recurring continuity, POV, physical-logic, mechanics, dialogue-tag, and slop errors that the automated validator cannot detect.
+  ```bash
+  # The checklist is at:
+  # .agents/skills/manuscript-workflow-orchestrator/references/chapter-preflight-checklist.md
+  # Read it, work through all 10 sections, and confirm each item passes before calling a chapter done.
+  ```
 - For deeper chapter review, generate an AI semantic review prompt:
   ```bash
   python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug> --chapter chapter-02 --ai-prompt
