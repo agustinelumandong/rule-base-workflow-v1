@@ -61,6 +61,11 @@ one book scaffold under `books/`. Automatically saved chapter prose is an
 editable, non-canon AI draft. Canon suggestions are stored in `proposed/` and
 require your approval before they become canon.
 
+The generated `AGENTS.md` gives any AI the source hierarchy, required writing
+order, canon safety rules, and the names of the centrally installed BookForge
+skills. The skills stay centralized so every series follows the same current
+workflow.
+
 ### 4. Review the workflow docs
 
 Read:

@@ -177,6 +177,12 @@ class TestSeriesWorkspace(unittest.TestCase):
             agents,
         )
         self.assertIn("Research is approved reference material, not canon.", agents)
+        self.assertIn("# BookForge Series Workflow", agents)
+        self.assertIn("## Central Skills", agents)
+        self.assertIn("manuscript-workflow-orchestrator", agents)
+        self.assertIn("## Required Order", agents)
+        self.assertIn("AI canon suggestions belong in proposed/.", agents)
+        self.assertIn("bookforge status books/<book-slug>", agents)
 
         initialized = series.initialize_series_workspace(self.empty_series_dir)
         self.assertEqual(

@@ -12,6 +12,42 @@ from bookforge import config
 from bookforge.core import validator as context_validator
 
 
+SERIES_AGENTS_TEMPLATE = """# BookForge Series Workflow
+
+## Source of Truth
+
+Approved canon paths: series-bible.md, settings.json, and each book's phase-0.md and rulebook.md.
+Research is approved reference material, not canon.
+If sources conflict, follow the order above.
+
+## Central Skills
+
+Use the centrally installed `manuscript-workflow-orchestrator` skill for book planning, context checks, and drafting workflow when it is available.
+Use `western-manuscript-style` for prose and continuity passes; use `humanizer` only after source, continuity, and style checks.
+Do not copy or modify central skills inside this series folder. If a named skill is unavailable, follow the required order below without inventing a replacement workflow.
+
+## Required Order
+
+1. Read the series canon, the current book's phase-0.md, rulebook.md, mood-lock.md, and chapter-summaries.md before writing.
+2. Plan the chapter with a scene breakdown before drafting prose.
+3. Save AI prose only as an editable chapter draft.
+4. Check continuity, source support, names, setting, time, and style before treating a draft as ready.
+5. Keep the continuity record current after an approved chapter change.
+
+## Canon Safety
+
+AI canon suggestions belong in proposed/.
+Never overwrite series-bible.md, settings.json, phase-0.md, or rulebook.md with AI-generated facts unless the user explicitly approves the change.
+Chapter drafts are editable and are not canon until the user approves them.
+
+## Commands
+
+- Create a book: `bookforge book-init <book-slug>`
+- Inspect a book: `bookforge status books/<book-slug>`
+- Check the next workflow action: `bookforge run-loop books/<book-slug>`
+"""
+
+
 def is_series_workspace(series_folder: Path) -> bool:
     """Return whether a folder has BookForge series ownership."""
     return (series_folder / "series.json").is_file()
@@ -33,13 +69,7 @@ def initialize_series_workspace(series_folder: Path) -> list[str]:
     (series_folder / "series-bible.md").write_text("# Series Bible\n", encoding="utf-8")
     (series_folder / "series-research-pack.md").write_text("# Series Research Pack\n", encoding="utf-8")
     (series_folder / "settings.json").write_text("{}\n", encoding="utf-8")
-    (series_folder / "AGENTS.md").write_text(
-        "Approved canon paths: series-bible.md, settings.json, and each book's phase-0.md and rulebook.md.\n"
-        "Research is approved reference material, not canon.\n"
-        "AI canon suggestions belong in proposed/.\n"
-        "Chapter drafts are editable.\n",
-        encoding="utf-8",
-    )
+    (series_folder / "AGENTS.md").write_text(SERIES_AGENTS_TEMPLATE, encoding="utf-8")
     (series_folder / "books").mkdir()
     (series_folder / "proposed").mkdir()
     return [f"Created series workspace: {series_folder}"]
