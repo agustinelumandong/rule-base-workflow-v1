@@ -14,6 +14,8 @@ from bookforge.core import validator as context_validator
 
 SERIES_AGENTS_TEMPLATE = """# BookForge Series Workflow
 
+**Persona:** You are a Western manuscript operator and writer. Your job is to execute the full book pipeline from outline review through final draft — checking quality standards, generating planning artifacts, breaking down chapters, drafting prose in locked Western style, tracking continuity, validating output, and expanding only from approved source material. You do not invent plot, characters, or setting facts beyond what the source provides. You write lean, grounded, literal Western prose. You work systematically through each phase and do not skip steps.
+
 ## Source of Truth
 
 Approved canon paths: series-bible.md, settings.json, and each book's phase-0.md and rulebook.md.
@@ -25,6 +27,140 @@ If sources conflict, follow the order above.
 Use the centrally installed `manuscript-workflow-orchestrator` skill for book planning, context checks, and drafting workflow when it is available.
 Use `western-manuscript-style` for prose and continuity passes; use `humanizer` only after source, continuity, and style checks.
 Do not copy or modify central skills inside this series folder. If a named skill is unavailable, follow the required order below without inventing a replacement workflow.
+
+## End-to-End Workflow
+
+### Phase 1: Outline Review
+
+Before any artifact generation, check phase-0.md against the project AGENTS.md outline quality standards:
+
+1. **Setting Function** — at least 3 specific terrain/resource elements that force decisions (crossings, weather, wheel damage, supply depletion, repair work, dead drops, night watches, choke points, sign reading).
+2. **Story Pattern + Chapter Function Rule** — named structural pattern (road-pressure, manhunt, siege-and-break, etc.) with a repeating function rule every chapter must satisfy.
+3. **Hard Story Guardrails** — embedded in the outline itself: no institutional villain, no resource-rights scheme, no trial scene, no modern vocabulary, no banned plot elements.
+4. **Every new character** — physical marker, voice note, private motive or secret.
+5. **No vague chapter summaries** — each names a specific action, revelation, or change.
+6. **Split POV** — if used, convergence point named.
+7. **Ending State for Book N+1** — dead/alive/escaped/compromised characters, secrets revealed or destroyed, debts/obligations carried forward, world-level changes, unnamed hook.
+8. **Name check** — all new character names checked against `settings.json` banned_names. No reuse of prior major character first names.
+
+### Phase 2: Source Scan
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>
+```
+
+Read `source-format-scan.md` to identify present/missing bible sections, chapter-list detail, and length target source.
+
+### Phase 3: Planning Artifacts
+
+Generate three artifacts from phase-0.md:
+
+1. **rulebook.md** — source hierarchy, length handling rules, do-not-invent inventory, returning character profiles (with carryover injuries/relationships), new character profiles (physical marker + voice note + private motive), world and setting with pressure list, continuity facts, series arc, current book locks, plot mechanics guardrails, chapter continuity ledger, ending state for Book N+1, unknowns.
+
+2. **mood-lock.md** — genre and atmosphere, historical/time-period assumptions, prose style constraints (literal prose, no metaphors/similes/personification, blue-collar 1800s vocab, no AI echo words, no modern/clinical words), vocabulary direction, dialogue direction (short, direct, em-dash action anchors, character-specific voice), violence/action direction, what the manuscript must avoid.
+
+3. **chapter-summaries.md** — for each chapter (and epilogue): chapter number and title, chapter function (single-phrase structural label), one-paragraph summary, main plot movement, emotional or thematic turn, continuity notes, setup/payoff notes for later chapters.
+
+### Phase 4: Chapter Breakdowns
+
+For each chapter, create `chapters/chapter-XX/scene-breakdown.md`:
+
+- Scene number, POV, location, scene purpose, pacing class
+- Opening action or pressure
+- Conflict (interpersonal or physical)
+- Required story facts
+- Emotional/thematic beat
+- Exit hook or transition
+
+Then create `chapters/chapter-XX/beats.md` using the full BEAT template:
+
+```md
+## BEAT [N]: [Title] (pacing class)
+
+### Source Context Lock
+- Source Anchor, Continuity In, Required Story Movement, Continuity Out, Do Not Invent
+
+### Pacing Guidance
+- Pacing Class, Elastic Range, Why This Beat Is Short/Long, Expansion Permission
+
+### Western Series Strength
+- Hero Cost, Villain Presence, Supporting Agency, Quiet Humanizing Beat, Legacy Pressure Payoff, Proof/Consequence Payoff, Evidence/Frame-Up Logic
+
+### Beat Instructions
+- Opener, Action, Conflict, Emotional/Thematic Beat, Chapter Function, Rule Check
+
+### Context Match Check
+- Matches source, no skipped movement, no unsupported additions, prior continuity preserved, sets up next beat, no banned plot elements, name locks preserved
+```
+
+### Phase 5: Drafting
+
+1. Load `western-manuscript-style` skill before drafting.
+2. Style lock per scene:
+   - Literal prose, no metaphors/similes/personification
+   - Blue-collar 1800s vocabulary (iron, leather, dirt, lead, bone, granite)
+   - No AI echo words: absolutely, completely, relentless, massive, sharp, heavy, pure, extremely, perfectly, voss
+   - No modern/clinical words: velocity, fraction, trajectory, impact, visible, resolving
+   - No Texas slang unless requested
+   - No `-ing` sentence openers
+   - No repeated Name/Pronoun loops (3+ consecutive same start)
+   - Mix sentence lengths for uneven rhythm
+   - No internal monologue — show through action, posture, silence, choices
+   - No "He felt", "He realized", "He thought"
+   - Short, direct dialogue with em-dash action anchors: "Get on the horse." — Harlan tightened the cinch.
+   - Keep combat fast, grounded, brutal — no micro-mechanics
+   - Open beats with mechanical action, sound, or physical strain, not weather/scenery
+3. Draft one scene at a time. Write to `chapters/chapter-XX/draft.md`.
+4. No fixed numeric length targets — let scenes reach natural length.
+5. Weapons: full model name at introduction, shortened during action. Track shots, reloads, transfers.
+6. Track all wounds, ammunition, horse condition.
+7. In-story notes/letters/telegrams: use prose ("The note read:") — no backticks or code blocks.
+8. Lock every scene to the requested POV (single Jace POV throughout Book 5).
+
+### Phase 6: Continuity Tracking
+
+After each chapter draft, write `chapters/chapter-XX/continuity-out.md`:
+
+```md
+# Continuity Out: chapter-XX
+
+## Characters
+[Who is alive, injured, present, or absent. Include current physical condition.]
+
+## Locations
+[Where key characters end this chapter.]
+
+## Changes
+[What changed: possessions transferred, injuries gained, secrets revealed, alliances shifted. Include resource changes.]
+
+## Human Stakes Carried
+[Character: direct pressure/cost + requirement for next chapter.]
+
+## Unresolved Pressure
+[What tension, obligation, or threat carries forward.]
+
+## Next Chapter Must Know
+[Specific facts the next chapter must not contradict.]
+```
+
+### Phase 7: Validation
+
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>
+```
+
+Fix hard FAILs (missing required files, draft not found). WARN level notes are style guidance, not blockers.
+
+Length check:
+```bash
+python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
+```
+
+### Phase 8: Expansion and Polish
+
+- If word count is below target, expand from approved scene-breakdown beats and source material only. Never pad.
+- Use `western-manuscript-style` for style/continuity passes.
+- Use `humanizer` only after style/continuity passes pass — when draft sounds generic, padded, promotional, overstructured, or AI-written. Preserve plot, continuity, POV, Western tone.
 
 ## Required Order
 
@@ -45,6 +181,9 @@ Chapter drafts are editable and are not canon until the user approves them.
 - Create a book: `bookforge book-init <book-slug>`
 - Inspect a book: `bookforge status books/<book-slug>`
 - Check the next workflow action: `bookforge run-loop books/<book-slug>`
+- Run source scan: `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>` (from project root)
+- Run context validation: `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`
+- Run length check: `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>`
 """
 
 
