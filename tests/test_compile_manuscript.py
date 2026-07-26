@@ -4,6 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from docx import Document
+from docx.shared import Inches, Pt
+
 SCRIPT_PATH = (
     Path(__file__).resolve().parents[1]
     / ".agents"
@@ -25,6 +28,27 @@ def load_compiler():
 
 
 class CompileManuscriptTests(unittest.TestCase):
+    def create_two_chapter_book(self, book_folder: Path) -> None:
+        (book_folder / "phase-0.md").write_text(
+            "# Test Title\n\nBook 7 of Test Saga\n", encoding="utf-8"
+        )
+        (book_folder / "chapter-summaries.md").write_text(
+            "### ch-001: First Steps\n\n### ch-002: Last Steps\n",
+            encoding="utf-8",
+        )
+
+        chapter_one = book_folder / "chapters" / "chapter-01"
+        chapter_one.mkdir(parents=True)
+        (chapter_one / "chapter-01.md").write_text(
+            "# Chapter One\n\nChapter one body prose.", encoding="utf-8"
+        )
+
+        chapter_two = book_folder / "chapters" / "chapter-02"
+        chapter_two.mkdir(parents=True)
+        (chapter_two / "chapter-02.md").write_text(
+            "# Chapter Two\n\nChapter two body prose.", encoding="utf-8"
+        )
+
     def test_read_title_present(self):
         compiler = load_compiler()
         with tempfile.TemporaryDirectory() as tmp:
@@ -124,8 +148,6 @@ class CompileManuscriptTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 compiler.compile_manuscript(book_folder, output_file, include_title=False)
 
-<<<<<<< Updated upstream
-=======
     def test_compile_docx_writes_reopenable_manuscript_with_book_layout(self):
         compiler = load_compiler()
         with tempfile.TemporaryDirectory() as tmp:
@@ -247,7 +269,6 @@ class CompileManuscriptTests(unittest.TestCase):
         compiler.validate_output_extension(Path("manuscript.md"), "markdown")
         compiler.validate_output_extension(Path("manuscript.docx"), "docx")
 
->>>>>>> Stashed changes
 
 if __name__ == "__main__":
     unittest.main()

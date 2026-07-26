@@ -9,7 +9,12 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt
+
 DEFAULT_OUTPUT_NAME = "compiled-manuscript.md"
+DEFAULT_DOCX_OUTPUT_NAME = "compiled-manuscript.docx"
 
 
 def chapter_sort_key(path: Path) -> tuple[int, str]:
@@ -31,8 +36,6 @@ def read_title(book_folder: Path) -> str | None:
     return None
 
 
-<<<<<<< Updated upstream
-=======
 def read_book_metadata(book_folder: Path) -> tuple[str | None, str | None, str | None]:
     """Return series title, book title, and display book number from phase-0.md."""
     from bookforge.core.scanner import source_path
@@ -74,7 +77,6 @@ def chapter_titles(book_folder: Path) -> dict[int, str]:
     return titles
 
 
->>>>>>> Stashed changes
 def discover_drafts(book_folder: Path) -> list[Path]:
     chapters_root = book_folder / "chapters"
     if not chapters_root.exists():
@@ -138,8 +140,6 @@ def compile_manuscript(book_folder: Path, output_path: Path, include_title: bool
     return len(draft_paths), len(manuscript.split())
 
 
-<<<<<<< Updated upstream
-=======
 def compile_docx(book_folder: Path, output_path: Path, include_title: bool) -> tuple[int, int]:
     """Compile chapter drafts into a manuscript-formatted DOCX file."""
     draft_paths = discover_drafts(book_folder)
@@ -217,12 +217,11 @@ def validate_output_extension(output_path: Path, output_format: str) -> None:
         )
 
 
->>>>>>> Stashed changes
 def main() -> int:
     import argparse
     import sys
     parser = argparse.ArgumentParser(
-        description="Compile chapter drafts and epilogue into one Markdown manuscript."
+        description="Compile chapter drafts and epilogue into one manuscript."
     )
     parser.add_argument(
         "book_folder",
@@ -232,7 +231,13 @@ def main() -> int:
     )
     parser.add_argument(
         "--output",
-        help=f"Output Markdown path. Defaults to <book_folder>/{DEFAULT_OUTPUT_NAME}.",
+        help="Output path. Defaults to a compiled-manuscript file matching --format.",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("markdown", "docx"),
+        default="markdown",
+        help="Output format. Defaults to markdown.",
     )
     parser.add_argument(
         "--no-title",
@@ -246,10 +251,15 @@ def main() -> int:
         print(f"Error: book folder not found: {book_folder}", file=sys.stderr)
         return 2
 
-    output_path = Path(args.output) if args.output else book_folder / DEFAULT_OUTPUT_NAME
+    default_output_name = (
+        DEFAULT_OUTPUT_NAME if args.format == "markdown" else DEFAULT_DOCX_OUTPUT_NAME
+    )
+    output_path = Path(args.output) if args.output else book_folder / default_output_name
 
     try:
-        draft_count, word_count = compile_manuscript(
+        validate_output_extension(output_path, args.format)
+        compiler = compile_manuscript if args.format == "markdown" else compile_docx
+        draft_count, word_count = compiler(
             book_folder=book_folder,
             output_path=output_path,
             include_title=not args.no_title,
@@ -265,4 +275,3 @@ def main() -> int:
     print(f"- **Draft Files Compiled:** {draft_count}")
     print(f"- **Compiled Words:** {word_count}")
     return 0
-
