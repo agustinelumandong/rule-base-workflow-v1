@@ -354,12 +354,12 @@ class BookForgeTUI:
                     pass
             
             try:
-                status, reason, report = loop.run_loop_check(
+                decision = loop.evaluate_loop(
                     book_folder=self.current_book,
                     target_min=target_words,
                     target_max=target_words + 1000
                 )
-                self.print_colorized_report(report)
+                self.print_colorized_report(decision.report)
             except KeyboardInterrupt:
                 print(f"\n  {COLOR_YELLOW}Loop execution cancelled by user.{RESET}")
             except Exception as e:
@@ -631,4 +631,3 @@ class BookForgeTUI:
             print("\nPress any key to return...")
             get_key()
             sys.stdout.write("\033[?25l")
-

@@ -104,7 +104,11 @@ bookforge book-init book-1
 # Run from the project or series workspace as appropriate.
 bookforge status books/<book-slug>
 bookforge run-loop books/<book-slug>
+bookforge run-loop books/<book-slug> --prepare
+bookforge run-loop books/<book-slug> --record-repair chapter-01
 bookforge compile books/<book-slug>
 ```
+
+`run-loop` only evaluates by default. `--prepare` writes a context packet for the selected chapter; it never changes drafts or canon. After a human or external agent attempts a repair, use `--record-repair` before evaluating again.
 
 Use the focused checks named by the changed module or command. A successful compile and a successful validation are separate results; report them separately.

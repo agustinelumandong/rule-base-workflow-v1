@@ -112,7 +112,15 @@ def cmd_run_loop(args: argparse.Namespace) -> int:
                 except ValueError:
                     pass
 
-    status, reason, report_text = loop_controller.run_loop_check(
+    if args.record_repair:
+        chapter_folder = book_folder / "chapters" / args.record_repair
+        if not chapter_folder.exists():
+            print(f"Error: chapter folder not found: {chapter_folder}", file=sys.stderr)
+            return 2
+        attempts = loop_controller.record_repair_attempt(book_folder, args.record_repair)
+        print(f"Recorded repair attempt {attempts} for {args.record_repair}.")
+
+    decision = loop_controller.evaluate_loop(
         book_folder=book_folder,
         target_min=args.target_min,
         target_max=args.target_max,
@@ -120,8 +128,15 @@ def cmd_run_loop(args: argparse.Namespace) -> int:
         max_repair_attempts=args.max_repair_attempts
     )
 
-    print(report_text)
-    return 2 if status == "BLOCKED" else 0
+    if args.prepare:
+        packet_path = loop_controller.prepare_loop_action(book_folder, decision)
+        if packet_path:
+            print(f"Prepared context packet: {packet_path}")
+        else:
+            print("No chapter context packet prepared for this decision.")
+
+    print(decision.report)
+    return 2 if decision.status == "BLOCKED" else 0
 
 
 def cmd_compile(args: argparse.Namespace) -> int:
@@ -429,6 +444,9 @@ def main(argv: list[str] | None = None) -> int:
     parser_run.add_argument("--target-max", type=int, help="Target maximum words")
     parser_run.add_argument("--repair-attempt", help="Comma-separated repair overrides (e.g. chapter-01:3)")
     parser_run.add_argument("--max-repair-attempts", type=int, default=3, help="Max repair attempts allowed")
+    run_action = parser_run.add_mutually_exclusive_group()
+    run_action.add_argument("--prepare", action="store_true", help="Write only the selected chapter's context packet")
+    run_action.add_argument("--record-repair", metavar="CHAPTER", help="Record a completed repair attempt before evaluating")
 
     # compile
     parser_compile = subparsers.add_parser("compile", help="Compile drafts into single manuscript")

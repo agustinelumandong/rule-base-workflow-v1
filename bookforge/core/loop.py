@@ -13,6 +13,7 @@ from pathlib import Path
 from bookforge.core import chain as check_continuity_chain
 from bookforge.core import length as length_checker
 from bookforge.core import narrative_quality
+from bookforge.core import packet as context_packet
 from bookforge.core import rhythm as check_chapter_rhythm
 from bookforge.core import validator as context_validator
 from bookforge.core.issue import IssueCategory, ManuscriptIssue, Severity
@@ -45,6 +46,18 @@ class LengthState:
     total_words: int
     remaining_to_min: int
     counts: list[length_checker.DraftCount]
+
+
+@dataclass(frozen=True)
+class LoopDecision:
+    status: str
+    reason: str
+    prompt_mode: str
+    target_chapter: str | None
+    next_action: str
+    terminal: bool
+    requires_human: bool
+    report: str
 
 
 def soft_length_bounds(target_min: int, target_max: int) -> tuple[int, int]:
@@ -120,7 +133,7 @@ def action_chapter(
     continuity_failures: list[str],
     rebalance_chapter: str = "NONE",
 ) -> str | None:
-    if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
+    if status in ("NEEDS_CONTEXT_REPAIR", "NEEDS_CHAPTER_REVIEW") and context_problem_chapters:
         return context_problem_chapters[0]
     if status == "NEEDS_CONTINUITY_REPAIR" and continuity_failures:
         match = re.match(r"(chapter-\d+|epilogue)", continuity_failures[0])
@@ -274,28 +287,47 @@ def classify(
     return "DONE", "Manuscript is within target range with clean deterministic checks."
 
 
-def load_persistent_repairs(book_folder: Path) -> dict[str, int]:
+def load_loop_state(book_folder: Path) -> dict[str, object]:
     state_file = book_folder / "loop-state.json"
     if not state_file.exists():
         return {}
     try:
         data = json.loads(state_file.read_text(encoding="utf-8"))
-        return data.get("repair_attempts", {})
+        return data if isinstance(data, dict) else {}
     except Exception:
         return {}
 
 
-def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], status: str) -> None:
+def save_loop_state(book_folder: Path, state: dict[str, object]) -> None:
     state_file = book_folder / "loop-state.json"
-    data = {
-        "repair_attempts": repair_attempts,
-        "last_run": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "last_status": status,
-    }
-    try:
-        state_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+    state_file.write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+
+def load_persistent_repairs(book_folder: Path) -> dict[str, int]:
+    repairs = load_loop_state(book_folder).get("repair_attempts", {})
+    return repairs if isinstance(repairs, dict) else {}
+
+
+def save_persistent_repairs(book_folder: Path, repair_attempts: dict[str, int], status: str) -> None:
+    state = load_loop_state(book_folder)
+    state.update(
+        {
+            "repair_attempts": repair_attempts,
+            "last_run": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "last_status": status,
+        }
+    )
+    save_loop_state(book_folder, state)
+
+
+def record_repair_attempt(book_folder: Path, chapter_slug: str) -> int:
+    state = load_loop_state(book_folder)
+    repairs = state.get("repair_attempts", {})
+    repairs = dict(repairs) if isinstance(repairs, dict) else {}
+    repairs[chapter_slug] = int(repairs.get(chapter_slug, 0)) + 1
+    state["repair_attempts"] = repairs
+    save_loop_state(book_folder, state)
+    return repairs[chapter_slug]
 
 
 def _required_book_file_issues(book_folder: Path) -> tuple[list[str], list[object]]:
@@ -314,13 +346,13 @@ def _required_book_file_issues(book_folder: Path) -> tuple[list[str], list[objec
     return [], list(result)
 
 
-def run_loop_check(
+def evaluate_loop(
     book_folder: Path,
     target_min: int | None = None,
     target_max: int | None = None,
     cli_attempts: dict[str, int] | None = None,
     max_repair_attempts: int = 3,
-) -> tuple[str, str, str]:
+) -> LoopDecision:
     if cli_attempts is None:
         cli_attempts = {}
     persistent_attempts = load_persistent_repairs(book_folder)
@@ -370,17 +402,6 @@ def run_loop_check(
     )
 
     context_problem_chapters = hard_issue_chapters(reports)
-    if status == "NEEDS_CONTEXT_REPAIR" and context_problem_chapters:
-        current_repairing = context_problem_chapters[0]
-        repair_attempts[current_repairing] = repair_attempts.get(current_repairing, 0) + 1
-
-    for report in reports:
-        slug = report.chapter.slug
-        if not report.failures and not report.warnings and slug in repair_attempts:
-            repair_attempts[slug] = 0
-
-    save_persistent_repairs(book_folder, repair_attempts, status)
-
     book_failure_messages = [_message_of(issue) for issue in book_failures]
     expansion_chapter = choose_expansion_chapter(reports, length_state.counts)
     rebalance_chapter = choose_rebalance_chapter(rhythm_report or length_state.counts)
@@ -448,7 +469,68 @@ def run_loop_check(
             dimension = getattr(issue, "dimension", getattr(getattr(issue, "category", ""), "name", "Narrative"))
             lines.append(f"- {chapter}: {dimension} - {_message_of(issue)}")
 
-    return status, reason, "\n".join(lines)
+    terminal = status in ("DONE", "DONE_WITH_WARNINGS", "BLOCKED")
+    return LoopDecision(
+        status=status,
+        reason=reason,
+        prompt_mode=prompt_mode,
+        target_chapter=next_chapter,
+        next_action=next_action,
+        terminal=terminal,
+        requires_human=not terminal,
+        report="\n".join(lines),
+    )
+
+
+def run_loop_check(
+    book_folder: Path,
+    target_min: int | None = None,
+    target_max: int | None = None,
+    cli_attempts: dict[str, int] | None = None,
+    max_repair_attempts: int = 3,
+) -> tuple[str, str, str]:
+    decision = evaluate_loop(
+        book_folder=book_folder,
+        target_min=target_min,
+        target_max=target_max,
+        cli_attempts=cli_attempts,
+        max_repair_attempts=max_repair_attempts,
+    )
+    return decision.status, decision.reason, decision.report
+
+
+def prepare_loop_action(book_folder: Path, decision: LoopDecision) -> Path | None:
+    if decision.terminal or not decision.target_chapter:
+        return None
+
+    chapter_folder = context_packet.chapter_folder(book_folder, decision.target_chapter)
+    packet_path = chapter_folder / "context-packet.md"
+    packet_path.write_text(
+        context_packet.render_packet(book_folder, decision.target_chapter),
+        encoding="utf-8",
+    )
+
+    state = load_loop_state(book_folder)
+    prepared_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    state.update(
+        {
+            "last_decision": {
+                "status": decision.status,
+                "reason": decision.reason,
+                "prompt_mode": decision.prompt_mode,
+                "target_chapter": decision.target_chapter,
+                "next_action": decision.next_action,
+                "terminal": decision.terminal,
+                "requires_human": decision.requires_human,
+            },
+            "last_run": prepared_at,
+            "last_status": decision.status,
+            "last_prepared_at": prepared_at,
+            "last_prepared_packet": str(packet_path),
+        }
+    )
+    save_loop_state(book_folder, state)
+    return packet_path
 
 
 def main() -> int:
@@ -491,12 +573,12 @@ def main() -> int:
                 except ValueError:
                     pass
 
-    status, _reason, report = run_loop_check(
+    decision = evaluate_loop(
         book_folder=book_folder,
         target_min=args.target_min,
         target_max=args.target_max,
         cli_attempts=cli_attempts,
         max_repair_attempts=args.max_repair_attempts,
     )
-    print(report)
-    return 2 if status == "BLOCKED" else 0
+    print(decision.report)
+    return 2 if decision.status == "BLOCKED" else 0

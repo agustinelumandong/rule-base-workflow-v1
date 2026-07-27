@@ -159,7 +159,9 @@ Do not patch a compiled manuscript as a substitute for correcting its source dra
 
 - Create a book: `bookforge book-init <book-slug>`
 - Inspect a book: `bookforge status books/<book-slug>`
-- Check the next workflow action: `bookforge run-loop books/<book-slug>`
+- Check the next workflow action: `bookforge run-loop books/<book-slug>` (read-only)
+- Prepare a selected chapter's safe context packet: `bookforge run-loop books/<book-slug> --prepare`
+- Record an actual human or external repair attempt: `bookforge run-loop books/<book-slug> --record-repair chapter-01`
 - Compile drafts: `bookforge compile books/<book-slug>`
 - Run source scan: `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>`
 - Run context validation: `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`
