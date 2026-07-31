@@ -85,7 +85,11 @@ def find_drafts(book_folder: Path) -> list[DraftCount]:
 
     counts: list[DraftCount] = []
     chapter_paths = sorted(
-        chapters_root.glob("chapter-*/chapter-*.md"),
+        (
+            path
+            for path in chapters_root.glob("chapter-*/chapter-*.md")
+            if re.fullmatch(r"chapter-\d+\.md", path.name)
+        ),
         key=chapter_sort_key,
     )
     for path in chapter_paths:

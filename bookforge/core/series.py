@@ -26,7 +26,7 @@ If sources conflict, keep approved canon unchanged and ask the user or place a p
 ## Central Skills
 
 Use the centrally installed `manuscript-workflow-orchestrator` skill for book planning, context checks, and drafting workflow when it is available.
-Use `western-manuscript-style` for prose and continuity passes; use `humanizer` only after source, continuity, and style checks.
+Use `western-manuscript-style` for prose and continuity passes; use `western-manuscript-validator` for story-logic, causality, and craft validation; use `humanizer` only after source, continuity, and style checks.
 Do not copy or modify central skills inside this series folder. If a named skill is unavailable, follow the required order below without inventing a replacement workflow.
 
 ## End-to-End Workflow
@@ -136,6 +136,14 @@ Length check:
 python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>
 ```
 
+Western craft validation (story logic, causality, continuity, tone, dialogue):
+
+```bash
+bookforge validate-western books/<book-slug> [--mode outline|scene|chapter|manuscript|dialogue|historical]
+```
+
+Load the `western-manuscript-validator` skill, read the output packet, and fill in the Validation Report section using the skill's criteria.
+
 ### Phase 8: Expansion and Polish
 
 - If word count is below target, expand from approved scene-breakdown beats and source material only. Never pad.
@@ -165,6 +173,7 @@ Do not patch a compiled manuscript as a substitute for correcting its source dra
 - Compile drafts: `bookforge compile books/<book-slug>`
 - Run source scan: `python .agents/skills/manuscript-workflow-orchestrator/scripts/scan_source_format.py books/<book-slug>`
 - Run context validation: `python .agents/skills/manuscript-workflow-orchestrator/scripts/validate_manuscript_context.py books/<book-slug>`
+- Run Western craft validation: `bookforge validate-western books/<book-slug> [--mode <mode>]`
 - Run length check: `python .agents/skills/manuscript-workflow-orchestrator/scripts/check_manuscript_length.py books/<book-slug>`
 """
 
@@ -172,6 +181,14 @@ Do not patch a compiled manuscript as a substitute for correcting its source dra
 def is_series_workspace(series_folder: Path) -> bool:
     """Return whether a folder has BookForge series ownership."""
     return (series_folder / "series.json").is_file()
+
+
+def refresh_series_agents(series_folder: Path) -> list[str]:
+    """Overwrite AGENTS.md with current template. Preserves other workspace files."""
+    if not is_series_workspace(series_folder):
+        raise FileNotFoundError(f"Not a BookForge series workspace: {series_folder}")
+    (series_folder / "AGENTS.md").write_text(SERIES_AGENTS_TEMPLATE, encoding="utf-8")
+    return [f"Refreshed AGENTS.md for series workspace: {series_folder}"]
 
 
 def initialize_series_workspace(series_folder: Path) -> list[str]:

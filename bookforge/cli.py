@@ -19,8 +19,13 @@ from bookforge.core import persona as persona_module
 from bookforge.core import repair as repair_module
 from bookforge.core import relationship as relationship_module
 from bookforge.core import research as research_module
+from bookforge.core import western_validator
 def cmd_init(args: argparse.Namespace) -> int:
     try:
+        if args.refresh_agents:
+            for message in series_module.refresh_series_agents(Path.cwd()):
+                print(message)
+            return 0
         for message in series_module.initialize_series_workspace(Path.cwd()):
             print(message)
     except (FileExistsError, FileNotFoundError, ValueError) as error:
@@ -418,6 +423,9 @@ def cmd_nlm(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_validate_western(args: argparse.Namespace) -> int:
+    return western_validator.cmd_validate_western(args)
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
@@ -427,7 +435,8 @@ def main(argv: list[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="command", required=False)
 
     # init
-    subparsers.add_parser("init", help="Initialize the current directory as a series workspace")
+    parser_init = subparsers.add_parser("init", help="Initialize the current directory as a series workspace")
+    parser_init.add_argument("--refresh-agents", action="store_true", help="Overwrite AGENTS.md with current template (safe for existing workspaces)")
     parser_book_init = subparsers.add_parser(
         "book-init", help="Initialize a book in the current series workspace"
     )
@@ -537,6 +546,19 @@ def main(argv: list[str] | None = None) -> int:
     parser_nlm_sync_src = nlm_subparsers.add_parser("sync-sources", help="Upload local rules and drafts to NotebookLM")
     parser_nlm_sync_src.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
 
+    # validate-western
+    parser_val = subparsers.add_parser(
+        "validate-western",
+        help="Validate Western fiction content against the manuscript-validator skill criteria"
+    )
+    parser_val.add_argument("path", help="Path to book folder, chapter folder, or file to validate")
+    parser_val.add_argument(
+        "--mode",
+        choices=["outline", "scene", "chapter", "manuscript", "dialogue", "historical"],
+        help="Validation mode (auto-detected if omitted)"
+    )
+    parser_val.add_argument("--output", "-o", help="Write validation packet to file instead of stdout")
+
     # nlm generate-outline
     parser_nlm_gen_out = nlm_subparsers.add_parser("generate-outline", help="Create a unique notebook, upload sources, and query to generate outline")
     parser_nlm_gen_out.add_argument("book_folder", nargs="?", default="books/tex-cade", help="Path to book folder")
@@ -561,6 +583,7 @@ def main(argv: list[str] | None = None) -> int:
         "add-relation": cmd_add_relation,
         "nlm": cmd_nlm,
         "resolve-unknowns": cmd_resolve_unknowns,
+        "validate-western": cmd_validate_western,
     }
 
     try:
